@@ -1,0 +1,557 @@
+/*
+ * Copyright (c) 2017, NVIDIA CORPORATION. All rights reserved.
+ */
+
+#include <sys/prctl.h>
+#include <sys/socket.h>
+#include <sys/time.h>
+#include <sys/types.h>
+#include <sys/wait.h>
+
+#include <poll.h>
+#include <signal.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <stdnoreturn.h>
+#include <string.h>
+#include <unistd.h>
+
+#include <cuda.h>
+#include <nvml.h>
+
+#pragma GCC diagnostic push
+#include "driver_rpc.h"
+#pragma GCC diagnostic pop
+
+#include "driver.h"
+#include "error.h"
+#include "utils.h"
+#include "xfuncs.h"
+
+#define SONAME_LIBCUDA "libcuda.so.1"
+#define SONAME_LIBNVML "libnvidia-ml.so.1"
+
+#define REAP_TIMEOUT_MS 10
+
+static int reset_cuda_environment(struct error *);
+static int setup_rpc_client(struct driver *);
+static noreturn void setup_rpc_service(struct driver *, pid_t);
+static int reap_process(struct error *, pid_t, int, bool);
+
+#define call_nvml(ctx, sym, ...) ({                                                                    \
+        union {void *ptr; __typeof__(&sym) fn;} u_;                                                    \
+        nvmlReturn_t r_;                                                                               \
+                                                                                                       \
+        dlerror();                                                                                     \
+        u_.ptr = dlsym((ctx)->nvml_dl, #sym);                                                          \
+        r_ = (dlerror() == NULL) ? (*u_.fn)(__VA_ARGS__) : NVML_ERROR_FUNCTION_NOT_FOUND;              \
+        if (r_ != NVML_SUCCESS)                                                                        \
+                error_set_nvml((ctx)->err, (ctx)->nvml_dl, r_, "nvml error");                          \
+        (r_ == NVML_SUCCESS) ? 0 : -1;                                                                 \
+})
+
+#define call_cuda(ctx, sym, ...) ({                                                                    \
+        union {void *ptr; __typeof__(&sym) fn;} u_;                                                    \
+        CUresult r_;                                                                                   \
+                                                                                                       \
+        dlerror();                                                                                     \
+        u_.ptr = dlsym((ctx)->cuda_dl, #sym);                                                          \
+        r_ = (dlerror() == NULL) ? (*u_.fn)(__VA_ARGS__) : CUDA_ERROR_SHARED_OBJECT_SYMBOL_NOT_FOUND;  \
+        if (r_ != CUDA_SUCCESS)                                                                        \
+                error_set_cuda((ctx)->err, (ctx)->cuda_dl, r_, "cuda error");                          \
+        (r_ == CUDA_SUCCESS) ? 0 : -1;                                                                 \
+})
+
+#define call_rpc(ctx, res, func, ...) ({                                                               \
+        enum clnt_stat r_;                                                                             \
+        struct sigaction osa_, sa_ = {.sa_handler = SIG_IGN};                                          \
+                                                                                                       \
+        static_assert(sizeof(ptr_t) >= sizeof(intptr_t), "incompatible types");                        \
+        sigaction(SIGPIPE, &sa_, &osa_);                                                               \
+        if ((r_ = func((ptr_t)ctx, ##__VA_ARGS__, res, (ctx)->rpc_clt)) != RPC_SUCCESS)                \
+                error_set_rpc((ctx)->err, r_, "rpc error");                                            \
+        else if ((res)->errcode != 0)                                                                  \
+                error_from_xdr((ctx)->err, res);                                                       \
+        sigaction(SIGPIPE, &osa_, NULL);                                                               \
+        (r_ == RPC_SUCCESS && (res)->errcode == 0) ? 0 : -1;                                           \
+})
+
+static int
+reset_cuda_environment(struct error *err)
+{
+        const struct { const char *name, *value; } env[] = {
+                {"CUDA_DISABLE_UNIFIED_MEMORY", "1"},
+                {"CUDA_CACHE_DISABLE", "1"},
+                {"CUDA_DEVICE_ORDER", "FASTEST_FIRST"},
+                {"CUDA_VISIBLE_DEVICES", NULL},
+        };
+        int ret;
+
+        for (size_t i = 0; i < nitems(env); ++i) {
+                ret = (env[i].value == NULL) ? unsetenv(env[i].name) :
+                    setenv(env[i].name, env[i].value, 1);
+                if (ret < 0) {
+                        error_set(err, "environment reset failed");
+                        return (-1);
+                }
+        }
+        return (0);
+}
+
+static int
+setup_rpc_client(struct driver *ctx)
+{
+        struct sockaddr_un addr;
+        socklen_t addrlen;
+        struct timeval timeout = {1, 0};
+
+        xclose(ctx->fd[SOCK_SVC]);
+
+        addrlen = sizeof(addr);
+        if (getpeername(ctx->fd[SOCK_CLT], (struct sockaddr *)&addr, &addrlen) < 0) {
+                error_set(ctx->err, "address resolution failed");
+                return (-1);
+        }
+        if ((ctx->rpc_clt = clntunix_create(&addr, DRIVER_PROGRAM, DRIVER_VERSION, &ctx->fd[SOCK_CLT], 0, 0)) == NULL) {
+                error_setx(ctx->err, "%s", clnt_spcreateerror("driver client creation failed"));
+                return (-1);
+        }
+        clnt_control(ctx->rpc_clt, CLSET_TIMEOUT, (char *)&timeout);
+        return (0);
+}
+
+static void
+setup_rpc_service(struct driver *ctx, pid_t ppid)
+{
+        log_info("starting driver service");
+        prctl(PR_SET_NAME, (unsigned long)"nvc:[driver]", 0, 0, 0);
+
+        xclose(ctx->fd[SOCK_CLT]);
+
+        if (prctl(PR_SET_PDEATHSIG, SIGTERM, 0, 0, 0) < 0) {
+                error_set(ctx->err, "process initialization failed");
+                goto fail;
+        }
+        if (getppid() != ppid)
+                kill(getpid(), SIGTERM);
+
+        if (reset_cuda_environment(ctx->err) < 0)
+                goto fail;
+
+        if ((ctx->rpc_svc = svcunixfd_create(ctx->fd[SOCK_SVC], 0, 0)) == NULL ||
+            !svc_register(ctx->rpc_svc, DRIVER_PROGRAM, DRIVER_VERSION, driver_program_1, 0)) {
+                error_setx(ctx->err, "program registration failed");
+                goto fail;
+        }
+        svc_run();
+
+        log_info("terminating driver service");
+        svc_destroy(ctx->rpc_svc);
+        _exit(EXIT_SUCCESS);
+
+ fail:
+        log_err("could not start driver service: %s", ctx->err->msg);
+        if (ctx->rpc_svc != NULL)
+                svc_destroy(ctx->rpc_svc);
+        _exit(EXIT_FAILURE);
+}
+
+static int
+reap_process(struct error *err, pid_t pid, int fd, bool force)
+{
+        int ret = 0;
+        int status;
+        struct pollfd fds = {.fd = fd, .events = POLLRDHUP};
+
+        if (waitpid(pid, &status, WNOHANG) <= 0) {
+                if (force)
+                        kill(pid, SIGTERM);
+
+                switch ((ret = poll(&fds, 1, REAP_TIMEOUT_MS))) {
+                case -1:
+                        break;
+                case 0:
+                        log_warn("terminating driver service (forced)");
+                        ret = kill(pid, SIGKILL);
+                        /* Fallthrough */
+                default:
+                        if (ret >= 0)
+                                ret = waitpid(pid, &status, 0);
+                }
+        }
+        if (ret < 0)
+                error_set(err, "process reaping failed (pid %ld)", (long)pid);
+        else
+                log_info("driver service terminated %s%.0d",
+                    WIFSIGNALED(status) ? "with signal " : "successfully",
+                    WIFSIGNALED(status) ? WTERMSIG(status) : 0);
+        return (ret);
+}
+
+int
+driver_program_1_freeresult(maybe_unused SVCXPRT *svc, xdrproc_t xdr_result, caddr_t res)
+{
+        xdr_free(xdr_result, res);
+        return (1);
+}
+
+int
+driver_init(struct driver *ctx, struct error *err)
+{
+        int ret;
+        pid_t pid;
+        struct driver_init_res res = {0};
+
+        *ctx = (struct driver){err, NULL, NULL, {-1, -1}, -1, NULL, NULL};
+
+        if ((ctx->cuda_dl = xdlopen(err, SONAME_LIBCUDA, RTLD_NOW)) == NULL)
+                goto fail;
+        if ((ctx->nvml_dl = xdlopen(err, SONAME_LIBNVML, RTLD_NOW)) == NULL)
+                goto fail;
+
+        pid = getpid();
+        if (socketpair(PF_LOCAL, SOCK_STREAM|SOCK_CLOEXEC, 0, ctx->fd) < 0 || (ctx->pid = fork()) < 0) {
+                error_set(err, "process creation failed");
+                goto fail;
+        }
+        if (ctx->pid == 0)
+                setup_rpc_service(ctx, pid);
+        if (setup_rpc_client(ctx) < 0)
+                goto fail;
+
+        ret = call_rpc(ctx, &res, driver_init_1);
+        xdr_free((xdrproc_t)xdr_driver_init_res, (caddr_t)&res);
+        if (ret < 0)
+                goto fail;
+
+        return (0);
+
+ fail:
+        if (ctx->pid > 0 && reap_process(NULL, ctx->pid, ctx->fd[SOCK_CLT], true) < 0)
+                log_warn("could not terminate driver service (pid %ld)", (long)ctx->pid);
+        if (ctx->rpc_clt != NULL)
+                clnt_destroy(ctx->rpc_clt);
+
+        xclose(ctx->fd[SOCK_CLT]);
+        xclose(ctx->fd[SOCK_SVC]);
+        xdlclose(NULL, ctx->cuda_dl);
+        xdlclose(NULL, ctx->nvml_dl);
+        return (-1);
+}
+
+bool_t
+driver_init_1_svc(ptr_t ctxptr, driver_init_res *res, maybe_unused struct svc_req *req)
+{
+        struct driver *ctx = (struct driver *)ctxptr;
+
+        memset(res, 0, sizeof(*res));
+        if (call_cuda(ctx, cuInit, 0) < 0)
+                goto fail;
+        if (call_nvml(ctx, nvmlInit_v2) < 0)
+                goto fail;
+        return (1);
+
+ fail:
+        error_to_xdr(ctx->err, res);
+        return (1);
+}
+
+int
+driver_shutdown(struct driver *ctx)
+{
+        int ret;
+        struct driver_shutdown_res res = {0};
+
+        ret = call_rpc(ctx, &res, driver_shutdown_1);
+        xdr_free((xdrproc_t)xdr_driver_shutdown_res, (caddr_t)&res);
+        if (ret < 0)
+                log_warn("could not terminate driver service: %s", ctx->err->msg);
+
+        if (reap_process(ctx->err, ctx->pid, ctx->fd[SOCK_CLT], (ret < 0)) < 0)
+                return (-1);
+        clnt_destroy(ctx->rpc_clt);
+
+        xclose(ctx->fd[SOCK_CLT]);
+        xclose(ctx->fd[SOCK_SVC]);
+        if (xdlclose(ctx->err, ctx->cuda_dl) < 0)
+                return (-1);
+        if (xdlclose(ctx->err, ctx->nvml_dl) < 0)
+                return (-1);
+
+        *ctx = (struct driver){NULL, NULL, NULL, {-1, -1}, -1, NULL, NULL};
+        return (0);
+}
+
+bool_t
+driver_shutdown_1_svc(ptr_t ctxptr, driver_shutdown_res *res, maybe_unused struct svc_req *req)
+{
+        struct driver *ctx = (struct driver *)ctxptr;
+
+        memset(res, 0, sizeof(*res));
+        if (call_nvml(ctx, nvmlShutdown) < 0)
+                goto fail;
+        svc_exit();
+        return (1);
+
+ fail:
+        error_to_xdr(ctx->err, res);
+        return (1);
+}
+
+int
+driver_get_rm_version(struct driver *ctx, char **version)
+{
+        struct driver_get_rm_version_res res = {0};
+        int rv = -1;
+
+        if (call_rpc(ctx, &res, driver_get_rm_version_1) < 0)
+                goto fail;
+        if ((*version = xstrdup(ctx->err, res.driver_get_rm_version_res_u.vers)) == NULL)
+                goto fail;
+        rv = 0;
+
+ fail:
+        xdr_free((xdrproc_t)xdr_driver_get_rm_version_res, (caddr_t)&res);
+        return (rv);
+}
+
+bool_t
+driver_get_rm_version_1_svc(ptr_t ctxptr, driver_get_rm_version_res *res, maybe_unused struct svc_req *req)
+{
+        struct driver *ctx = (struct driver *)ctxptr;
+        char buf[NVML_SYSTEM_DRIVER_VERSION_BUFFER_SIZE];
+
+        memset(res, 0, sizeof(*res));
+        if (call_nvml(ctx, nvmlSystemGetDriverVersion, buf, sizeof(buf)) < 0)
+                goto fail;
+        if ((res->driver_get_rm_version_res_u.vers = xstrdup(ctx->err, buf)) == NULL)
+                goto fail;
+        return (1);
+
+ fail:
+        error_to_xdr(ctx->err, res);
+        return (1);
+}
+
+int
+driver_get_cuda_version(struct driver *ctx, char **version)
+{
+        struct driver_get_cuda_version_res res = {0};
+        int rv = -1;
+
+        if (call_rpc(ctx, &res, driver_get_cuda_version_1) < 0)
+                goto fail;
+        if (xasprintf(ctx->err, version, "%u.%u", res.driver_get_cuda_version_res_u.vers.major,
+            res.driver_get_cuda_version_res_u.vers.minor) < 0)
+                goto fail;
+        rv = 0;
+
+ fail:
+        xdr_free((xdrproc_t)xdr_driver_get_cuda_version_res, (caddr_t)&res);
+        return (rv);
+}
+
+bool_t
+driver_get_cuda_version_1_svc(ptr_t ctxptr, driver_get_cuda_version_res *res, maybe_unused struct svc_req *req)
+{
+        struct driver *ctx = (struct driver *)ctxptr;
+        int version;
+
+        memset(res, 0, sizeof(*res));
+        if (call_cuda(ctx, cuDriverGetVersion, &version) < 0)
+                goto fail;
+        res->driver_get_cuda_version_res_u.vers.major = (unsigned int)version / 1000;
+        res->driver_get_cuda_version_res_u.vers.minor = (unsigned int)version % 100 / 10;
+        return (1);
+
+ fail:
+        error_to_xdr(ctx->err, res);
+        return (1);
+}
+
+int
+driver_get_device_count(struct driver *ctx, unsigned int *count)
+{
+        struct driver_get_device_count_res res = {0};
+        int rv = -1;
+
+        if (call_rpc(ctx, &res, driver_get_device_count_1) < 0)
+                goto fail;
+        *count = res.driver_get_device_count_res_u.count;
+        rv = 0;
+
+ fail:
+        xdr_free((xdrproc_t)xdr_driver_get_device_count_res, (caddr_t)&res);
+        return (rv);
+}
+
+bool_t
+driver_get_device_count_1_svc(ptr_t ctxptr, driver_get_device_count_res *res, maybe_unused struct svc_req *req)
+{
+        struct driver *ctx = (struct driver *)ctxptr;
+        unsigned int count;
+
+        memset(res, 0, sizeof(*res));
+        if (call_nvml(ctx, nvmlDeviceGetCount_v2, &count) < 0)
+                goto fail;
+        res->driver_get_device_count_res_u.count = count;
+        return (1);
+
+ fail:
+        error_to_xdr(ctx->err, res);
+        return (1);
+}
+
+int
+driver_get_device_handle(struct driver *ctx, unsigned int idx, driver_device_handle *dev, bool pci_order)
+{
+        struct driver_get_device_handle_res res = {0};
+        int rv = -1;
+
+        if (call_rpc(ctx, &res, driver_get_device_handle_1, idx, pci_order) < 0)
+                goto fail;
+        *dev = (driver_device_handle)res.driver_get_device_handle_res_u.handle;
+        rv = 0;
+
+ fail:
+        xdr_free((xdrproc_t)xdr_driver_get_device_handle_res, (caddr_t)&res);
+        return (rv);
+}
+
+bool_t
+driver_get_device_handle_1_svc(ptr_t ctxptr, u_int idx, bool_t pci_order, driver_get_device_handle_res *res, maybe_unused struct svc_req *req)
+{
+        struct driver *ctx = (struct driver *)ctxptr;
+        driver_device_handle handle;
+        CUdevice cudev;
+        int domainid, deviceid, busid;
+        char buf[NVML_DEVICE_PCI_BUS_ID_BUFFER_SIZE];
+
+        memset(res, 0, sizeof(*res));
+        if (pci_order) {
+                if (call_nvml(ctx, nvmlDeviceGetHandleByIndex, idx, &handle) < 0)
+                        goto fail;
+        } else {
+                if (call_cuda(ctx, cuDeviceGet, &cudev, (int)idx) < 0)
+                        goto fail;
+                if (call_cuda(ctx, cuDeviceGetAttribute, &domainid, CU_DEVICE_ATTRIBUTE_PCI_DOMAIN_ID, cudev) < 0)
+                        goto fail;
+                if (call_cuda(ctx, cuDeviceGetAttribute, &busid, CU_DEVICE_ATTRIBUTE_PCI_BUS_ID, cudev) < 0)
+                        goto fail;
+                if (call_cuda(ctx, cuDeviceGetAttribute, &deviceid, CU_DEVICE_ATTRIBUTE_PCI_DEVICE_ID, cudev) < 0)
+                        goto fail;
+                snprintf(buf, sizeof(buf), "%04x:%02x:%02x.0", domainid, busid, deviceid);
+
+                if (call_nvml(ctx, nvmlDeviceGetHandleByPciBusId, buf, &handle) < 0)
+                        goto fail;
+        }
+        res->driver_get_device_handle_res_u.handle = (ptr_t)handle;
+        return (1);
+
+ fail:
+        error_to_xdr(ctx->err, res);
+        return (1);
+}
+
+int
+driver_get_device_minor(struct driver *ctx, driver_device_handle dev, unsigned int *minor)
+{
+        struct driver_get_device_minor_res res = {0};
+        int rv = -1;
+
+        if (call_rpc(ctx, &res, driver_get_device_minor_1, (ptr_t)dev) < 0)
+                goto fail;
+        *minor = res.driver_get_device_minor_res_u.minor;
+        rv = 0;
+
+ fail:
+        xdr_free((xdrproc_t)xdr_driver_get_device_minor_res, (caddr_t)&res);
+        return (rv);
+}
+
+bool_t
+driver_get_device_minor_1_svc(ptr_t ctxptr, ptr_t dev, driver_get_device_minor_res *res, maybe_unused struct svc_req *req)
+{
+        struct driver *ctx = (struct driver *)ctxptr;
+        unsigned int minor;
+
+        memset(res, 0, sizeof(*res));
+        if (call_nvml(ctx, nvmlDeviceGetMinorNumber, (nvmlDevice_t)dev, &minor) < 0)
+                goto fail;
+        res->driver_get_device_minor_res_u.minor = minor;
+        return (1);
+
+ fail:
+        error_to_xdr(ctx->err, res);
+        return (1);
+}
+
+int
+driver_get_device_busid(struct driver *ctx, driver_device_handle dev, char **busid)
+{
+        struct driver_get_device_busid_res res = {0};
+        int rv = -1;
+
+        if (call_rpc(ctx, &res, driver_get_device_busid_1, (ptr_t)dev) < 0)
+                goto fail;
+        if ((*busid = xstrdup(ctx->err, res.driver_get_device_busid_res_u.busid)) == NULL)
+                goto fail;
+        rv = 0;
+
+ fail:
+        xdr_free((xdrproc_t)xdr_driver_get_device_busid_res, (caddr_t)&res);
+        return (rv);
+}
+
+bool_t
+driver_get_device_busid_1_svc(ptr_t ctxptr, ptr_t dev, driver_get_device_busid_res *res, maybe_unused struct svc_req *req)
+{
+        struct driver *ctx = (struct driver *)ctxptr;
+        nvmlPciInfo_t pci;
+
+        memset(res, 0, sizeof(*res));
+        if (call_nvml(ctx, nvmlDeviceGetPciInfo_v2, (nvmlDevice_t)dev, &pci) < 0)
+                goto fail;
+        if ((res->driver_get_device_busid_res_u.busid = xstrdup(ctx->err, pci.busId)) == NULL)
+                goto fail;
+        return (1);
+
+ fail:
+        error_to_xdr(ctx->err, res);
+        return (1);
+}
+
+int
+driver_get_device_uuid(struct driver *ctx, driver_device_handle dev, char **uuid)
+{
+        struct driver_get_device_uuid_res res = {0};
+        int rv = -1;
+
+        if (call_rpc(ctx, &res, driver_get_device_uuid_1, (ptr_t)dev) < 0)
+                goto fail;
+        if ((*uuid = xstrdup(ctx->err, res.driver_get_device_uuid_res_u.uuid)) == NULL)
+                goto fail;
+        rv = 0;
+
+ fail:
+        xdr_free((xdrproc_t)xdr_driver_get_device_uuid_res, (caddr_t)&res);
+        return (rv);
+}
+
+bool_t
+driver_get_device_uuid_1_svc(ptr_t ctxptr, ptr_t dev, driver_get_device_uuid_res *res, maybe_unused struct svc_req *req)
+{
+        struct driver *ctx = (struct driver *)ctxptr;
+        char buf[NVML_DEVICE_UUID_BUFFER_SIZE];
+
+        memset(res, 0, sizeof(*res));
+        if (call_nvml(ctx, nvmlDeviceGetUUID, (nvmlDevice_t)dev, buf, sizeof(buf)) < 0)
+                goto fail;
+        if ((res->driver_get_device_uuid_res_u.uuid = xstrdup(ctx->err, buf)) == NULL)
+                goto fail;
+        return (1);
+
+ fail:
+        error_to_xdr(ctx->err, res);
+        return (1);
+}
