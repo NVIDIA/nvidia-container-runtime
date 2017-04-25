@@ -1,5 +1,9 @@
 # libnvidia-container
 
+<a href="https://scan.coverity.com/projects/nvidia-libnvidia-container">
+    <img alt="Coverity Scan Build Status" src="https://scan.coverity.com/projects/12444/badge.svg"/>
+</a>
+
 **Warning: This project is an alpha release, it is not intended to be used in production systems.**
 
 This repository provides a library to automatically configure GNU/Linux containers leveraging NVIDIA hardware.\
