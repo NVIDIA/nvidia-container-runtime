@@ -466,7 +466,7 @@ openrel(struct error *err, int dir, const char *path)
                         return (-1);
                 }
         }
-        close(dir);
+        xclose(dir);
         return (fd);
 }
 
