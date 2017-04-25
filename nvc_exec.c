@@ -150,8 +150,10 @@ drop_capabilities(struct error *err)
 
         if ((fs = fopen(PROC_LAST_CAP_PATH, "r")) != NULL) {
                 int v;
-                if (fscanf(fs, "%d", &v) == 1)
-                        last_cap = (cap_value_t)v;
+                if (fscanf(fs, "%d", &v) == 1) {
+                        if ((cap_value_t)v >= 0 && (cap_value_t)v <= last_cap)
+                                last_cap = (cap_value_t)v;
+                }
                 fclose(fs);
         }
 
