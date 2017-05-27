@@ -7,6 +7,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 
+#include <pci-enum.h>
 #include <nvidia-modprobe-utils.h>
 
 #include "nvc_internal.h"
@@ -16,6 +17,8 @@
 #include "options.h"
 #include "utils.h"
 #include "xfuncs.h"
+
+static void load_kernel_modules(void);
 
 static const struct nvc_version version = {
         NVC_MAJOR,
@@ -67,6 +70,49 @@ nvc_context_free(struct nvc_context *ctx)
         free(ctx);
 }
 
+static void
+load_kernel_modules(void)
+{
+        struct pci_id_match devs = {
+                0x10de,        /* vendor (NVIDIA) */
+                PCI_MATCH_ANY, /* device */
+                PCI_MATCH_ANY, /* subvendor */
+                PCI_MATCH_ANY, /* subdevice */
+                0x0300,        /* class (display) */
+                0xff00,        /* class mask (any subclass) */
+                0,             /* match count */
+        };
+
+        if (pci_enum_match_id(&devs) != 0 || devs.num_matches == 0)
+                log_warn("failed to detect NVIDIA devices");
+
+        log_info("loading kernel module nvidia");
+        if (nvidia_modprobe(0, -1) == 0)
+                log_err("could not load kernel module nvidia");
+        else {
+                for (int i = 0; i < (int)devs.num_matches; ++i) {
+                        if (nvidia_mknod(i, -1) == 0)
+                                log_err("could not create kernel module device node");
+                }
+        }
+
+        log_info("loading kernel module nvidia_uvm");
+        if (nvidia_uvm_modprobe(0) == 0)
+                log_err("could not load kernel module nvidia_uvm");
+        else {
+                if (nvidia_uvm_mknod(0) == 0)
+                        log_err("could not create kernel module device node");
+        }
+
+        log_info("loading kernel module nvidia_modeset");
+        if (nvidia_modeset_modprobe() == 0)
+                log_err("could not load kernel module nvidia_modeset");
+        else {
+                if (nvidia_modeset_mknod() == 0)
+                        log_err("could not create kernel module device node");
+        }
+}
+
 int
 nvc_init(struct nvc_context *ctx, const struct nvc_config *cfg, const char *opts)
 {
@@ -88,14 +134,8 @@ nvc_init(struct nvc_context *ctx, const struct nvc_config *cfg, const char *opts
         log_open(getenv("NVC_DEBUG_FILE"));
         log_info("initializing library context (version=%s, build=%s)", NVC_VERSION, SCM_REVISION);
 
-        if (flags & OPT_LOAD_UVM) {
-                log_info("loading UVM kernel module");
-                /* Don't worry about the other modules, NVML will load them if necessary. */
-                if (nvidia_uvm_modprobe(0) == 0 || nvidia_uvm_mknod(0) == 0) {
-                        error_setx(&ctx->err, "loading UVM kernel module failed");
-                        return (-1);
-                }
-        }
+        if (flags & OPT_LOAD_KMODS)
+                load_kernel_modules();
 
         memset(&ctx->cfg, 0, sizeof(ctx->cfg));
         ctx->mnt_ns = -1;

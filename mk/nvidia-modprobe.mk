@@ -43,6 +43,7 @@ all: $(STATIC_LIB)($(OBJS))
 
 install: all
 	$(INSTALL) -D -m 644 -t $(DESTDIR)$(includedir) $(MODPROBE_UTILS)/nvidia-modprobe-utils.h
+	$(INSTALL) -D -m 644 -t $(DESTDIR)$(includedir) $(MODPROBE_UTILS)/pci-enum.h
 	$(INSTALL) -D -m 644 -t $(DESTDIR)$(libdir) $(STATIC_LIB)
 
 clean:

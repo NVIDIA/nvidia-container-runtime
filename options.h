@@ -16,11 +16,11 @@ struct option {
 
 /* Library options */
 enum {
-        OPT_LOAD_UVM = 1 << 0,
+        OPT_LOAD_KMODS = 1 << 0,
 };
 
 static const struct option library_opts[] = {
-        {"load-uvm", OPT_LOAD_UVM},
+        {"load-kmods", OPT_LOAD_KMODS},
 };
 
 static const char * const default_library_opts = "";
