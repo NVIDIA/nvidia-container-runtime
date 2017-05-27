@@ -17,11 +17,11 @@
 #include "utils.h"
 #include "xfuncs.h"
 
-typedef char *(*parse_fn)(char *, const char *);
+typedef char *(*parse_fn)(char *, char *, const char *);
 
-static char *cgroup_mount(char *, const char *);
-static char *cgroup_root(char *, const char *);
-static char *parse_proc_file(struct error *, const char *, parse_fn, const char *);
+static char *cgroup_mount(char *, char *, const char *);
+static char *cgroup_root(char *, char *, const char *);
+static char *parse_proc_file(struct error *, const char *, parse_fn, char *, const char *);
 static char *find_cgroup_path(struct error *, const struct nvc_container *, const char *);
 static char *find_namespace_path(struct error *, const struct nvc_container *, const char *);
 static int  lookup_owner(struct error *, struct nvc_container *);
@@ -49,7 +49,7 @@ nvc_container_config_free(struct nvc_container_config *cfg)
 }
 
 static char *
-cgroup_mount(char *line, const char *subsys)
+cgroup_mount(char *line, char *prefix, const char *subsys)
 {
         char *root, *mount, *fstype, *substr;
 
@@ -64,20 +64,23 @@ cgroup_mount(char *line, const char *subsys)
 
         if (root == NULL || mount == NULL || fstype == NULL || substr == NULL)
                 return (NULL);
-        if (strcmp(root, "/"))
+        if (*root == '\0' || *mount == '\0' || *fstype == '\0' || *substr == '\0')
                 return (NULL);
         if (strcmp(fstype, "cgroup"))
                 return (NULL);
         if (strstr(substr, subsys) == NULL)
                 return (NULL);
+        if (strlen(root) >= PATH_MAX || !strpcmp(root, "/.."))
+                return (NULL);
+        strcpy(prefix, root);
 
         return (mount);
 }
 
 static char *
-cgroup_root(char *line, const char *subsys)
+cgroup_root(char *line, char *prefix, const char *subsys)
 {
-        char *root, *substr, *ptr;
+        char *root, *substr;
 
         for (int i = 0; i < 2; ++i)
                 substr = strsep(&line, ":");
@@ -85,18 +88,20 @@ cgroup_root(char *line, const char *subsys)
 
         if (root == NULL || substr == NULL)
                 return (NULL);
-        if (!strpcmp(root, "/.."))
+        if (*root == '\0' || *substr == '\0')
                 return (NULL);
         if (strstr(substr, subsys) == NULL)
                 return (NULL);
+        if (strlen(root) >= PATH_MAX || !strpcmp(root, "/.."))
+                return (NULL);
+        if (strcmp(prefix, "/") && !strpcmp(root, prefix))
+                root += strlen(prefix);
 
-        if ((ptr = strchr(root, '\n')) != NULL)
-                *ptr = '\0';
         return (root);
 }
 
 static char *
-parse_proc_file(struct error *err, const char *procf, parse_fn parse, const char *subsys)
+parse_proc_file(struct error *err, const char *procf, parse_fn parse, char *prefix, const char *subsys)
 {
         FILE *fs;
         ssize_t n;
@@ -109,7 +114,10 @@ parse_proc_file(struct error *err, const char *procf, parse_fn parse, const char
                 return (NULL);
         while ((n = getline(&buf, &len, fs)) >= 0) {
                 ptr = buf;
-                if ((ptr = parse(ptr, subsys)) != NULL)
+                ptr[strcspn(ptr, "\n")] = '\0';
+                if (n == 0 || *ptr == '\0')
+                        continue;
+                if ((ptr = parse(ptr, prefix, subsys)) != NULL)
                         break;
         }
         if (ferror(fs)) {
@@ -134,6 +142,7 @@ find_cgroup_path(struct error *err, const struct nvc_container *cnt, const char 
         pid_t pid;
         const char *prefix;
         char path[PATH_MAX];
+        char root_prefix[PATH_MAX];
         char *mount = NULL;
         char *root = NULL;
         char *cgroup = NULL;
@@ -143,12 +152,13 @@ find_cgroup_path(struct error *err, const struct nvc_container *cnt, const char 
 
         if (xsnprintf(err, path, sizeof(path), "%s"PROC_MOUNTS_PATH(PROC_PID), prefix, (long)pid) < 0)
                 goto fail;
-        if ((mount = parse_proc_file(err, path, cgroup_mount, subsys)) == NULL)
+        if ((mount = parse_proc_file(err, path, cgroup_mount, root_prefix, subsys)) == NULL)
                 goto fail;
         if (xsnprintf(err, path, sizeof(path), "%s"PROC_CGROUP_PATH(PROC_PID), prefix, (long)cnt->cfg.pid) < 0)
                 goto fail;
-        if ((root = parse_proc_file(err, path, cgroup_root, subsys)) == NULL)
+        if ((root = parse_proc_file(err, path, cgroup_root, root_prefix, subsys)) == NULL)
                 goto fail;
+
         xasprintf(err, &cgroup, "%s%s%s", prefix, mount, root);
 
  fail:
