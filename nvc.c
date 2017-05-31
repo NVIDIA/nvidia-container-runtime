@@ -97,7 +97,7 @@ load_kernel_modules(void)
         }
 
         log_info("loading kernel module nvidia_uvm");
-        if (nvidia_uvm_modprobe(0) == 0)
+        if (nvidia_uvm_modprobe() == 0)
                 log_err("could not load kernel module nvidia_uvm");
         else {
                 if (nvidia_uvm_mknod(0) == 0)
