@@ -33,6 +33,7 @@
                   nitems(compute_libs) + \
                   nitems(video_libs) + \
                   nitems(graphic_libs) + \
+                  nitems(graphic_libs_glvnd) + \
                   nitems(graphic_libs_compat))
 
 static int select_libraries(struct error *, void *, const char *, const char *);
@@ -89,14 +90,6 @@ static const char * const video_libs[] = {
 };
 
 static const char * const graphic_libs[] = {
-        //"libGLX.so",                      /* GLX ICD loader (GLVND only) */
-        //"libOpenGL.so",                   /* OpenGL ICD loader (GLVND only) */
-        //"libGLdispatch.so",               /* OpenGL dispatch (GLVND only) (used by libOpenGL, libEGL and libGLES*) */
-        "libGLX_nvidia.so",                 /* OpenGL/GLX ICD (GLVND only) */
-        "libEGL_nvidia.so",                 /* EGL ICD (GLVND only) */
-        "libGLESv2_nvidia.so",              /* OpenGL ES v2 ICD (GLVND only) */
-        "libGLESv1_CM_nvidia.so",           /* OpenGL ES v1 common profile ICD (GLVND only) */
-
         //"libnvidia-egl-wayland.so",       /* EGL wayland platform extension (used by libEGL_nvidia) */
         "libnvidia-eglcore.so",             /* EGL core (used by libGLES*[_nvidia] and libEGL_nvidia) */
         "libnvidia-glcore.so",              /* OpenGL core (used by libGL or libGLX_nvidia) */
@@ -104,6 +97,16 @@ static const char * const graphic_libs[] = {
         "libnvidia-glsi.so",                /* OpenGL system interaction (used by libEGL_nvidia) */
         "libnvidia-fbc.so",                 /* Framebuffer capture */
         "libnvidia-ifr.so",                 /* OpenGL framebuffer capture */
+};
+
+static const char * const graphic_libs_glvnd[] = {
+        //"libGLX.so",                      /* GLX ICD loader */
+        //"libOpenGL.so",                   /* OpenGL ICD loader */
+        //"libGLdispatch.so",               /* OpenGL dispatch (used by libOpenGL, libEGL and libGLES*) */
+        "libGLX_nvidia.so",                 /* OpenGL/GLX ICD */
+        "libEGL_nvidia.so",                 /* EGL ICD */
+        "libGLESv2_nvidia.so",              /* OpenGL ES v2 ICD */
+        "libGLESv1_CM_nvidia.so",           /* OpenGL ES v1 common profile ICD */
 };
 
 static const char * const graphic_libs_compat[] = {
@@ -274,10 +277,13 @@ lookup_libraries(struct error *err, struct nvc_driver_info *info, int32_t flags,
                 ptr = array_append(ptr, compute_libs, nitems(compute_libs));
         if (flags & OPT_VIDEO_LIBS)
                 ptr = array_append(ptr, video_libs, nitems(video_libs));
-        if (flags & OPT_GRAPHIC_LIBS)
+        if (flags & OPT_GRAPHIC_LIBS) {
                 ptr = array_append(ptr, graphic_libs, nitems(graphic_libs));
-        if ((flags & OPT_GRAPHIC_LIBS) && (flags & OPT_NO_GLVND))
-                ptr = array_append(ptr, graphic_libs_compat, nitems(graphic_libs_compat));
+                if (flags & OPT_NO_GLVND)
+                        ptr = array_append(ptr, graphic_libs_compat, nitems(graphic_libs_compat));
+                else
+                        ptr = array_append(ptr, graphic_libs_glvnd, nitems(graphic_libs_glvnd));
+        }
 
         if (flags & (OPT_UTILITY_LIBS|OPT_COMPUTE_LIBS|OPT_VIDEO_LIBS|OPT_GRAPHIC_LIBS)) {
                 if (find_library_paths(err, info, flags, ldcache, libs, (size_t)(ptr - libs)) < 0)
