@@ -17,7 +17,7 @@ nvc_entry(void)
 {
         printf("version: %s\n", NVC_VERSION);
         printf("build date: %s\n", BUILD_DATE);
-        printf("scm revision: %s\n", SCM_REVISION);
-        printf("compiler options: %s\n", COMPILE_OPTS);
+        printf("build revision: %s\n", BUILD_REVISION);
+        printf("build flags: %s\n", BUILD_FLAGS);
         exit(EXIT_SUCCESS);
 }

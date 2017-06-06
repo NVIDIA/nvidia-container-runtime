@@ -29,7 +29,7 @@ COMMON   := $(SRCS_DIR)/common
 export CPPFLAGS += -D_FORTIFY_SOURCE=2
 export CFLAGS   += -fdata-sections -ffunction-sections -fstack-protector -fPIC -O2
 
-##### Private targets #####
+##### Private rules #####
 
 $(SRCS_DIR)/.download_stamp:
 	$(MKDIR) -p $(SRCS_DIR)
@@ -42,7 +42,7 @@ $(SRCS_DIR)/.build_stamp: $(SRCS_DIR)/.download_stamp
 	$(BMAKE) -j $(shell nproc) -C $(LIBELF)
 	@touch $@
 
-##### Public targets #####
+##### Public rules #####
 
 .PHONY: all install clean $(COMMON) $(LIBELF)
 

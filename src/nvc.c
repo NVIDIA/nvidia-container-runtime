@@ -132,7 +132,7 @@ nvc_init(struct nvc_context *ctx, const struct nvc_config *cfg, const char *opts
                 return (-1);
 
         log_open(getenv("NVC_DEBUG_FILE"));
-        log_info("initializing library context (version=%s, build=%s)", NVC_VERSION, SCM_REVISION);
+        log_info("initializing library context (version=%s, build=%s)", NVC_VERSION, BUILD_REVISION);
 
         if (flags & OPT_LOAD_KMODS)
                 load_kernel_modules();

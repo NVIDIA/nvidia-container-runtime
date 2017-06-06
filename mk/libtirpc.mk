@@ -18,7 +18,7 @@ LIBTIRPC := $(SRCS_DIR)/libtirpc
 export CPPFLAGS += -D_FORTIFY_SOURCE=2
 export CFLAGS   += -fdata-sections -ffunction-sections -fstack-protector
 
-##### Private targets #####
+##### Private rules #####
 
 $(SRCS_DIR)/.download_stamp:
 	$(MKDIR) -p $(SRCS_DIR)
@@ -31,7 +31,7 @@ $(SRCS_DIR)/.build_stamp: $(SRCS_DIR)/.download_stamp
 	$(MAKE) -C $(SRCS_DIR)
 	@touch $@
 
-##### Public targets #####
+##### Public rules #####
 
 .PHONY: all install clean
 

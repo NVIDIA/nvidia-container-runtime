@@ -22,4 +22,4 @@ OBJCPY   ?= objcopy
 RPCGEN   ?= rpcgen
 BMAKE    ?= MAKEFLAGS= bmake
 
-getdef = $(shell sed -n "s;\#define\s\+$(1)\s\+\(\w*\);\1;p" $(2))
+getdef = $(shell sed -n "0,/$(1)/s/\#define\s\+$(1)\s\+\(\w*\)/\1/p" $(2))
