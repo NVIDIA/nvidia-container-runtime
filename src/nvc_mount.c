@@ -275,7 +275,7 @@ nvc_driver_mount(struct nvc_context *ctx, const struct nvc_container *cnt, const
         if (devs_mnt == NULL)
                 goto fail;
         for (size_t i = 0; i < ndevs_mnt; ++i, ++mnt) {
-                if (!(cnt->flags & OPT_NO_DEVFS)) {
+                if (!(cnt->flags & OPT_NO_DEVBIND)) {
                         if ((*mnt = mount_device(&ctx->err, cnt, info->devs[i].path)) == NULL)
                                 goto fail;
                 }
@@ -319,7 +319,7 @@ nvc_device_mount(struct nvc_context *ctx, const struct nvc_container *cnt, const
         if (nsenter(&ctx->err, cnt->mnt_ns, CLONE_NEWNS) < 0)
                 return (-1);
 
-        if (!(cnt->flags & OPT_NO_DEVFS)) {
+        if (!(cnt->flags & OPT_NO_DEVBIND)) {
                 if ((mnt = mount_device(&ctx->err, cnt, dev->node.path)) == NULL)
                         goto fail;
         }

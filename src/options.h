@@ -69,17 +69,17 @@ enum {
         OPT_SUPERVISED = 1 << 0,
         OPT_STANDALONE = 1 << 1,
         OPT_NO_CGROUPS = 1 << 2,
-        OPT_NO_DEVFS   = 1 << 3,
+        OPT_NO_DEVBIND = 1 << 3,
 };
 
 static const struct option container_opts[] = {
         {"supervised", OPT_SUPERVISED},
         {"standalone", OPT_STANDALONE},
         {"no-cgroups", OPT_NO_CGROUPS},
-        {"no-devfs", OPT_NO_DEVFS},
+        {"no-devbind", OPT_NO_DEVBIND},
 };
 
-static const char * const default_container_opts = "standalone no-cgroups no-devfs";
+static const char * const default_container_opts = "standalone no-cgroups no-devbind";
 
 int32_t options_parse(struct error *, const char *, const struct option *, size_t);
 
