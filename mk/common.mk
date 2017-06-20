@@ -4,6 +4,7 @@
 
 export prefix      ?= /usr/local
 export exec_prefix ?= $(prefix)
+export bindir      ?= $(exec_prefix)/bin
 export libdir      ?= $(exec_prefix)/lib
 export libdbgdir   ?= $(libdir)/debug/$(libdir)
 export includedir  ?= $(prefix)/include

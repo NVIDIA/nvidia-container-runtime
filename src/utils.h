@@ -42,6 +42,8 @@ void strlower(char *);
 int  strpcmp(const char *, const char *);
 int  strrcmp(const char *, const char *);
 bool strmatch(const char *, const char * const [], size_t);
+int  strtopid(struct error *, const char *, pid_t *);
+int  strjoin(struct error *, char **, const char *, const char *);
 
 int nsenterat(struct error *, int, int);
 int nsenter(struct error *, const char *, int);

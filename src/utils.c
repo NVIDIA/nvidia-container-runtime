@@ -15,10 +15,12 @@
 #include <errno.h>
 #include <fcntl.h>
 #include <ftw.h>
+#include <inttypes.h>
 #include <libgen.h>
 #include <limits.h>
 #include <sched.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <time.h>
 #include <unistd.h>
@@ -145,6 +147,51 @@ strmatch(const char *str, const char * const arr[], size_t size)
                         return (true);
         }
         return (false);
+}
+
+int
+strjoin(struct error *err, char **s1, const char *s2, const char *sep)
+{
+        size_t size = 1;
+        char *buf;
+
+        if (*s1 != NULL && **s1 != '\0')
+                size += strlen(*s1) + strlen(sep);
+        size += strlen(s2);
+        if ((buf = realloc(*s1, size)) == NULL) {
+                error_set(err, "memory allocation failed");
+                return (-1);
+        }
+        if (*s1 == NULL)
+                *buf = '\0';
+        if (*buf != '\0')
+                strcat(buf, sep);
+        strcat(buf, s2);
+        *s1 = buf;
+        return (0);
+}
+
+int
+strtopid(struct error *err, const char *str, pid_t *pid)
+{
+        char *ptr;
+        intmax_t n;
+
+        n = strtoimax(str, &ptr, 10);
+        if (ptr == str || *ptr != '\0') {
+                errno = EINVAL;
+                goto fail;
+        }
+        if (n == INTMAX_MIN || n == INTMAX_MAX || n != (pid_t)n) {
+                errno = ERANGE;
+                goto fail;
+        }
+        *pid = (pid_t)n;
+        return (0);
+
+ fail:
+        error_set(err, "parse pid failed");
+        return (-1);
 }
 
 int

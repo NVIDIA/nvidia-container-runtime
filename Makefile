@@ -2,7 +2,7 @@
 # Copyright (c) 2017, NVIDIA CORPORATION. All rights reserved.
 #
 
-.PHONY: all shared static deps install uninstall dist depsclean mostlyclean clean distclean
+.PHONY: all utils shared static deps install uninstall dist depsclean mostlyclean clean distclean
 .DEFAULT_GOAL := all
 
 ##### Global variables #####
@@ -34,7 +34,6 @@ endif
 ##### Source definitions #####
 
 BUILD_DEFS   := $(SRCS_DIR)/build.h
-LIB_SYMS     := $(SRCS_DIR)/nvc.sym
 
 LIB_INCS     := $(SRCS_DIR)/nvc.h
 LIB_SRCS     := $(SRCS_DIR)/driver.c        \
@@ -51,11 +50,20 @@ LIB_SRCS     := $(SRCS_DIR)/driver.c        \
                 $(SRCS_DIR)/options.c       \
                 $(SRCS_DIR)/utils.c
 
+# Order sensitive (see flags definitions)
 LIB_RPC_SPEC := $(SRCS_DIR)/driver_rpc.x
 LIB_RPC_SRCS := $(SRCS_DIR)/driver_rpc.h \
                 $(SRCS_DIR)/driver_xdr.c \
                 $(SRCS_DIR)/driver_svc.c \
                 $(SRCS_DIR)/driver_clt.c
+
+BIN_SRCS     := $(SRCS_DIR)/nvc_cli.c \
+                $(SRCS_DIR)/error_generic.c \
+                $(SRCS_DIR)/dsl.c \
+                $(SRCS_DIR)/utils.c
+
+LIB_SCRIPT   = $(SRCS_DIR)/$(LIB_NAME).lds
+BIN_SCRIPT   = $(SRCS_DIR)/$(BIN_UTILS).lds
 
 ##### Target definitions #####
 
@@ -75,6 +83,7 @@ ifeq ($(REVISION),)
 $(error Invalid revision version)
 endif
 
+BIN_UTILS   := nvidia-container-cli
 LIB_NAME    := libnvidia-container
 LIB_STATIC  := $(LIB_NAME).a
 LIB_SHARED  := $(LIB_NAME).so.$(VERSION)
@@ -97,8 +106,8 @@ LIB_CPPFLAGS       = $(CPPFLAGS) -DNV_LINUX -isystem $(CUDA_DIR)/include -isyste
 LIB_CFLAGS         = $(CFLAGS) -fPIC
 LIB_LDLIBS_STATIC  = $(LDLIBS) -l:libelf.a -l:libnvidia-modprobe-utils.a
 LIB_LDLIBS_SHARED  = $(LDLIBS) -ldl -lcap
-LIB_LDFLAGS        = $(LDFLAGS) -L$(DEPS_DIR)/usr/local/lib -shared -Wl,-soname=$(LIB_SONAME) -Wl,--version-script=$(LIB_SYMS) \
-                     -Wl,--entry=nvc_entry -Wl,--undefined=nvc_interp
+LIB_LDFLAGS        = $(LDFLAGS) -L$(DEPS_DIR)/usr/local/lib -shared -Wl,-soname=$(LIB_SONAME)
+
 ifeq ($(WITH_TIRPC), 1)
 LIB_CPPFLAGS       += -isystem $(DEPS_DIR)/usr/local/include/tirpc -DWITH_TIRPC
 LIB_LDLIBS_STATIC  += -l:libtirpc.a
@@ -110,15 +119,22 @@ LIB_LDLIBS_SHARED  += -lseccomp
 endif
 LIB_LDLIBS         = $(LIB_LDLIBS_STATIC) $(LIB_LDLIBS_SHARED)
 
-$(word 1,$(LIB_RPC_SRCS)): RPCGENFLAGS=-h # Header
-$(word 2,$(LIB_RPC_SRCS)): RPCGENFLAGS=-c # XDR
-$(word 3,$(LIB_RPC_SRCS)): RPCGENFLAGS=-m # Service
-$(word 4,$(LIB_RPC_SRCS)): RPCGENFLAGS=-l # Client
+BIN_CPPFLAGS       = $(CPPFLAGS) -include $(BUILD_DEFS)
+BIN_CFLAGS         = $(CFLAGS) -fPIE -flto
+BIN_LDFLAGS        = $(LDFLAGS) -L. -pie -Wl,--strip-all
+BIN_LDLIBS         = $(LDLIBS) -l:$(LIB_SHARED)
+
+$(word 1,$(LIB_RPC_SRCS)): RPCGENFLAGS=-h
+$(word 2,$(LIB_RPC_SRCS)): RPCGENFLAGS=-c
+$(word 3,$(LIB_RPC_SRCS)): RPCGENFLAGS=-m
+$(word 4,$(LIB_RPC_SRCS)): RPCGENFLAGS=-l
 
 ##### Private rules #####
 
-LIB_OBJS       := $(LIB_SRCS:.c=.o) $(patsubst %.c,%.o,$(filter %.c,$(LIB_RPC_SRCS)))
-LIB_STATIC_OBJ := $(SRCS_DIR)/$(LIB_STATIC:.a=.o)
+BIN_OBJS       := $(BIN_SRCS:.c=.o)
+LIB_OBJS       := $(LIB_SRCS:.c=.lo) $(patsubst %.c,%.lo,$(filter %.c,$(LIB_RPC_SRCS)))
+LIB_STATIC_OBJ := $(SRCS_DIR)/$(LIB_STATIC:.a=.lo)
+DEPENDENCIES   := $(BIN_OBJS:%.o=%.d) $(LIB_OBJS:%.lo=%.d)
 
 $(BUILD_DEFS):
 	@printf '#define BUILD_DATE     "%s"\n' '$(DATE)' >$(BUILD_DEFS)
@@ -129,14 +145,17 @@ $(LIB_RPC_SRCS): $(LIB_RPC_SPEC)
 	$(RM) $@
 	cd $(dir $@) && $(RPCGEN) $(RPCGENFLAGS) -C -M -N -o $(notdir $@) $(LIB_RPC_SPEC)
 
-$(LIB_OBJS): %.o: %.c | deps
+$(LIB_OBJS): %.lo: %.c | deps
 	$(CC) $(LIB_CFLAGS) $(LIB_CPPFLAGS) -MMD -MF $*.d -c $(OUTPUT_OPTION) $<
 
--include $(LIB_OBJS:%.o=%.d)
+$(BIN_OBJS): %.o: %.c | shared
+	$(CC) $(BIN_CFLAGS) $(BIN_CPPFLAGS) -MMD -MF $*.d -c $(OUTPUT_OPTION) $<
+
+-include $(DEPENDENCIES)
 
 $(LIB_SHARED): $(LIB_OBJS)
 	$(MKDIR) -p $(DEBUG_DIR)
-	$(CC) $(LIB_CFLAGS) $(LIB_CPPFLAGS) $(LIB_LDFLAGS) $(OUTPUT_OPTION) $^ $(LIB_LDLIBS)
+	$(CC) $(LIB_CFLAGS) $(LIB_CPPFLAGS) $(LIB_LDFLAGS) $(OUTPUT_OPTION) $^ $(LIB_SCRIPT) $(LIB_LDLIBS)
 	$(OBJCPY) --only-keep-debug $@ $(LIB_SONAME)
 	$(OBJCPY) --add-gnu-debuglink=$(LIB_SONAME) $@
 	$(MV) $(LIB_SONAME) $(DEBUG_DIR)
@@ -147,15 +166,20 @@ $(LIB_STATIC_OBJ): $(LIB_OBJS)
 	$(OBJCPY) --localize-hidden $@
 	$(STRIP) --strip-unneeded $@
 
+$(BIN_UTILS): $(BIN_OBJS)
+	$(CC) $(BIN_CFLAGS) $(BIN_CPPFLAGS) $(BIN_LDFLAGS) $(OUTPUT_OPTION) $^ $(BIN_SCRIPT) $(BIN_LDLIBS)
+
 ##### Public rules #####
 
 all: release
 
 debug: CFLAGS += -pedantic
-debug: shared static
+debug: shared static utils
 
 release: CPPFLAGS += -DNDEBUG
-release: shared static
+release: shared static utils
+
+utils: $(BIN_UTILS)
 
 shared: $(LIB_SHARED)
 
@@ -171,7 +195,7 @@ ifeq ($(WITH_TIRPC), 1)
 endif
 
 install: all
-	$(INSTALL) -d -m 755 $(addprefix $(DESTDIR),$(includedir) $(libdir) $(libdbgdir) $(pkgconfdir))
+	$(INSTALL) -d -m 755 $(addprefix $(DESTDIR),$(includedir) $(bindir) $(libdir) $(libdbgdir) $(pkgconfdir))
 	# Install header files
 	$(INSTALL) -m 644 $(LIB_INCS) $(DESTDIR)$(includedir)
 	# Install library files
@@ -183,6 +207,8 @@ install: all
 	$(INSTALL) -m 644 $(DEBUG_DIR)/$(LIB_SONAME) $(DESTDIR)$(libdbgdir)
 	# Install configuration files
 	$(M4) -D'$$VERSION=$(VERSION)' -D'$$PRIVATE_LIBS=$(LIB_LDLIBS_SHARED)' $(MAKE_DIR)/$(LIB_PKGCFG).m4 > $(DESTDIR)$(pkgconfdir)/$(LIB_PKGCFG)
+	# Install binary files
+	$(INSTALL) -m 755 $(BIN_UTILS) $(DESTDIR)$(bindir)
 
 uninstall:
 	# Uninstall header files
@@ -193,6 +219,8 @@ uninstall:
 	$(RM) $(DESTDIR)$(libdbgdir)/$(LIB_SONAME)
 	# Uninstall configuration files
 	$(RM) $(DESTDIR)$(pkgconfdir)/$(LIB_PKGCFG)
+	# Uninstall binary files
+	$(RM) $(DESTDIR)$(bindir)/$(BIN_UTILS)
 
 dist: DESTDIR=$(DIST_DIR)/$(LIB_NAME)_$(VERSION)
 dist: install
@@ -208,10 +236,10 @@ ifeq ($(WITH_TIRPC), 1)
 endif
 
 mostlyclean:
-	$(RM) $(LIB_OBJS) $(LIB_STATIC_OBJ) $(LIB_OBJS:%.o=%.d)
+	$(RM) $(LIB_OBJS) $(LIB_STATIC_OBJ) $(BIN_OBJS) $(DEPENDENCIES)
 
 clean: mostlyclean depsclean
 
 distclean: clean
 	$(RM) -r $(DEPS_DIR) $(DIST_DIR) $(DEBUG_DIR)
-	$(RM) $(LIB_RPC_SRCS) $(LIB_STATIC) $(LIB_SHARED)
+	$(RM) $(LIB_RPC_SRCS) $(LIB_STATIC) $(LIB_SHARED) $(BIN_UTILS)
