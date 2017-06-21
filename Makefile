@@ -12,7 +12,7 @@ WITH_SECCOMP ?= 1
 
 ##### Global definitions #####
 
-export CUDA_DIR  ?= /usr/local/cuda
+export CUDA_DIR  ?= /usr/local/cuda-8.0
 export SRCS_DIR  ?= $(CURDIR)/src
 export DEPS_DIR  ?= $(CURDIR)/deps
 export DIST_DIR  ?= $(CURDIR)/dist
