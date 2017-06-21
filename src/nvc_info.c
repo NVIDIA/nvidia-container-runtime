@@ -147,9 +147,9 @@ select_libraries(struct error *err, void *ptr, const char *orig_path, const char
 
  done:
         if (rv > 0)
-                log_info((orig_path == NULL) ? "%s %s" : "%s %s over %s", "selecting", alt_path, orig_path);
+                log_infof((orig_path == NULL) ? "%s %s" : "%s %s over %s", "selecting", alt_path, orig_path);
         else
-                log_info("skipping %s", alt_path);
+                log_infof("skipping %s", alt_path);
 
         elftool_close(&et);
         return (rv);
@@ -224,7 +224,7 @@ find_binary_paths(struct error *err, struct nvc_driver_info *info,
                                 info->bins[i] = xrealpath(err, path, NULL);
                                 if (info->bins[i] == NULL)
                                         goto fail;
-                                log_info("selecting %s", path);
+                                log_infof("selecting %s", path);
                         }
                 }
         }
@@ -256,9 +256,9 @@ find_ipc_path(struct error *err, const char *path, char **ipc)
                 return (-1);
 
         if (ret == 0)
-                log_info("missing ipc %s", path);
+                log_infof("missing ipc %s", path);
         else {
-                log_info("listing ipc %s", path);
+                log_infof("listing ipc %s", path);
                 if ((*ipc = xrealpath(err, path, NULL)) == NULL)
                         return (-1);
         }
@@ -292,11 +292,11 @@ lookup_libraries(struct error *err, struct nvc_driver_info *info, int32_t flags,
 
         for (size_t i = 0; info->libs != NULL && i < info->nlibs; ++i) {
                 if (info->libs[i] == NULL)
-                        log_warn("missing library %s", libs[i]);
+                        log_warnf("missing library %s", libs[i]);
         }
         for (size_t i = 0; info->libs32 != NULL && i < info->nlibs32; ++i) {
                 if (info->libs32[i] == NULL)
-                        log_warn("missing compat32 library %s", libs[i]);
+                        log_warnf("missing compat32 library %s", libs[i]);
         }
         array_pack(info->libs, &info->nlibs);
         array_pack(info->libs32, &info->nlibs32);
@@ -321,7 +321,7 @@ lookup_binaries(struct error *err, struct nvc_driver_info *info, int32_t flags)
 
         for (size_t i = 0; info->bins != NULL && i < info->nbins; ++i) {
                 if (info->bins[i] == NULL)
-                        log_warn("missing binary %s", bins[i]);
+                        log_warnf("missing binary %s", bins[i]);
         }
         array_pack(info->bins, &info->nbins);
         return (0);
@@ -354,7 +354,7 @@ lookup_devices(struct error *err, struct nvc_driver_info *info, int32_t flags)
                 *(++node) = uvm_tools;
 
         for (size_t i = 0; i < info->ndevs; ++i)
-                log_info("listing device %s", info->devs[i].path);
+                log_infof("listing device %s", info->devs[i].path);
         return (0);
 }
 
@@ -396,7 +396,7 @@ nvc_driver_info_new(struct nvc_context *ctx, const char *opts)
         if ((flags = options_parse(&ctx->err, opts, driver_opts, nitems(driver_opts))) < 0)
                 return (NULL);
 
-        log_info("requesting driver information with '%s'", opts);
+        log_infof("requesting driver information with '%s'", opts);
         if ((info = xcalloc(&ctx->err, 1, sizeof(*info))) == NULL)
                 return (NULL);
 
@@ -450,7 +450,7 @@ nvc_device_info_new(struct nvc_context *ctx, const char *opts)
         if ((flags = options_parse(&ctx->err, opts, device_opts, nitems(device_opts))) < 0)
                 return (NULL);
 
-        log_info("requesting device information with '%s'", opts);
+        log_infof("requesting device information with '%s'", opts);
         if ((info = xcalloc(&ctx->err, 1, sizeof(*info))) == NULL)
                 return (NULL);
 
@@ -474,7 +474,7 @@ nvc_device_info_new(struct nvc_context *ctx, const char *opts)
                         goto fail;
                 gpu->node.id = makedev(NV_DEVICE_MAJOR, minor);
 
-                log_info("listing device %s (%s at %s)", gpu->node.path, gpu->uuid, gpu->busid);
+                log_infof("listing device %s (%s at %s)", gpu->node.path, gpu->uuid, gpu->busid);
         }
         return (info);
 

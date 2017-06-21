@@ -89,7 +89,7 @@ CFLAGS   += -std=gnu11 -O2 -g -fdata-sections -ffunction-sections -fstack-protec
             -Wall -Wextra -Wcast-align -Wpointer-arith -Wmissing-prototypes -Wnonnull \
             -Wwrite-strings -Wlogical-op -Wformat=2 -Wmissing-format-attribute -Winit-self -Wshadow \
             -Wstrict-prototypes -Wunreachable-code -Wconversion -Wsign-conversion \
-            -Wno-unknown-warning-option -Wno-format-extra-args -Wno-gnu
+            -Wno-unknown-warning-option -Wno-format-extra-args -Wno-gnu-alignof-expression
 LDFLAGS  += -Wl,-zrelro -Wl,-znow -Wl,-zdefs -Wl,--gc-sections
 
 LIB_CPPFLAGS       = $(CPPFLAGS) -DNV_LINUX -isystem $(CUDA_DIR)/include -isystem $(DEPS_DIR)/usr/local/include -include $(BUILD_DEFS)
@@ -150,6 +150,7 @@ $(LIB_STATIC_OBJ): $(LIB_OBJS)
 
 all: release
 
+debug: CFLAGS += -pedantic
 debug: shared static
 
 release: CPPFLAGS += -DNDEBUG

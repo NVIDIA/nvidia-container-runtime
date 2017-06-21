@@ -7,6 +7,11 @@
 
 #include <rpc/rpc.h>
 
+#ifndef WITH_TIRPC
+/* Glibc is missing this prototype */
+SVCXPRT *svcunixfd_create(int, u_int, u_int);
+#endif /* WITH_TIRPC */
+
 #include <stdbool.h>
 
 #include "error.h"

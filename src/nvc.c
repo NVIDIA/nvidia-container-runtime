@@ -132,7 +132,7 @@ nvc_init(struct nvc_context *ctx, const struct nvc_config *cfg, const char *opts
                 return (-1);
 
         log_open(getenv("NVC_DEBUG_FILE"));
-        log_info("initializing library context (version=%s, build=%s)", NVC_VERSION, BUILD_REVISION);
+        log_infof("initializing library context (version=%s, build=%s)", NVC_VERSION, BUILD_REVISION);
 
         if (flags & OPT_LOAD_KMODS)
                 load_kernel_modules();
@@ -143,7 +143,7 @@ nvc_init(struct nvc_context *ctx, const struct nvc_config *cfg, const char *opts
         ldcache = (cfg->ldcache != NULL) ? cfg->ldcache : LDCACHE_PATH;
         if ((ctx->cfg.ldcache = xrealpath(&ctx->err, ldcache, NULL)) == NULL)
                 goto fail;
-        log_info("using ldcache %s", ctx->cfg.ldcache);
+        log_infof("using ldcache %s", ctx->cfg.ldcache);
 
         if (xsnprintf(&ctx->err, path, sizeof(path), PROC_NS_PATH(PROC_SELF), "mnt") < 0)
                 goto fail;

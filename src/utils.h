@@ -14,9 +14,12 @@
 
 #include "error.h"
 
-#define maybe_unused __attribute__((unused))
-#define assert_func(fn) ({ maybe_unused int r_ = fn; assert(r_ == 0); })
 #define nitems(x) (sizeof(x) / sizeof(*x))
+#define maybe_unused __attribute__((unused))
+#define assert_func(fn) do {      \
+        maybe_unused int r_ = fn; \
+        assert(r_ == 0);          \
+} while (0)
 
 #define MODE_DIR(mode) ((mode) | S_IFDIR)
 #define MODE_REG(mode) ((mode) | S_IFREG)
@@ -28,9 +31,12 @@ void log_write(char, const char *, unsigned long, const char *, ...)
     __attribute__((format(printf, 4, 5), nonnull(4)));
 int  log_pipe_output(struct error *, int[2]);
 
-#define log_info(fmt, ...) log_write('I', __FILE__, __LINE__, fmt, ##__VA_ARGS__)
-#define log_warn(fmt, ...) log_write('W', __FILE__, __LINE__, fmt, ##__VA_ARGS__)
-#define log_err(fmt, ...)  log_write('E', __FILE__, __LINE__, fmt, ##__VA_ARGS__)
+#define log_info(msg) log_write('I', __FILE__, __LINE__, msg)
+#define log_warn(msg) log_write('W', __FILE__, __LINE__, msg)
+#define log_err(msg)  log_write('E', __FILE__, __LINE__, msg)
+#define log_infof(fmt, ...) log_write('I', __FILE__, __LINE__, fmt, __VA_ARGS__)
+#define log_warnf(fmt, ...) log_write('W', __FILE__, __LINE__, fmt, __VA_ARGS__)
+#define log_errf(fmt, ...)  log_write('E', __FILE__, __LINE__, fmt, __VA_ARGS__)
 
 void strlower(char *);
 int  strpcmp(const char *, const char *);

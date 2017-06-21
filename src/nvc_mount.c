@@ -62,7 +62,7 @@ mount_files(struct error *err, const struct nvc_container *cnt, const char *dir,
                 if (file_create(err, path, cnt->uid, cnt->gid, mode) < 0)
                         goto fail;
 
-                log_info("mounting %s at %s", paths[i], path);
+                log_infof("mounting %s at %s", paths[i], path);
                 if (xmount(err, paths[i], path, NULL, MS_BIND, NULL) < 0)
                         goto fail;
                 if (xmount(err, NULL, path, NULL, MS_BIND|MS_REMOUNT | MS_RDONLY|MS_NODEV|MS_NOSUID, NULL) < 0)
@@ -93,7 +93,7 @@ mount_device(struct error *err, const struct nvc_container *cnt, const char *dev
         if (file_create(err, path, cnt->uid, cnt->gid, mode) < 0)
                 return (NULL);
 
-        log_info("mounting %s at %s", dev, path);
+        log_infof("mounting %s at %s", dev, path);
         if (xmount(err, dev, path, NULL, MS_BIND, NULL) < 0)
                 goto fail;
         if (xmount(err, NULL, path, NULL, MS_BIND|MS_REMOUNT | MS_NOSUID|MS_NOEXEC, NULL) < 0)
@@ -121,7 +121,7 @@ mount_ipc(struct error *err, const struct nvc_container *cnt, const char *ipc)
         if (file_create(err, path, cnt->uid, cnt->gid, mode) < 0)
                 return (NULL);
 
-        log_info("mounting %s at %s", ipc, path);
+        log_infof("mounting %s at %s", ipc, path);
         if (xmount(err, ipc, path, NULL, MS_BIND, NULL) < 0)
                 goto fail;
         if (xmount(err, NULL, path, NULL, MS_BIND|MS_REMOUNT | MS_NODEV|MS_NOSUID|MS_NOEXEC, NULL) < 0)
@@ -156,7 +156,7 @@ setup_cgroup(struct error *err, const char *cgroup, dev_t id)
         if ((fs = xfopen(err, path, "a")) == NULL)
                 return (-1);
 
-        log_info("whitelisting device node %u:%u", major(id), minor(id));
+        log_infof("whitelisting device node %u:%u", major(id), minor(id));
         if (fprintf(fs, CGROUP_DEVICE_STR, major(id), minor(id), "rwm") < 0 || ferror(fs)) {
                 error_set(err, "write error: %s", path);
                 goto fail;
@@ -180,7 +180,7 @@ symlink_library(struct error *err, const char *dir, const char *lib, const char 
         if (xasprintf(err, &target, "%s.%s", lib, version) < 0)
                 return (-1);
 
-        log_info("creating symlink %s -> %s", path, target);
+        log_infof("creating symlink %s -> %s", path, target);
         if (symlink(target, path) < 0 && errno != EEXIST) {
                 error_set(err, "symlink creation failed: %s", path);
                 goto fail;

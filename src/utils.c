@@ -102,7 +102,7 @@ log_pipe_output(struct error *err, int fd[2])
         while ((n = getline(&buf, &len, fs)) >= 0) {
                 if (n > 0) {
                         buf[n - 1] = '\0';
-                        log_warn("%s", buf);
+                        log_warnf("%s", buf);
                 }
         }
         if (ferror(fs)) {

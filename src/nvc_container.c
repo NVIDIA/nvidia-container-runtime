@@ -292,7 +292,7 @@ nvc_container_new(struct nvc_context *ctx, const struct nvc_container_config *cf
                 return (NULL);
         }
 
-        log_info("configuring container with '%s'", opts);
+        log_infof("configuring container with '%s'", opts);
         if ((cnt = xcalloc(&ctx->err, 1, sizeof(*cnt))) == NULL)
                 return (NULL);
 
@@ -308,16 +308,16 @@ nvc_container_new(struct nvc_context *ctx, const struct nvc_container_config *cf
                         goto fail;
         }
 
-        log_info("setting pid to %ld", (long)cnt->cfg.pid);
-        log_info("setting rootfs to %s", cnt->cfg.rootfs);
-        log_info("setting owner to %lu:%lu", (unsigned long)cnt->uid, (unsigned long)cnt->gid);
-        log_info("setting bins directory to %s", cnt->cfg.bins_dir);
-        log_info("setting libs directory to %s", cnt->cfg.libs_dir);
-        log_info("setting libs32 directory to %s", cnt->cfg.libs32_dir);
-        log_info("setting ldconfig to %s", cnt->cfg.ldconfig);
-        log_info("setting mount namespace to %s", cnt->mnt_ns);
+        log_infof("setting pid to %ld", (long)cnt->cfg.pid);
+        log_infof("setting rootfs to %s", cnt->cfg.rootfs);
+        log_infof("setting owner to %lu:%lu", (unsigned long)cnt->uid, (unsigned long)cnt->gid);
+        log_infof("setting bins directory to %s", cnt->cfg.bins_dir);
+        log_infof("setting libs directory to %s", cnt->cfg.libs_dir);
+        log_infof("setting libs32 directory to %s", cnt->cfg.libs32_dir);
+        log_infof("setting ldconfig to %s", cnt->cfg.ldconfig);
+        log_infof("setting mount namespace to %s", cnt->mnt_ns);
         if (!(flags & OPT_NO_CGROUPS))
-                log_info("setting devices cgroup to %s", cnt->dev_cg);
+                log_infof("setting devices cgroup to %s", cnt->dev_cg);
         return (cnt);
 
  fail:

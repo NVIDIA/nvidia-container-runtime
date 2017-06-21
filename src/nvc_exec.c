@@ -71,7 +71,7 @@ create_process(struct error *err)
 
  fail:
         if (rv < 0) {
-                log_err("could not capture process output: %s", err->msg);
+                log_errf("could not capture process output: %s", err->msg);
                 error_reset(err);
         }
         xclose(fd[0]);
@@ -119,7 +119,8 @@ change_rootfs(struct error *err, const char *rootfs, bool *drop_groups)
                 goto fail;
 
         if ((fs = fopen(PROC_SETGROUPS_PATH(PROC_SELF), "r")) != NULL) {
-                (void)fgets(buf, sizeof(buf), fs);
+                if (fgets(buf, sizeof(buf), fs) == NULL)
+                        *buf = '\0';
                 fclose(fs);
         }
         *drop_groups = strpcmp(buf, "deny");
@@ -315,7 +316,7 @@ nvc_ldcache_update(struct nvc_context *ctx, const struct nvc_container *cnt)
         if (validate_args(ctx, cnt != NULL) < 0)
                 return (-1);
 
-        log_info("executing %s at %s", cnt->cfg.ldconfig, cnt->cfg.rootfs);
+        log_infof("executing %s at %s", cnt->cfg.ldconfig, cnt->cfg.rootfs);
         if ((child = create_process(&ctx->err)) < 0)
                 return (-1);
         if (child == 0) {
@@ -338,7 +339,7 @@ nvc_ldcache_update(struct nvc_context *ctx, const struct nvc_container *cnt)
                     (char *)NULL, (char * const []){NULL});
                 error_set(&ctx->err, "process execution failed");
          fail:
-                log_err("could not start %s: %s", cnt->cfg.ldconfig, ctx->err.msg);
+                log_errf("could not start %s: %s", cnt->cfg.ldconfig, ctx->err.msg);
                 (ctx->err.code == ENOENT) ? _exit(EXIT_SUCCESS) : _exit(EXIT_FAILURE);
         }
         if (waitpid(child, &status, 0) < 0) {

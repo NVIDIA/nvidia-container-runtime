@@ -38,7 +38,7 @@ static int setup_rpc_client(struct driver *);
 static noreturn void setup_rpc_service(struct driver *, pid_t);
 static int reap_process(struct error *, pid_t, int, bool);
 
-#define call_nvml(ctx, sym, ...) ({                                                                    \
+#define call_nvml(ctx, sym, ...) __extension__ ({                                                      \
         union {void *ptr; __typeof__(&sym) fn;} u_;                                                    \
         nvmlReturn_t r_;                                                                               \
                                                                                                        \
@@ -50,7 +50,7 @@ static int reap_process(struct error *, pid_t, int, bool);
         (r_ == NVML_SUCCESS) ? 0 : -1;                                                                 \
 })
 
-#define call_cuda(ctx, sym, ...) ({                                                                    \
+#define call_cuda(ctx, sym, ...) __extension__ ({                                                      \
         union {void *ptr; __typeof__(&sym) fn;} u_;                                                    \
         CUresult r_;                                                                                   \
                                                                                                        \
@@ -62,7 +62,7 @@ static int reap_process(struct error *, pid_t, int, bool);
         (r_ == CUDA_SUCCESS) ? 0 : -1;                                                                 \
 })
 
-#define call_rpc(ctx, res, func, ...) ({                                                               \
+#define call_rpc(ctx, res, func, ...) __extension__ ({                                                 \
         enum clnt_stat r_;                                                                             \
         struct sigaction osa_, sa_ = {.sa_handler = SIG_IGN};                                          \
                                                                                                        \
@@ -150,7 +150,7 @@ setup_rpc_service(struct driver *ctx, pid_t ppid)
         _exit(EXIT_SUCCESS);
 
  fail:
-        log_err("could not start driver service: %s", ctx->err->msg);
+        log_errf("could not start driver service: %s", ctx->err->msg);
         if (ctx->rpc_svc != NULL)
                 svc_destroy(ctx->rpc_svc);
         _exit(EXIT_FAILURE);
@@ -182,7 +182,7 @@ reap_process(struct error *err, pid_t pid, int fd, bool force)
         if (ret < 0)
                 error_set(err, "process reaping failed (pid %ld)", (long)pid);
         else
-                log_info("driver service terminated %s%.0d",
+                log_infof("driver service terminated %s%.0d",
                     WIFSIGNALED(status) ? "with signal " : "successfully",
                     WIFSIGNALED(status) ? WTERMSIG(status) : 0);
         return (ret);
@@ -228,7 +228,7 @@ driver_init(struct driver *ctx, struct error *err)
 
  fail:
         if (ctx->pid > 0 && reap_process(NULL, ctx->pid, ctx->fd[SOCK_CLT], true) < 0)
-                log_warn("could not terminate driver service (pid %ld)", (long)ctx->pid);
+                log_warnf("could not terminate driver service (pid %ld)", (long)ctx->pid);
         if (ctx->rpc_clt != NULL)
                 clnt_destroy(ctx->rpc_clt);
 
@@ -265,7 +265,7 @@ driver_shutdown(struct driver *ctx)
         ret = call_rpc(ctx, &res, driver_shutdown_1);
         xdr_free((xdrproc_t)xdr_driver_shutdown_res, (caddr_t)&res);
         if (ret < 0)
-                log_warn("could not terminate driver service: %s", ctx->err->msg);
+                log_warnf("could not terminate driver service: %s", ctx->err->msg);
 
         if (reap_process(ctx->err, ctx->pid, ctx->fd[SOCK_CLT], (ret < 0)) < 0)
                 return (-1);
