@@ -47,6 +47,7 @@ error_vset(struct error *err, int errcode, const char *errmsg, const char *fmt, 
         }
         if (errmsg == NULL) {
                 err->msg = msg;
+                strlower(err->msg);
                 return (0);
         }
         if (asprintf(&err->msg, "%s: %s", msg, errmsg) < 0) {

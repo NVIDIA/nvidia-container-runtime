@@ -138,7 +138,7 @@ xdlopen(struct error *err, const char *filename, int flags)
         void *h;
 
         if ((h = dlopen(filename, flags)) == NULL)
-                error_setx(err, "load library failed %s: %s", filename, dlerror());
+                error_setx(err, "load library failed: %s", dlerror());
         return (h);
 }
 
