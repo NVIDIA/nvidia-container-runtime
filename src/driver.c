@@ -249,11 +249,11 @@ driver_init_1_svc(ptr_t ctxptr, driver_init_res *res, maybe_unused struct svc_re
                 goto fail;
         if (call_nvml(ctx, nvmlInit_v2) < 0)
                 goto fail;
-        return (1);
+        return (true);
 
  fail:
         error_to_xdr(ctx->err, res);
-        return (1);
+        return (true);
 }
 
 int
@@ -291,11 +291,11 @@ driver_shutdown_1_svc(ptr_t ctxptr, driver_shutdown_res *res, maybe_unused struc
         if (call_nvml(ctx, nvmlShutdown) < 0)
                 goto fail;
         svc_exit();
-        return (1);
+        return (true);
 
  fail:
         error_to_xdr(ctx->err, res);
-        return (1);
+        return (true);
 }
 
 int
@@ -326,11 +326,11 @@ driver_get_rm_version_1_svc(ptr_t ctxptr, driver_get_rm_version_res *res, maybe_
                 goto fail;
         if ((res->driver_get_rm_version_res_u.vers = xstrdup(ctx->err, buf)) == NULL)
                 goto fail;
-        return (1);
+        return (true);
 
  fail:
         error_to_xdr(ctx->err, res);
-        return (1);
+        return (true);
 }
 
 int
@@ -362,11 +362,11 @@ driver_get_cuda_version_1_svc(ptr_t ctxptr, driver_get_cuda_version_res *res, ma
                 goto fail;
         res->driver_get_cuda_version_res_u.vers.major = (unsigned int)version / 1000;
         res->driver_get_cuda_version_res_u.vers.minor = (unsigned int)version % 100 / 10;
-        return (1);
+        return (true);
 
  fail:
         error_to_xdr(ctx->err, res);
-        return (1);
+        return (true);
 }
 
 int
@@ -395,11 +395,11 @@ driver_get_device_count_1_svc(ptr_t ctxptr, driver_get_device_count_res *res, ma
         if (call_nvml(ctx, nvmlDeviceGetCount_v2, &count) < 0)
                 goto fail;
         res->driver_get_device_count_res_u.count = count;
-        return (1);
+        return (true);
 
  fail:
         error_to_xdr(ctx->err, res);
-        return (1);
+        return (true);
 }
 
 int
@@ -446,11 +446,11 @@ driver_get_device_handle_1_svc(ptr_t ctxptr, u_int idx, bool_t pci_order, driver
                         goto fail;
         }
         res->driver_get_device_handle_res_u.handle = (ptr_t)handle;
-        return (1);
+        return (true);
 
  fail:
         error_to_xdr(ctx->err, res);
-        return (1);
+        return (true);
 }
 
 int
@@ -479,11 +479,11 @@ driver_get_device_minor_1_svc(ptr_t ctxptr, ptr_t dev, driver_get_device_minor_r
         if (call_nvml(ctx, nvmlDeviceGetMinorNumber, (nvmlDevice_t)dev, &minor) < 0)
                 goto fail;
         res->driver_get_device_minor_res_u.minor = minor;
-        return (1);
+        return (true);
 
  fail:
         error_to_xdr(ctx->err, res);
-        return (1);
+        return (true);
 }
 
 int
@@ -514,11 +514,11 @@ driver_get_device_busid_1_svc(ptr_t ctxptr, ptr_t dev, driver_get_device_busid_r
                 goto fail;
         if ((res->driver_get_device_busid_res_u.busid = xstrdup(ctx->err, pci.busId)) == NULL)
                 goto fail;
-        return (1);
+        return (true);
 
  fail:
         error_to_xdr(ctx->err, res);
-        return (1);
+        return (true);
 }
 
 int
@@ -549,9 +549,9 @@ driver_get_device_uuid_1_svc(ptr_t ctxptr, ptr_t dev, driver_get_device_uuid_res
                 goto fail;
         if ((res->driver_get_device_uuid_res_u.uuid = xstrdup(ctx->err, buf)) == NULL)
                 goto fail;
-        return (1);
+        return (true);
 
  fail:
         error_to_xdr(ctx->err, res);
-        return (1);
+        return (true);
 }

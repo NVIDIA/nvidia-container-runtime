@@ -122,7 +122,7 @@ select_libraries(struct error *err, void *ptr, const char *orig_path, const char
         struct nvc_driver_info *info = ptr;
         struct elftool et;
         char *lib;
-        int rv = 1;
+        int rv = true;
 
         elftool_init(&et, err);
         if (elftool_open(&et, alt_path) < 0)
@@ -131,22 +131,22 @@ select_libraries(struct error *err, void *ptr, const char *orig_path, const char
         lib = basename(alt_path);
         if (!strpcmp(lib, "libnvidia-tls.so")) {
                 /* Only choose the TLS library using the new ABI (kernel 2.3.99). */
-                if ((rv = elftool_has_abi(&et, (uint32_t[3]){0x02, 0x03, 0x63})) <= 0)
+                if ((rv = elftool_has_abi(&et, (uint32_t[3]){0x02, 0x03, 0x63})) != true)
                         goto done;
         }
         /* Check the driver version. */
-        if ((rv = !strrcmp(lib, info->kmod_version)) == 0)
+        if ((rv = !strrcmp(lib, info->kmod_version)) == false)
                 goto done;
         if (strmatch(lib, graphic_libs_compat, nitems(graphic_libs_compat))) {
                 /* Only choose OpenGL/EGL libraries issued by NVIDIA. */
-                if ((rv = elftool_has_dependency(&et, "libnvidia-glcore.so")) != 0)
+                if ((rv = elftool_has_dependency(&et, "libnvidia-glcore.so")) != false)
                         goto done;
-                if ((rv = elftool_has_dependency(&et, "libnvidia-eglcore.so")) != 0)
+                if ((rv = elftool_has_dependency(&et, "libnvidia-eglcore.so")) != false)
                         goto done;
         }
 
  done:
-        if (rv > 0)
+        if (rv)
                 log_infof((orig_path == NULL) ? "%s %s" : "%s %s over %s", "selecting", alt_path, orig_path);
         else
                 log_infof("skipping %s", alt_path);
@@ -242,9 +242,9 @@ find_device_node(struct error *err, const char *path, struct nvc_device_node *no
 
         if (xstat(err, path, &s) == 0) {
                 *node = (struct nvc_device_node){(char *)path, s.st_rdev};
-                return (1);
+                return (true);
         }
-        return (errno == ENOENT ? 0 : -1);
+        return (errno == ENOENT ? false : -1);
 }
 
 static int

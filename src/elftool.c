@@ -84,10 +84,10 @@ elftool_has_dependency(struct elftool *ctx, const char *lib)
                         if ((dep = elf_strptr(ctx->elf, shdr.sh_link, dyn.d_un.d_ptr)) == NULL)
                                 goto fail;
                         if (!strpcmp(dep, lib))
-                                return (1);
+                                return (true);
                 }
         }
-        return (0);
+        return (false);
 
  fail:
         error_set_elf(ctx->err, "elf data read error: %s", ctx->path);
