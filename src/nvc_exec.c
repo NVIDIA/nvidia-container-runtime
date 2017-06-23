@@ -17,6 +17,7 @@
 # define PR_CAP_AMBIENT_RAISE 2
 #endif
 
+#include <errno.h>
 #include <grp.h>
 #include <sched.h>
 #ifdef WITH_SECCOMP

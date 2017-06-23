@@ -6,21 +6,11 @@
 #define HEADER_ERROR_H
 
 #include <assert.h>
-#include <errno.h>
 #include <stdalign.h>
-#include <stdarg.h>
-#include <string.h>
 
-struct error {
-        int code;
-        char *msg;
-};
+#include "error_generic.h"
+#include "xfuncs.h"
 
-void error_reset(struct error *);
-int error_set(struct error *, const char *, ...)
-    __attribute__((format(printf, 2, 3), nonnull(2)));
-int error_setx(struct error *, const char *, ...)
-    __attribute__((format(printf, 2, 3), nonnull(2)));
 int error_set_elf(struct error *, const char *, ...)
     __attribute__((format(printf, 2, 3), nonnull(2)));
 int error_set_nvml(struct error *, void *, int, const char *, ...)

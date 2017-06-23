@@ -2,6 +2,7 @@
  * Copyright (c) 2017, NVIDIA CORPORATION. All rights reserved.
  */
 
+#include <errno.h>
 #include <limits.h>
 #include <stdio.h>
 #include <stdlib.h>
