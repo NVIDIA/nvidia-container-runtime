@@ -21,13 +21,13 @@ export DEBUG_DIR ?= $(CURDIR)/.debug
 
 include $(MAKE_DIR)/common.mk
 
-DATE   := $(shell date -u --iso-8601=minutes)
-COMMIT := $(shell git rev-parse HEAD)
+DATE     := $(shell date -u --iso-8601=minutes)
+REVISION := $(shell git rev-parse HEAD)
 
 ifeq ($(DATE),)
 $(error Invalid date format)
 endif
-ifeq ($(COMMIT),)
+ifeq ($(REVISION),)
 $(error Invalid commit hash)
 endif
 
@@ -67,11 +67,11 @@ BIN_SCRIPT   = $(SRCS_DIR)/$(BIN_UTILS).lds
 
 ##### Target definitions #####
 
-ARCH     := x86_64
-MAJOR    := $(call getdef,NVC_MAJOR,$(LIB_INCS))
-MINOR    := $(call getdef,NVC_MINOR,$(LIB_INCS))
-REVISION := $(call getdef,NVC_REVISION,$(LIB_INCS))
-VERSION  := $(MAJOR).$(MINOR).$(REVISION)
+ARCH    := x86_64
+MAJOR   := $(call getdef,NVC_MAJOR,$(LIB_INCS))
+MINOR   := $(call getdef,NVC_MINOR,$(LIB_INCS))
+PATCH   := $(call getdef,NVC_PATCH,$(LIB_INCS))
+VERSION := $(MAJOR).$(MINOR).$(PATCH)
 
 ifeq ($(MAJOR),)
 $(error Invalid major version)
@@ -79,8 +79,8 @@ endif
 ifeq ($(MINOR),)
 $(error Invalid minor version)
 endif
-ifeq ($(REVISION),)
-$(error Invalid revision version)
+ifeq ($(PATCH),)
+$(error Invalid patch version)
 endif
 
 BIN_UTILS   := nvidia-container-cli
@@ -139,7 +139,7 @@ DEPENDENCIES   := $(BIN_OBJS:%.o=%.d) $(LIB_OBJS:%.lo=%.d)
 $(BUILD_DEFS):
 	@printf '#define BUILD_DATE     "%s"\n' '$(DATE)' >$(BUILD_DEFS)
 	@printf '#define BUILD_FLAGS    "%s"\n' '$(CPPFLAGS) $(CFLAGS) $(LDFLAGS)' >>$(BUILD_DEFS)
-	@printf '#define BUILD_REVISION "%s"\n' '$(COMMIT)' >>$(BUILD_DEFS)
+	@printf '#define BUILD_REVISION "%s"\n' '$(REVISION)' >>$(BUILD_DEFS)
 
 $(LIB_RPC_SRCS): $(LIB_RPC_SPEC)
 	$(RM) $@

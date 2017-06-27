@@ -23,7 +23,7 @@ static void load_kernel_modules(void);
 static const struct nvc_version version = {
         NVC_MAJOR,
         NVC_MINOR,
-        NVC_REVISION,
+        NVC_PATCH,
         NVC_VERSION,
 };
 

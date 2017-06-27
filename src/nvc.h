@@ -13,12 +13,12 @@
 extern "C" {
 #endif
 
-#define NVC_MAJOR    1
-#define NVC_MINOR    0
-#define NVC_REVISION 0
-#define NVC_VERSION  "1.0.0"
+#define NVC_MAJOR   1
+#define NVC_MINOR   0
+#define NVC_PATCH   0
+#define NVC_VERSION "1.0.0"
 
-#define NVC_ARG_MAX  256
+#define NVC_ARG_MAX 256
 
 struct nvc_context;
 struct nvc_container;
@@ -26,7 +26,7 @@ struct nvc_container;
 struct nvc_version {
         unsigned int major;
         unsigned int minor;
-        unsigned int revision;
+        unsigned int patch;
         const char *string;
 };
 
