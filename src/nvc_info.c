@@ -4,6 +4,7 @@
 
 #include <errno.h>
 #include <limits.h>
+#include <paths.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -21,12 +22,12 @@
 
 #define NV_DEVICE_MAJOR          195
 #define NV_CTL_DEVICE_MINOR      255
-#define NV_DEVICE_PATH           "/dev/nvidia%d"
-#define NV_CTL_DEVICE_PATH       "/dev/nvidiactl"
-#define NV_UVM_DEVICE_PATH       "/dev/nvidia-uvm"
-#define NV_UVM_TOOLS_DEVICE_PATH "/dev/nvidia-uvm-tools"
-#define NV_PERSISTENCED_SOCKET   "/var/run/nvidia-persistenced/socket"
-#define NV_MPS_PIPE_DIR          "/tmp/nvidia-mps"
+#define NV_DEVICE_PATH           _PATH_DEV "nvidia%d"
+#define NV_CTL_DEVICE_PATH       _PATH_DEV "nvidiactl"
+#define NV_UVM_DEVICE_PATH       _PATH_DEV "nvidia-uvm"
+#define NV_UVM_TOOLS_DEVICE_PATH _PATH_DEV "nvidia-uvm-tools"
+#define NV_PERSISTENCED_SOCKET   _PATH_VARRUN "nvidia-persistenced/socket"
+#define NV_MPS_PIPE_DIR          _PATH_TMP "nvidia-mps"
 
 #define MAX_BINS (nitems(utility_bins) + \
                   nitems(compute_bins))

@@ -19,6 +19,7 @@
 
 #include <errno.h>
 #include <grp.h>
+#include <paths.h>
 #include <sched.h>
 #ifdef WITH_SECCOMP
 #include <seccomp.h>
@@ -56,7 +57,7 @@ create_process(struct error *err)
         }
 
         if (child == 0) {
-                if ((null = xopen(err, "/dev/null", O_RDWR)) < 0)
+                if ((null = xopen(err, _PATH_DEVNULL, O_RDWR)) < 0)
                         goto fail;
                 if (dup2(null, STDIN_FILENO) < 0 ||
                     dup2(log_active() ? fd[1] : null, STDOUT_FILENO) < 0 ||
