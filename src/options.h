@@ -52,7 +52,7 @@ static const struct option driver_opts[] = {
         {"no-persistenced", OPT_NO_PERSISTENCED},
 };
 
-static const char * const default_driver_opts = "utility compute video graphic compat32";
+static const char * const default_driver_opts = "utility";
 
 /* Device options */
 static const struct option device_opts[] = {
@@ -62,7 +62,7 @@ static const struct option device_opts[] = {
         {"graphic", 0},
 };
 
-static const char * const default_device_opts = "utility compute video graphic";
+static const char * const default_device_opts = "utility";
 
 /* Container options */
 enum {
