@@ -17,6 +17,7 @@
 #include <ftw.h>
 #include <inttypes.h>
 #include <libgen.h>
+#undef basename /* Use the GNU version of basename. */
 #include <limits.h>
 #include <sched.h>
 #include <stdio.h>
@@ -75,7 +76,7 @@ log_write(char level, const char *file, unsigned long line, const char *fmt, ...
             strftime(buf, sizeof(buf), "%m%d %T", tm) == 0)
                 strcpy(buf, "0000 00:00:00");
 
-        fprintf(logfile, "%c%s.%06ld %ld %s:%lu] ", level, buf, tv.tv_usec, (long)syscall(SYS_gettid), file, line);
+        fprintf(logfile, "%c%s.%06ld %ld %s:%lu] ", level, buf, tv.tv_usec, (long)syscall(SYS_gettid), basename(file), line);
         va_start(ap, fmt);
         vfprintf(logfile, fmt, ap);
         va_end(ap);
