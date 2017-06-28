@@ -35,7 +35,7 @@
 
 static int reset_cuda_environment(struct error *);
 static int setup_rpc_client(struct driver *);
-static noreturn void setup_rpc_service(struct driver *, pid_t);
+static noreturn void setup_rpc_service(struct driver *, uid_t, gid_t, pid_t);
 static int reap_process(struct error *, pid_t, int, bool);
 
 #define call_nvml(ctx, sym, ...) __extension__ ({                                                      \
@@ -121,7 +121,7 @@ setup_rpc_client(struct driver *ctx)
 }
 
 static void
-setup_rpc_service(struct driver *ctx, pid_t ppid)
+setup_rpc_service(struct driver *ctx, uid_t uid, gid_t gid, pid_t ppid)
 {
         log_info("starting driver service");
         prctl(PR_SET_NAME, (unsigned long)"nvc:[driver]", 0, 0, 0);
@@ -135,6 +135,8 @@ setup_rpc_service(struct driver *ctx, pid_t ppid)
         if (getppid() != ppid)
                 kill(getpid(), SIGTERM);
 
+        if (priv_drop(ctx->err, uid, gid, true) < 0)
+                goto fail;
         if (reset_cuda_environment(ctx->err) < 0)
                 goto fail;
 
@@ -196,7 +198,7 @@ driver_program_1_freeresult(maybe_unused SVCXPRT *svc, xdrproc_t xdr_result, cad
 }
 
 int
-driver_init(struct driver *ctx, struct error *err)
+driver_init(struct driver *ctx, struct error *err, uid_t uid, gid_t gid)
 {
         int ret;
         pid_t pid;
@@ -215,7 +217,7 @@ driver_init(struct driver *ctx, struct error *err)
                 goto fail;
         }
         if (ctx->pid == 0)
-                setup_rpc_service(ctx, pid);
+                setup_rpc_service(ctx, uid, gid, pid);
         if (setup_rpc_client(ctx) < 0)
                 goto fail;
 

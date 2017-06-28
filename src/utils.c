@@ -15,6 +15,7 @@
 #include <errno.h>
 #include <fcntl.h>
 #include <ftw.h>
+#include <grp.h>
 #include <inttypes.h>
 #include <libgen.h>
 #undef basename /* Use the GNU version of basename. */
@@ -465,6 +466,22 @@ file_mode(struct error *err, const char *path, mode_t *mode)
 }
 
 int
+file_read_ulong(struct error *err, const char *path, unsigned long *v)
+{
+        FILE *fs;
+        int rv = 0;
+
+        if ((fs = xfopen(err, path, "r")) == NULL)
+                return (-1);
+        if (fscanf(fs, "%lu", v) != 1) {
+                error_setx(err, "file read error: %s", path);
+                rv = -1;
+        }
+        fclose(fs);
+        return (rv);
+}
+
+int
 path_append(struct error *err, char *buf, const char *path)
 {
         size_t len, cap;
@@ -617,4 +634,24 @@ path_resolve(struct error *err, char *buf, const char *root, const char *path)
  fail:
         xclose(fd);
         return (rv);
+}
+
+int
+priv_drop(struct error *err, uid_t uid, gid_t gid, bool drop_groups)
+{
+        if (drop_groups && setgroups(1, &gid) < 0)
+                goto fail;
+        if (setregid(gid, gid) < 0)
+                goto fail;
+        if (setreuid(uid, uid) < 0)
+                goto fail;
+        if (getegid() != gid || geteuid() != uid) {
+                errno = EPERM;
+                goto fail;
+        }
+        return (0);
+
+ fail:
+        error_set(err, "privileges relinquishment failed");
+        return (-1);
 }

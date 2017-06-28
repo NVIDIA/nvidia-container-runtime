@@ -5,6 +5,8 @@
 #ifndef HEADER_DRIVER_H
 #define HEADER_DRIVER_H
 
+#include <sys/types.h>
+
 #include <rpc/rpc.h>
 
 #ifndef WITH_TIRPC
@@ -33,7 +35,7 @@ typedef struct nvmlDevice_st *driver_device_handle;
 
 void driver_program_1(struct svc_req *, register SVCXPRT *);
 
-int driver_init(struct driver *, struct error *);
+int driver_init(struct driver *, struct error *, uid_t, gid_t);
 int driver_shutdown(struct driver *);
 int driver_get_rm_version(struct driver *, char **);
 int driver_get_cuda_version(struct driver *, char **);

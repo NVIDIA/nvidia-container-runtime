@@ -32,6 +32,8 @@ struct nvc_version {
 
 struct nvc_config {
         char *ldcache;
+        uid_t uid;
+        gid_t gid;
 };
 
 struct nvc_device_node {

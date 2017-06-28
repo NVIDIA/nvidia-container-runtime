@@ -58,9 +58,12 @@ int  file_create(struct error *, const char *, uid_t, gid_t, mode_t);
 int  file_remove(struct error *, const char *);
 int  file_exists(struct error *, const char *);
 int  file_mode(struct error *, const char *, mode_t *);
+int  file_read_ulong(struct error *, const char *, unsigned long *);
 
 int path_append(struct error *, char *, const char *);
 int path_join(struct error *, char *, const char *, const char *);
 int path_resolve(struct error *, char *, const char *, const char *);
+
+int priv_drop(struct error *, uid_t, gid_t, bool);
 
 #endif /* HEADER_UTILS_H */

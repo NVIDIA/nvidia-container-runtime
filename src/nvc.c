@@ -19,6 +19,7 @@
 #include "xfuncs.h"
 
 static void load_kernel_modules(void);
+static int  copy_config(struct error *, struct nvc_context *, const struct nvc_config *);
 
 static const struct nvc_version version = {
         NVC_MAJOR,
@@ -40,6 +41,8 @@ nvc_config_new(void)
 
         if ((cfg = calloc(1, sizeof(*cfg))) == NULL)
                 return (NULL);
+        cfg->uid = (uid_t)-1;
+        cfg->gid = (gid_t)-1;
         return (cfg);
 }
 
@@ -113,19 +116,48 @@ load_kernel_modules(void)
         }
 }
 
+static int
+copy_config(struct error *err, struct nvc_context *ctx, const struct nvc_config *cfg)
+{
+        const char *ldcache;
+        unsigned long uid, gid;
+
+        ldcache = (cfg->ldcache != NULL) ? cfg->ldcache : LDCACHE_PATH;
+        if ((ctx->cfg.ldcache = xrealpath(err, ldcache, NULL)) == NULL)
+                return (-1);
+
+        if (cfg->uid != (uid_t)-1)
+                ctx->cfg.uid = cfg->uid;
+        else {
+                if (file_read_ulong(err, PROC_OVERFLOW_UID, &uid) < 0)
+                        return (-1);
+                ctx->cfg.uid = (uid_t)uid;
+        }
+        if (cfg->gid != (gid_t)-1)
+                ctx->cfg.gid = cfg->gid;
+        else {
+                if (file_read_ulong(err, PROC_OVERFLOW_GID, &gid) < 0)
+                        return (-1);
+                ctx->cfg.gid = (gid_t)gid;
+        }
+
+        log_infof("using ldcache %s", ctx->cfg.ldcache);
+        log_infof("using unprivileged user %lu:%lu", (unsigned long)ctx->cfg.uid, (unsigned long)ctx->cfg.gid);
+        return (0);
+}
+
 int
 nvc_init(struct nvc_context *ctx, const struct nvc_config *cfg, const char *opts)
 {
         int32_t flags;
         char path[PATH_MAX];
-        const char *ldcache;
 
         if (ctx == NULL)
                 return (-1);
         if (ctx->initialized)
                 return (0);
         if (cfg == NULL)
-                cfg = &(struct nvc_config){0};
+                cfg = &(struct nvc_config){NULL, (uid_t)-1, (gid_t)-1};
         if (opts == NULL)
                 opts = default_library_opts;
         if ((flags = options_parse(&ctx->err, opts, library_opts, nitems(library_opts))) < 0)
@@ -140,16 +172,13 @@ nvc_init(struct nvc_context *ctx, const struct nvc_config *cfg, const char *opts
         memset(&ctx->cfg, 0, sizeof(ctx->cfg));
         ctx->mnt_ns = -1;
 
-        ldcache = (cfg->ldcache != NULL) ? cfg->ldcache : LDCACHE_PATH;
-        if ((ctx->cfg.ldcache = xrealpath(&ctx->err, ldcache, NULL)) == NULL)
+        if (copy_config(&ctx->err, ctx, cfg) < 0)
                 goto fail;
-        log_infof("using ldcache %s", ctx->cfg.ldcache);
-
         if (xsnprintf(&ctx->err, path, sizeof(path), PROC_NS_PATH(PROC_SELF), "mnt") < 0)
                 goto fail;
         if ((ctx->mnt_ns = xopen(&ctx->err, path, O_RDONLY|O_CLOEXEC)) < 0)
                 goto fail;
-        if (driver_init(&ctx->drv, &ctx->err) < 0)
+        if (driver_init(&ctx->drv, &ctx->err, ctx->cfg.uid, ctx->cfg.gid) < 0)
                 goto fail;
 
         ctx->initialized = true;

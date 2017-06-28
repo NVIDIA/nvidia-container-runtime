@@ -25,6 +25,8 @@
 #define PROC_NS_PATH(proc)        proc "/ns/%s"
 #define PROC_SETGROUPS_PATH(proc) proc "/setgroups"
 #define PROC_LAST_CAP_PATH        "/proc/sys/kernel/cap_last_cap"
+#define PROC_OVERFLOW_UID         "/proc/sys/kernel/overflowuid"
+#define PROC_OVERFLOW_GID         "/proc/sys/kernel/overflowgid"
 
 #define LDCACHE_PATH              "/etc/ld.so.cache"
 #define LDCONFIG_PATH             "/sbin/ldconfig"

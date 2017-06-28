@@ -18,7 +18,6 @@
 #endif
 
 #include <errno.h>
-#include <grp.h>
 #include <paths.h>
 #include <sched.h>
 #ifdef WITH_SECCOMP
@@ -145,19 +144,15 @@ change_rootfs(struct error *err, const char *rootfs, bool *drop_groups)
 static int
 drop_capabilities(struct error *err)
 {
-        FILE *fs;
+        unsigned long v;
         cap_t caps = NULL;
         cap_value_t last_cap = 63;
         cap_value_t cap = CAP_DAC_OVERRIDE;
         int rv = -1;
 
-        if ((fs = fopen(PROC_LAST_CAP_PATH, "r")) != NULL) {
-                int v;
-                if (fscanf(fs, "%d", &v) == 1) {
-                        if ((cap_value_t)v >= 0 && (cap_value_t)v <= last_cap)
-                                last_cap = (cap_value_t)v;
-                }
-                fclose(fs);
+        if (file_read_ulong(NULL, PROC_LAST_CAP_PATH, &v) == 0) {
+                if ((cap_value_t)v >= 0 && (cap_value_t)v <= last_cap)
+                        last_cap = (cap_value_t)v;
         }
 
         /*
@@ -195,18 +190,8 @@ drop_privileges(struct error *err, uid_t uid, gid_t gid, bool drop_groups)
 {
         if (prctl(PR_SET_SECUREBITS, SECBIT_NO_SETUID_FIXUP, 0, 0, 0) < 0)
                 goto fail;
-
-        if (drop_groups && setgroups(1, &gid) < 0)
-                goto fail;
-        if (setregid(gid, gid) < 0)
-                goto fail;
-        if (setreuid(uid, uid) < 0)
-                goto fail;
-        if (getegid() != gid || geteuid() != uid) {
-                errno = EPERM;
-                goto fail;
-        }
-
+        if (priv_drop(err, uid, gid, drop_groups) < 0)
+                return (-1);
         if (prctl(PR_SET_NO_NEW_PRIVS, 1, 0, 0, 0) < 0)
                 goto fail;
         if (prctl(PR_SET_DUMPABLE, 0, 0, 0, 0) < 0)
