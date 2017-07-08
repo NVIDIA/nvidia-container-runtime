@@ -5,6 +5,7 @@
 #ifndef HEADER_UTILS_H
 #define HEADER_UTILS_H
 
+#include <sys/capability.h>
 #include <sys/stat.h>
 #include <sys/types.h>
 
@@ -13,6 +14,8 @@
 #include <stddef.h>
 
 #include "error.h"
+
+#define CAP_AMBIENT (cap_flag_t)-1
 
 #define nitems(x) (sizeof(x) / sizeof(*x))
 #define maybe_unused __attribute__((unused))
@@ -64,6 +67,8 @@ int path_append(struct error *, char *, const char *);
 int path_join(struct error *, char *, const char *, const char *);
 int path_resolve(struct error *, char *, const char *, const char *);
 
-int priv_drop(struct error *, uid_t, gid_t, bool);
+int perm_drop_privileges(struct error *, uid_t, gid_t, bool);
+int perm_drop_bounds(struct error *);
+int perm_set_capabilities(struct error *, cap_flag_t, const cap_value_t [], size_t);
 
 #endif /* HEADER_UTILS_H */

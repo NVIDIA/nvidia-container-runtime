@@ -2,10 +2,10 @@
  * Copyright (c) 2017, NVIDIA CORPORATION. All rights reserved.
  */
 
-#include <sys/capability.h>
 #include <sys/fsuid.h>
 #include <sys/mman.h>
 #include <sys/param.h>
+#include <sys/prctl.h>
 #include <sys/stat.h>
 #include <sys/syscall.h>
 #include <sys/time.h>
@@ -27,8 +27,16 @@
 #include <time.h>
 #include <unistd.h>
 
+#include "nvc_internal.h"
+
 #include "utils.h"
 #include "xfuncs.h"
+
+#if !defined(PR_CAP_AMBIENT) || !defined(PR_CAP_AMBIENT_RAISE) || !defined(PR_CAP_AMBIENT_CLEAR_ALL)
+# define PR_CAP_AMBIENT           47
+# define PR_CAP_AMBIENT_RAISE     2
+# define PR_CAP_AMBIENT_CLEAR_ALL 4
+#endif /* !defined(PR_CAP_AMBIENT) || !defined(PR_CAP_AMBIENT_RAISE) || !defined(PR_CAP_AMBIENT_CLEAR_ALL) */
 
 static mode_t get_umask(void);
 static int set_fsugid(uid_t, gid_t);
@@ -307,8 +315,9 @@ get_umask(void)
 static int
 set_fsugid(uid_t uid, gid_t gid)
 {
-        cap_t caps = NULL;
+        cap_t state = NULL;
         cap_value_t cap = CAP_DAC_OVERRIDE;
+        cap_flag_value_t flag;
         int rv = -1;
 
         setfsgid(gid);
@@ -321,22 +330,26 @@ set_fsugid(uid_t uid, gid_t gid)
                 errno = EPERM;
                 return (-1);
         }
-        if (uid != 0) {
-                /*
-                 * We need to restore CAP_DAC_OVERRIDE because some distributions rely on it
-                 * (e.g. https://bugzilla.redhat.com/show_bug.cgi?id=517575)
-                 */
-                if ((caps = cap_get_proc()) == NULL)
+
+        /*
+         * Changing the filesystem user ID potentially affects effective capabilities.
+         * If allowed, restore CAP_DAC_OVERRIDE because some distributions rely on it
+         * (e.g. https://bugzilla.redhat.com/show_bug.cgi?id=517575).
+         */
+        if ((state = cap_get_proc()) == NULL)
+                goto fail;
+        if (cap_get_flag(state, cap, CAP_PERMITTED, &flag) < 0)
+                goto fail;
+        if (flag == CAP_SET) {
+                if (cap_set_flag(state, CAP_EFFECTIVE, 1, &cap, CAP_SET) < 0)
                         goto fail;
-                if (cap_set_flag(caps, CAP_EFFECTIVE, 1, &cap, CAP_SET) < 0)
-                        goto fail;
-                if (cap_set_proc(caps) < 0)
+                if (cap_set_proc(state) < 0)
                         goto fail;
         }
         rv = 0;
 
  fail:
-        cap_free(caps);
+        cap_free(state);
         return (rv);
 }
 
@@ -637,21 +650,104 @@ path_resolve(struct error *err, char *buf, const char *root, const char *path)
 }
 
 int
-priv_drop(struct error *err, uid_t uid, gid_t gid, bool drop_groups)
+perm_drop_privileges(struct error *err, uid_t uid, gid_t gid, bool drop_groups)
 {
+        uid_t euid;
+        gid_t egid;
+
+        euid = geteuid();
+        egid = getegid();
         if (drop_groups && setgroups(1, &gid) < 0)
                 goto fail;
-        if (setregid(gid, gid) < 0)
+        if (egid != gid && setregid(gid, gid) < 0)
                 goto fail;
-        if (setreuid(uid, uid) < 0)
+        if (euid != uid && setreuid(uid, uid) < 0)
                 goto fail;
-        if (getegid() != gid || geteuid() != uid) {
+        if ((egid != gid && getegid() != gid) ||
+            (euid != uid && geteuid() != uid)) {
                 errno = EPERM;
                 goto fail;
         }
+        if (prctl(PR_SET_NO_NEW_PRIVS, 1, 0, 0, 0) < 0)
+                goto fail;
         return (0);
 
  fail:
-        error_set(err, "privileges relinquishment failed");
+        error_set(err, "privilege change failed");
         return (-1);
+}
+
+int
+perm_drop_bounds(struct error *err)
+{
+        unsigned long n;
+        cap_value_t last_cap = CAP_LAST_CAP;
+
+        if (file_read_ulong(err, PROC_LAST_CAP_PATH, &n) < 0)
+                return (-1);
+        if ((cap_value_t)n >= 0 && (cap_value_t)n > last_cap)
+                last_cap = (cap_value_t)n;
+
+        for (cap_value_t c = 0; c <= last_cap; ++c) {
+                if (cap_get_bound(c) > 0 && cap_drop_bound(c) < 0) {
+                        error_set(err, "capability change failed");
+                        return (-1);
+                }
+        }
+        return (0);
+}
+
+int
+perm_set_capabilities(struct error *err, cap_flag_t type, const cap_value_t caps[], size_t size)
+{
+        cap_t state = NULL;
+        cap_t tmp = NULL;
+        cap_flag_value_t flag;
+        int rv = -1;
+
+        if (type == CAP_AMBIENT) {
+                /* Ambient capabilities are only supported since Linux 4.3 and are not available in libcap. */
+                if (prctl(PR_CAP_AMBIENT, PR_CAP_AMBIENT_CLEAR_ALL, 0, 0, 0) < 0 && errno != EINVAL)
+                        goto fail;
+                if (caps != NULL) {
+                        for (size_t i = 0; i < size; ++i) {
+                                if (prctl(PR_CAP_AMBIENT, PR_CAP_AMBIENT_RAISE, caps[i], 0, 0) < 0 && errno != EINVAL)
+                                        goto fail;
+                        }
+                }
+                return (0);
+        }
+
+        if ((state = cap_get_proc()) == NULL)
+                goto fail;
+        if (cap_clear_flag(state, type) < 0)
+                goto fail;
+        if (caps != NULL) {
+                if (cap_set_flag(state, type, (int)size, caps, CAP_SET) < 0)
+                        goto fail;
+        }
+        if (type == CAP_PERMITTED) {
+                if ((tmp = cap_dup(state)) == NULL)
+                        goto fail;
+                if (cap_clear_flag(state, CAP_EFFECTIVE) < 0)
+                        goto fail;
+                if (caps != NULL) {
+                        for (size_t i = 0; i < size; ++i) {
+                                if (cap_get_flag(tmp, caps[i], CAP_EFFECTIVE, &flag) < 0)
+                                        goto fail;
+                                if (cap_set_flag(state, CAP_EFFECTIVE, 1, &caps[i], flag) < 0)
+                                        goto fail;
+                        }
+                }
+        }
+        if (cap_set_proc(state) < 0)
+                goto fail;
+        rv = 0;
+
+ fail:
+        if (rv < 0)
+                error_set(err, "capability change failed");
+        cap_free(state);
+        cap_free(tmp);
+        return (rv);
 }

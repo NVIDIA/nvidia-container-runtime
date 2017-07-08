@@ -12,11 +12,6 @@
 #include <sys/types.h>
 #include <sys/wait.h>
 
-#if !defined(PR_CAP_AMBIENT) || !defined(PR_CAP_AMBIENT_RAISE)
-# define PR_CAP_AMBIENT       47
-# define PR_CAP_AMBIENT_RAISE 2
-#endif
-
 #include <errno.h>
 #include <paths.h>
 #include <sched.h>
@@ -35,8 +30,8 @@
 
 static pid_t create_process(struct error *);
 static int   change_rootfs(struct error *, const char *, bool *);
-static int   drop_capabilities(struct error *);
-static int   drop_privileges(struct error *, uid_t, gid_t, bool);
+static int   ajust_capabilities(struct error *, uid_t);
+static int   ajust_privileges(struct error *, uid_t, gid_t, bool);
 static int   limit_resources(struct error *);
 static int   limit_syscalls(struct error *);
 
@@ -119,6 +114,10 @@ change_rootfs(struct error *err, const char *rootfs, bool *drop_groups)
         if (chroot(".") < 0)
                 goto fail;
 
+        /*
+         * Check if we are in standalone mode, within a user namespace and
+         * restricted from setting supplementary groups.
+         */
         if ((fs = fopen(PROC_SETGROUPS_PATH(PROC_SELF), "r")) != NULL) {
                 if (fgets(buf, sizeof(buf), fs) == NULL)
                         *buf = '\0';
@@ -142,65 +141,50 @@ change_rootfs(struct error *err, const char *rootfs, bool *drop_groups)
 }
 
 static int
-drop_capabilities(struct error *err)
+ajust_capabilities(struct error *err, uid_t uid)
 {
-        unsigned long v;
-        cap_t caps = NULL;
-        cap_value_t last_cap = 63;
         cap_value_t cap = CAP_DAC_OVERRIDE;
-        int rv = -1;
 
-        if (file_read_ulong(NULL, PROC_LAST_CAP_PATH, &v) == 0) {
-                if ((cap_value_t)v >= 0 && (cap_value_t)v <= last_cap)
-                        last_cap = (cap_value_t)v;
-        }
-
-        /*
-         * Drop all the inheritable capabilities (and the ambient capabilities consequently).
-         * We need to keep CAP_DAC_OVERRIDE because some distributions rely on it
-         * (e.g. https://bugzilla.redhat.com/show_bug.cgi?id=517575)
+        /* Drop all the inheritable capabilities and the ambient capabilities consequently.
+         * Don't bother with the other capabilities, execve will take care of it.
+         * If allowed, set the CAP_DAC_OVERRIDE capability because some distributions rely on it
+         * (e.g. https://bugzilla.redhat.com/show_bug.cgi?id=517575).
          */
-        if ((caps = cap_get_proc()) == NULL)
-                goto fail;
-        if (cap_clear_flag(caps, CAP_INHERITABLE) < 0)
-                goto fail;
-        if (cap_set_flag(caps, CAP_INHERITABLE, 1, &cap, CAP_SET) < 0)
-                goto fail;
-        if (cap_set_proc(caps) < 0)
-                goto fail;
-        if (prctl(PR_CAP_AMBIENT, PR_CAP_AMBIENT_RAISE, cap, 0, 0) < 0 && errno != EINVAL)
-                goto fail;
-
-        /* Drop all the bounding capabilities */
-        for (cap_value_t c = 0; c <= last_cap; ++c) {
-                if (CAP_IS_SUPPORTED(c) && cap_drop_bound(c) < 0)
-                        goto fail;
+        if (perm_set_capabilities(err, CAP_INHERITABLE, &cap, 1) < 0) {
+                if (err->code != EPERM)
+                        return (-1);
+                if (perm_set_capabilities(err, CAP_INHERITABLE, NULL, 0) < 0)
+                        return (-1);
+                log_warn("could not set inheritable capabilities, containers may require additional tuning");
+        } else if (uid != 0 && perm_set_capabilities(err, CAP_AMBIENT, &cap, 1) < 0) {
+                if (err->code != EPERM)
+                        return (-1);
+                log_warn("could not set ambient capabilities, containers may require additional tuning");
         }
-        rv = 0;
 
- fail:
-        if (rv < 0)
-                error_set(err, "capabilities relinquishment failed");
-        cap_free(caps);
-        return (rv);
+        /* Drop all the bounding set */
+        if (perm_drop_bounds(err) < 0)
+                return (-1);
+
+        return (0);
 }
 
 static int
-drop_privileges(struct error *err, uid_t uid, gid_t gid, bool drop_groups)
+ajust_privileges(struct error *err, uid_t uid, gid_t gid, bool drop_groups)
 {
-        if (prctl(PR_SET_SECUREBITS, SECBIT_NO_SETUID_FIXUP, 0, 0, 0) < 0)
-                goto fail;
-        if (priv_drop(err, uid, gid, drop_groups) < 0)
-                return (-1);
-        if (prctl(PR_SET_NO_NEW_PRIVS, 1, 0, 0, 0) < 0)
-                goto fail;
-        if (prctl(PR_SET_DUMPABLE, 0, 0, 0, 0) < 0)
-                goto fail;
-        return (0);
-
- fail:
-        error_set(err, "privileges relinquishment failed");
-        return (-1);
+        /*
+         * Prevent the kernel from adjusting capabilities on UID change.
+         * This is necessary if we want to keep our ambient capabilities.
+         */
+        if (uid != 0 && prctl(PR_SET_SECUREBITS, SECBIT_NO_SETUID_FIXUP, 0, 0, 0) < 0) {
+                if (errno == EPERM)
+                        log_warn("could not preserve capabilities, containers may require additional tuning");
+                else {
+                        error_set(err, "privilege change failed");
+                        return (-1);
+                }
+        }
+        return (perm_drop_privileges(err, uid, gid, drop_groups));
 }
 
 static int
@@ -311,13 +295,13 @@ nvc_ldcache_update(struct nvc_context *ctx, const struct nvc_container *cnt)
 
                 if (nsenter(&ctx->err, cnt->mnt_ns, CLONE_NEWNS) < 0)
                         goto fail;
+                if (ajust_capabilities(&ctx->err, cnt->uid) < 0)
+                        goto fail;
                 if (change_rootfs(&ctx->err, cnt->cfg.rootfs, &drop_groups) < 0)
                         goto fail;
                 if (limit_resources(&ctx->err) < 0)
                         goto fail;
-                if (drop_capabilities(&ctx->err) < 0)
-                        goto fail;
-                if (drop_privileges(&ctx->err, cnt->uid, cnt->gid, drop_groups) < 0)
+                if (ajust_privileges(&ctx->err, cnt->uid, cnt->gid, drop_groups) < 0)
                         goto fail;
                 if (limit_syscalls(&ctx->err) < 0)
                         goto fail;

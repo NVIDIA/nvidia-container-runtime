@@ -123,6 +123,8 @@ setup_rpc_client(struct driver *ctx)
 static void
 setup_rpc_service(struct driver *ctx, uid_t uid, gid_t gid, pid_t ppid)
 {
+        bool drop_groups = true;
+
         log_info("starting driver service");
         prctl(PR_SET_NAME, (unsigned long)"nvc:[driver]", 0, 0, 0);
 
@@ -135,7 +137,9 @@ setup_rpc_service(struct driver *ctx, uid_t uid, gid_t gid, pid_t ppid)
         if (getppid() != ppid)
                 kill(getpid(), SIGTERM);
 
-        if (priv_drop(ctx->err, uid, gid, true) < 0)
+        if (geteuid() == uid && getegid() == gid)
+                drop_groups = false;
+        if (perm_drop_privileges(ctx->err, uid, gid, drop_groups) < 0)
                 goto fail;
         if (reset_cuda_environment(ctx->err) < 0)
                 goto fail;
