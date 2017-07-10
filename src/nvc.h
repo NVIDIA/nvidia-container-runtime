@@ -11,7 +11,7 @@
 
 #ifdef __cplusplus
 extern "C" {
-#endif
+#endif /* __cplusplus */
 
 #define NVC_MAJOR   1
 #define NVC_MINOR   0
@@ -109,6 +109,6 @@ const char *nvc_error(struct nvc_context *);
 
 #ifdef __cplusplus
 }
-#endif
+#endif /* __cplusplus */
 
 #endif /* HEADER_NVC_H */

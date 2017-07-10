@@ -17,7 +17,7 @@
 #include <sched.h>
 #ifdef WITH_SECCOMP
 #include <seccomp.h>
-#endif
+#endif /* WITH_SECCOMP */
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>

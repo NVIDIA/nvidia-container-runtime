@@ -27,8 +27,7 @@
 #include <time.h>
 #include <unistd.h>
 
-#include "nvc_internal.h"
-
+#include "common.h"
 #include "utils.h"
 #include "xfuncs.h"
 

@@ -7,6 +7,7 @@
 
 #include <sys/types.h>
 
+#include <paths.h>
 #include <stdbool.h>
 #include <stdint.h>
 
@@ -14,38 +15,19 @@
 #include "nvc.h"
 #pragma GCC visibility pop
 
+#include "common.h"
 #include "driver.h"
 #include "error.h"
 #include "ldcache.h"
 
-#define PROC_PID                  "/proc/%ld"
-#define PROC_SELF                 "/proc/self"
-#define PROC_MOUNTS_PATH(proc)    proc "/mountinfo"
-#define PROC_CGROUP_PATH(proc)    proc "/cgroup"
-#define PROC_NS_PATH(proc)        proc "/ns/%s"
-#define PROC_SETGROUPS_PATH(proc) proc "/setgroups"
-#define PROC_LAST_CAP_PATH        "/proc/sys/kernel/cap_last_cap"
-#define PROC_OVERFLOW_UID         "/proc/sys/kernel/overflowuid"
-#define PROC_OVERFLOW_GID         "/proc/sys/kernel/overflowgid"
-
-#define LDCACHE_PATH              "/etc/ld.so.cache"
-#define LDCONFIG_PATH             "/sbin/ldconfig"
-#define LDCONFIG_ALT_PATH         "/sbin/ldconfig.real"
-
-#define LIB_DIR                   "/lib64"
-#define USR_BIN_DIR               "/usr/bin"
-#define USR_LIB_DIR               "/usr/lib64"
-#define USR_LIB32_DIR             "/usr/lib32"
-#define USR_LIB32_ALT_DIR         "/usr/lib"
-
-#if defined(__x86_64__)
-# define LIB_ARCH                 LD_X8664_LIB64
-# define LIB32_ARCH               LD_I386_LIB32
-# define USR_LIB_MULTIARCH_DIR    "/usr/lib/x86_64-linux-gnu"
-# define USR_LIB32_MULTIARCH_DIR  "/usr/lib/i386-linux-gnu"
-#else
-# error "unsupported architecture"
-#endif
+#define NV_DEVICE_MAJOR          195
+#define NV_CTL_DEVICE_MINOR      255
+#define NV_DEVICE_PATH           _PATH_DEV "nvidia%d"
+#define NV_CTL_DEVICE_PATH       _PATH_DEV "nvidiactl"
+#define NV_UVM_DEVICE_PATH       _PATH_DEV "nvidia-uvm"
+#define NV_UVM_TOOLS_DEVICE_PATH _PATH_DEV "nvidia-uvm-tools"
+#define NV_PERSISTENCED_SOCKET   _PATH_VARRUN "nvidia-persistenced/socket"
+#define NV_MPS_PIPE_DIR          _PATH_TMP "nvidia-mps"
 
 struct nvc_context {
         bool initialized;
