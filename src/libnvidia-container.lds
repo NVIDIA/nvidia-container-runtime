@@ -1,4 +1,4 @@
-ENTRY(nvc_entry)
+ENTRY(nvc_entrypoint)
 
 SECTIONS {
     .interp :

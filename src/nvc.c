@@ -2,8 +2,11 @@
  * Copyright (c) 2017, NVIDIA CORPORATION. All rights reserved.
  */
 
+#include <gnu/lib-names.h>
+
 #include <sys/types.h>
 
+#include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
 
@@ -21,12 +24,24 @@
 static void load_kernel_modules(void);
 static int  copy_config(struct error *, struct nvc_context *, const struct nvc_config *);
 
+const char interpreter[] __attribute__((section(".interp"))) = LIB_DIR "/" LD_SO;
+
 static const struct nvc_version version = {
         NVC_MAJOR,
         NVC_MINOR,
         NVC_PATCH,
         NVC_VERSION,
 };
+
+void
+nvc_entrypoint(void)
+{
+        printf("version: %s\n", NVC_VERSION);
+        printf("build date: %s\n", BUILD_DATE);
+        printf("build revision: %s\n", BUILD_REVISION);
+        printf("build flags: %s\n", BUILD_FLAGS);
+        exit(EXIT_SUCCESS);
+}
 
 const struct nvc_version *
 nvc_version(void)

@@ -42,7 +42,6 @@ LIB_SRCS     := $(SRCS_DIR)/driver.c        \
                 $(SRCS_DIR)/error.c         \
                 $(SRCS_DIR)/ldcache.c       \
                 $(SRCS_DIR)/nvc.c           \
-                $(SRCS_DIR)/nvc_entry.c     \
                 $(SRCS_DIR)/nvc_exec.c      \
                 $(SRCS_DIR)/nvc_info.c      \
                 $(SRCS_DIR)/nvc_mount.c     \

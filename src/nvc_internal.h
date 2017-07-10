@@ -68,6 +68,6 @@ validate_args(struct nvc_context *ctx, bool predicate)
         return (0);
 }
 
-void nvc_entry(void);
+void nvc_entrypoint(void);
 
 #endif /* HEADER_NVC_INTERNAL_H */
