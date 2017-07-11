@@ -14,6 +14,7 @@
 
 #include "nvc.h"
 
+#include "debug.h"
 #include "dsl.h"
 #include "error_generic.h"
 #include "utils.h"

@@ -120,7 +120,7 @@ LIB_LDLIBS         = $(LIB_LDLIBS_STATIC) $(LIB_LDLIBS_SHARED)
 
 BIN_CPPFLAGS       = $(CPPFLAGS) -include $(BUILD_DEFS)
 BIN_CFLAGS         = $(CFLAGS) -fPIE -flto
-BIN_LDFLAGS        = $(LDFLAGS) -L. -pie -Wl,--strip-all
+BIN_LDFLAGS        = $(LDFLAGS) -L. -pie
 BIN_LDLIBS         = $(LDLIBS) -l:$(LIB_SHARED)
 
 $(word 1,$(LIB_RPC_SRCS)): RPCGENFLAGS=-h
@@ -172,10 +172,12 @@ $(BIN_UTILS): $(BIN_OBJS)
 
 all: release
 
-debug: CFLAGS += -pedantic
+debug: CFLAGS += -pedantic -fsanitize=undefined -fno-omit-frame-pointer -fno-common
+debug: STRIP  := @echo skipping: strip
 debug: shared static utils
 
 release: CPPFLAGS += -DNDEBUG
+release: BIN_LDFLAGS += -Wl,--strip-all
 release: shared static utils
 
 utils: $(BIN_UTILS)

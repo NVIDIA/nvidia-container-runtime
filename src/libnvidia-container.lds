@@ -33,6 +33,8 @@ VERSION {
             nvc_device_info_free;
             nvc_driver_mount;
             nvc_device_mount;
+
+            __ubsan_default_options;
         local:
             *;
     };

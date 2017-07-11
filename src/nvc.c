@@ -17,6 +17,7 @@
 #include "nvc_internal.h"
 
 #include "driver.h"
+#include "debug.h"
 #include "error.h"
 #include "options.h"
 #include "utils.h"
