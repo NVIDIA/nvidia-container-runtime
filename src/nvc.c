@@ -117,6 +117,8 @@ load_kernel_modules(void)
         if (nvidia_modprobe(0, -1) == 0)
                 log_err("could not load kernel module nvidia");
         else {
+                if (nvidia_mknod(NV_CTL_DEVICE_MINOR, -1) == 0)
+                        log_err("could not create kernel module device node");
                 for (int i = 0; i < (int)devs.num_matches; ++i) {
                         if (nvidia_mknod(i, -1) == 0)
                                 log_err("could not create kernel module device node");
