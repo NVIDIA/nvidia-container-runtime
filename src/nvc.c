@@ -10,6 +10,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 
+#include <elfdefinitions.h>
 #include <pci-enum.h>
 #include <nvidia-modprobe-utils.h>
 
@@ -25,6 +26,14 @@ static void load_kernel_modules(void);
 static int  copy_config(struct error *, struct nvc_context *, const struct nvc_config *);
 
 const char interpreter[] __attribute__((section(".interp"))) = LIB_DIR "/" LD_SO;
+
+const struct __attribute__((__packed__)) {
+        Elf_Note hdr;
+        uint32_t desc[5];
+} abitag __attribute__((section (".note.ABI-tag"))) = {
+        {0x04, 0x10, 0x01},
+        {0x554e47, 0x0, 0x3, 0xa, 0x0}, /* GNU Linux 3.10.0 */
+};
 
 static const struct nvc_version version = {
         NVC_MAJOR,

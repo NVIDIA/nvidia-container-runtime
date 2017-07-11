@@ -5,6 +5,10 @@ SECTIONS {
     {
         KEEP(*(.interp))
     }
+    .note.ABI-tag :
+    {
+        KEEP(*(.note.ABI-tag))
+    }
 }
 
 VERSION {
