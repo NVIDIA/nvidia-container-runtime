@@ -314,7 +314,7 @@ nvc_container_new(struct nvc_context *ctx, const struct nvc_container_config *cf
         log_infof("setting bins directory to %s", cnt->cfg.bins_dir);
         log_infof("setting libs directory to %s", cnt->cfg.libs_dir);
         log_infof("setting libs32 directory to %s", cnt->cfg.libs32_dir);
-        log_infof("setting ldconfig to %s", cnt->cfg.ldconfig);
+        log_infof("setting ldconfig to %s%s", cnt->cfg.ldconfig, (cnt->cfg.ldconfig[0] == '@') ? " (host relative)" : "");
         log_infof("setting mount namespace to %s", cnt->mnt_ns);
         if (!(flags & OPT_NO_CGROUPS))
                 log_infof("setting devices cgroup to %s", cnt->dev_cg);

@@ -28,22 +28,23 @@
 #include "utils.h"
 #include "xfuncs.h"
 
-static pid_t create_process(struct error *);
-static int   change_rootfs(struct error *, const char *, bool *);
+static pid_t create_process(struct error *, int);
+static int   change_rootfs(struct error *, const char *, bool, bool *);
 static int   ajust_capabilities(struct error *, uid_t);
 static int   ajust_privileges(struct error *, uid_t, gid_t, bool);
 static int   limit_resources(struct error *);
 static int   limit_syscalls(struct error *);
 
 static pid_t
-create_process(struct error *err)
+create_process(struct error *err, int flags)
 {
         pid_t child;
         int fd[2] = {-1, -1};
         int null = -1;
         int rv = -1;
 
-        if ((log_active() && pipe(fd) < 0) || (child = fork()) < 0) {
+        if ((log_active() && pipe(fd) < 0) ||
+            (child = (pid_t)syscall(SYS_clone, SIGCHLD|flags, NULL, NULL, NULL, NULL)) < 0) {
                 error_set(err, "process creation failed");
                 xclose(fd[0]);
                 xclose(fd[1]);
@@ -77,7 +78,7 @@ create_process(struct error *err)
 }
 
 static int
-change_rootfs(struct error *err, const char *rootfs, bool *drop_groups)
+change_rootfs(struct error *err, const char *rootfs, bool mount_proc, bool *drop_groups)
 {
         int rv = -1;
         int oldroot = -1;
@@ -114,6 +115,9 @@ change_rootfs(struct error *err, const char *rootfs, bool *drop_groups)
         if (chroot(".") < 0)
                 goto fail;
 
+        if (mount_proc && xmount(err, NULL, "/proc", "proc", MS_RDONLY, NULL) < 0)
+                goto fail;
+
         /*
          * Check if we are in standalone mode, within a user namespace and
          * restricted from setting supplementary groups.
@@ -126,7 +130,7 @@ change_rootfs(struct error *err, const char *rootfs, bool *drop_groups)
         *drop_groups = strpcmp(buf, "deny");
 
         /* Hide sensitive mountpoints. */
-        for (size_t i = 0; i < nitems(mounts); ++i) {
+        for (size_t i = mount_proc; i < nitems(mounts); ++i) {
                 if (xmount(err, NULL, mounts[i], "tmpfs", MS_RDONLY, NULL) < 0)
                         goto fail;
         }
@@ -278,17 +282,34 @@ limit_syscalls(maybe_unused struct error *err)
 int
 nvc_ldcache_update(struct nvc_context *ctx, const struct nvc_container *cnt)
 {
+        char **argv;
         pid_t child;
         int status;
         bool drop_groups = true;
+        bool mount_proc = false;
+        int fd = -1;
 
         if (validate_context(ctx) < 0)
                 return (-1);
         if (validate_args(ctx, cnt != NULL) < 0)
                 return (-1);
 
-        log_infof("executing %s at %s", cnt->cfg.ldconfig, cnt->cfg.rootfs);
-        if ((child = create_process(&ctx->err)) < 0)
+        argv = (char * []){cnt->cfg.ldconfig, cnt->cfg.libs_dir, cnt->cfg.libs32_dir, NULL};
+        if (*argv[0] == '@') {
+                /*
+                 * We treat this path specially to be relative to the host filesystem.
+                 * Force proc to be remounted since we're creating a PID namespace and fexecve depends on it.
+                 */
+                ++argv[0];
+                if ((fd = xopen(&ctx->err, argv[0], O_RDONLY|O_CLOEXEC)) < 0)
+                        return (-1);
+                mount_proc = true;
+                log_infof("executing %s from host at %s", argv[0], cnt->cfg.rootfs);
+        } else {
+                log_infof("executing %s at %s", argv[0], cnt->cfg.rootfs);
+        }
+
+        if ((child = create_process(&ctx->err, CLONE_NEWPID|CLONE_NEWIPC)) < 0)
                 return (-1);
         if (child == 0) {
                 prctl(PR_SET_NAME, (unsigned long)"nvc:[ldconfig]", 0, 0, 0);
@@ -297,7 +318,7 @@ nvc_ldcache_update(struct nvc_context *ctx, const struct nvc_container *cnt)
                         goto fail;
                 if (ajust_capabilities(&ctx->err, cnt->uid) < 0)
                         goto fail;
-                if (change_rootfs(&ctx->err, cnt->cfg.rootfs, &drop_groups) < 0)
+                if (change_rootfs(&ctx->err, cnt->cfg.rootfs, mount_proc, &drop_groups) < 0)
                         goto fail;
                 if (limit_resources(&ctx->err) < 0)
                         goto fail;
@@ -306,11 +327,13 @@ nvc_ldcache_update(struct nvc_context *ctx, const struct nvc_container *cnt)
                 if (limit_syscalls(&ctx->err) < 0)
                         goto fail;
 
-                execle(cnt->cfg.ldconfig, cnt->cfg.ldconfig, cnt->cfg.libs_dir, cnt->cfg.libs32_dir,
-                    (char *)NULL, (char * const []){NULL});
+                if (fd < 0)
+                        execve(argv[0], argv, (char * const []){NULL});
+                else
+                        fexecve(fd, argv, (char * const []){NULL});
                 error_set(&ctx->err, "process execution failed");
          fail:
-                log_errf("could not start %s: %s", cnt->cfg.ldconfig, ctx->err.msg);
+                log_errf("could not start %s: %s", argv[0], ctx->err.msg);
                 (ctx->err.code == ENOENT) ? _exit(EXIT_SUCCESS) : _exit(EXIT_FAILURE);
         }
         if (waitpid(child, &status, 0) < 0) {
@@ -318,11 +341,11 @@ nvc_ldcache_update(struct nvc_context *ctx, const struct nvc_container *cnt)
                 return (-1);
         }
         if (WIFSIGNALED(status)) {
-                error_setx(&ctx->err, "process %s terminated with signal %d", cnt->cfg.ldconfig, WTERMSIG(status));
+                error_setx(&ctx->err, "process %s terminated with signal %d", argv[0], WTERMSIG(status));
                 return (-1);
         }
         if (WIFEXITED(status) && (status = WEXITSTATUS(status)) != 0) {
-                error_setx(&ctx->err, "process %s failed with error code: %d", cnt->cfg.ldconfig, status);
+                error_setx(&ctx->err, "process %s failed with error code: %d", argv[0], status);
                 return (-1);
         }
         return (0);
