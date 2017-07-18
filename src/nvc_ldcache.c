@@ -98,9 +98,9 @@ change_rootfs(struct error *err, const char *rootfs, bool mount_proc, bool *drop
                 goto fail;
 
         /* Pivot to the new rootfs and unmount the previous one. */
-        if ((oldroot = xopen(err, "/", O_RDONLY|O_DIRECTORY)) < 0)
+        if ((oldroot = xopen(err, "/", O_PATH|O_DIRECTORY)) < 0)
                 goto fail;
-        if ((newroot = xopen(err, rootfs, O_RDONLY|O_DIRECTORY)) < 0)
+        if ((newroot = xopen(err, rootfs, O_PATH|O_DIRECTORY)) < 0)
                 goto fail;
         if (fchdir(newroot) < 0)
                 goto fail;

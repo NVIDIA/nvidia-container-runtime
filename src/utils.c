@@ -412,7 +412,7 @@ file_create(struct error *err, const char *path, void *data, uid_t uid, gid_t gi
                 if (symlink(data, path) < 0 && errno != EEXIST)
                         goto fail;
         } else {
-                if ((fd = open(path, O_NOFOLLOW|O_CREAT|O_WRONLY, perm)) < 0)
+                if ((fd = open(path, O_NOFOLLOW|O_CREAT, perm)) < 0)
                         goto fail;
                 close(fd);
         }
