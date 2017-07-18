@@ -27,8 +27,8 @@ static char *mount_device(struct error *, const struct nvc_container *, const ch
 static char *mount_ipc(struct error *, const struct nvc_container *, const char *);
 static void unmount(const char *);
 static int  setup_cgroup(struct error *, const char *, dev_t);
-static int  symlink_library(struct error *, const char *, const char *, const char *, const char *);
-static int  symlink_libraries(struct error *, const char *, char *[], size_t, const char *);
+static int  symlink_library(struct error *, const char *, const char *, const char *, const char *, uid_t, gid_t);
+static int  symlink_libraries(struct error *, const struct nvc_container *, const char *, char *[], size_t, const char *);
 
 static char *
 mount_files(struct error *err, const struct nvc_container *cnt, const char *dir, char *paths[], size_t size)
@@ -40,7 +40,7 @@ mount_files(struct error *err, const struct nvc_container *cnt, const char *dir,
         /* Create the top directory under the rootfs. */
         if (path_resolve(err, path, cnt->cfg.rootfs, dir) < 0)
                 return (NULL);
-        if (file_create(err, path, cnt->uid, cnt->gid, MODE_DIR(0755)) < 0)
+        if (file_create(err, path, NULL, cnt->uid, cnt->gid, MODE_DIR(0755)) < 0)
                 return (NULL);
 
         ptr = path + strlen(path);
@@ -59,7 +59,7 @@ mount_files(struct error *err, const struct nvc_container *cnt, const char *dir,
                         goto fail;
                 if (file_mode(err, paths[i], &mode) < 0)
                         goto fail;
-                if (file_create(err, path, cnt->uid, cnt->gid, mode) < 0)
+                if (file_create(err, path, NULL, cnt->uid, cnt->gid, mode) < 0)
                         goto fail;
 
                 log_infof("mounting %s at %s", paths[i], path);
@@ -90,7 +90,7 @@ mount_device(struct error *err, const struct nvc_container *cnt, const char *dev
                 return (NULL);
         if (file_mode(err, dev, &mode) < 0)
                 return (NULL);
-        if (file_create(err, path, cnt->uid, cnt->gid, mode) < 0)
+        if (file_create(err, path, NULL, cnt->uid, cnt->gid, mode) < 0)
                 return (NULL);
 
         log_infof("mounting %s at %s", dev, path);
@@ -118,7 +118,7 @@ mount_ipc(struct error *err, const struct nvc_container *cnt, const char *ipc)
                 return (NULL);
         if (file_mode(err, ipc, &mode) < 0)
                 return (NULL);
-        if (file_create(err, path, cnt->uid, cnt->gid, mode) < 0)
+        if (file_create(err, path, NULL, cnt->uid, cnt->gid, mode) < 0)
                 return (NULL);
 
         log_infof("mounting %s at %s", ipc, path);
@@ -169,7 +169,7 @@ setup_cgroup(struct error *err, const char *cgroup, dev_t id)
 }
 
 static int
-symlink_library(struct error *err, const char *dir, const char *lib, const char *version, const char *linkname)
+symlink_library(struct error *err, const char *dir, const char *lib, const char *version, const char *linkname, uid_t uid, gid_t gid)
 {
         char path[PATH_MAX];
         char *target;
@@ -181,10 +181,8 @@ symlink_library(struct error *err, const char *dir, const char *lib, const char 
                 return (-1);
 
         log_infof("creating symlink %s -> %s", path, target);
-        if (symlink(target, path) < 0 && errno != EEXIST) {
-                error_set(err, "symlink creation failed: %s", path);
+        if (file_create(err, path, target, uid, gid, MODE_LNK(0777)) < 0)
                 goto fail;
-        }
         rv = 0;
 
  fail:
@@ -193,21 +191,19 @@ symlink_library(struct error *err, const char *dir, const char *lib, const char 
 }
 
 static int
-symlink_libraries(struct error *err, const char *dir, char *paths[], size_t size, const char *version)
+symlink_libraries(struct error *err, const struct nvc_container *cnt, const char *dir, char *paths[], size_t size, const char *version)
 {
         char *p;
 
         for (size_t i = 0; i < size; ++i) {
-                if ((p = strrchr(paths[i], '/')) == NULL)
-                        continue;
-                ++p;
+                p = basename(paths[i]);
                 if (!strpcmp(p, "libcuda.so")) {
                         /* XXX Many applications wrongly assume that libcuda.so exists (e.g. with dlopen). */
-                        if (symlink_library(err, dir, "libcuda.so", version, "libcuda.so") < 0)
+                        if (symlink_library(err, dir, "libcuda.so", version, "libcuda.so", cnt->uid, cnt->gid) < 0)
                                 return (-1);
                 } else if (!strpcmp(p, "libGLX_nvidia.so")) {
                         /* XXX GLVND requires this symlink for indirect GLX support. */
-                        if (symlink_library(err, dir, "libGLX_nvidia.so", version, "libGLX_indirect.so.0") < 0)
+                        if (symlink_library(err, dir, "libGLX_nvidia.so", version, "libGLX_indirect.so.0", cnt->uid, cnt->gid) < 0)
                                 return (-1);
                 }
         }
@@ -247,14 +243,14 @@ nvc_driver_mount(struct nvc_context *ctx, const struct nvc_container *cnt, const
         if (info->libs != NULL && info->nlibs > 0) {
                 if ((*mnt = mount_files(&ctx->err, cnt, cnt->cfg.libs_dir, info->libs, info->nlibs)) == NULL)
                         goto fail;
-                if (symlink_libraries(&ctx->err, *mnt, info->libs, info->nlibs, info->kmod_version) < 0)
+                if (symlink_libraries(&ctx->err, cnt, *mnt, info->libs, info->nlibs, info->kmod_version) < 0)
                         goto fail;
                 ++mnt;
         }
         if (info->libs32 != NULL && info->nlibs32 > 0) {
                 if ((*mnt = mount_files(&ctx->err, cnt, cnt->cfg.libs32_dir, info->libs32, info->nlibs32)) == NULL)
                         goto fail;
-                if (symlink_libraries(&ctx->err, *mnt, info->libs32, info->nlibs32, info->kmod_version) < 0)
+                if (symlink_libraries(&ctx->err, cnt, *mnt, info->libs32, info->nlibs32, info->kmod_version) < 0)
                         goto fail;
                 ++mnt;
         }

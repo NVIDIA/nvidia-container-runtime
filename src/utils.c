@@ -379,7 +379,7 @@ make_ancestors(char *path, mode_t perm)
 }
 
 int
-file_create(struct error *err, const char *path, uid_t uid, gid_t gid, mode_t mode)
+file_create(struct error *err, const char *path, void *data, uid_t uid, gid_t gid, mode_t mode)
 {
         char *p;
         uid_t euid;
@@ -391,6 +391,10 @@ file_create(struct error *err, const char *path, uid_t uid, gid_t gid, mode_t mo
         if ((p = xstrdup(err, path)) == NULL)
                 return (-1);
 
+        /*
+         * Change the filesystem UID/GID before creating the file to support user namespaces.
+         * This is required since Linux 4.8 because the inode needs to be created with a UID/GID known to the VFS.
+         */
         euid = geteuid();
         egid = getegid();
         if (set_fsugid(uid, gid) < 0)
@@ -399,10 +403,13 @@ file_create(struct error *err, const char *path, uid_t uid, gid_t gid, mode_t mo
         perm = (0777 & ~get_umask()) | S_IWUSR | S_IXUSR;
         if (make_ancestors(dirname(p), perm) < 0)
                 goto fail;
-
         perm = 0777 & ~get_umask() & mode;
+
         if (S_ISDIR(mode)) {
                 if (mkdir(path, perm) < 0 && errno != EEXIST)
+                        goto fail;
+        } else if (S_ISLNK(mode)) {
+                if (symlink(data, path) < 0 && errno != EEXIST)
                         goto fail;
         } else {
                 if ((fd = open(path, O_NOFOLLOW|O_CREAT|O_WRONLY, perm)) < 0)

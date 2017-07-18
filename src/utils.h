@@ -26,6 +26,7 @@
 
 #define MODE_DIR(mode) ((mode) | S_IFDIR)
 #define MODE_REG(mode) ((mode) | S_IFREG)
+#define MODE_LNK(mode) ((mode) | S_IFLNK)
 
 bool log_active(void);
 void log_open(const char *);
@@ -57,7 +58,7 @@ void array_pack(char *[], size_t *);
 const char **array_append(const char **, const char * const [], size_t);
 
 void *file_map(struct error *, const char *, size_t *);
-int  file_create(struct error *, const char *, uid_t, gid_t, mode_t);
+int  file_create(struct error *, const char *, void *, uid_t, gid_t, mode_t);
 int  file_remove(struct error *, const char *);
 int  file_exists(struct error *, const char *);
 int  file_mode(struct error *, const char *, mode_t *);
