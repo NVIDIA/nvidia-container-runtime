@@ -28,12 +28,22 @@
 #include "utils.h"
 #include "xfuncs.h"
 
+static inline bool secure_mode(void);
 static pid_t create_process(struct error *, int);
 static int   change_rootfs(struct error *, const char *, bool, bool *);
-static int   ajust_capabilities(struct error *, uid_t);
+static int   ajust_capabilities(struct error *, uid_t, bool);
 static int   ajust_privileges(struct error *, uid_t, gid_t, bool);
 static int   limit_resources(struct error *);
 static int   limit_syscalls(struct error *);
+
+static inline bool
+secure_mode(void)
+{
+        char *s;
+
+        s = secure_getenv("NVC_INSECURE_MODE");
+        return (s == NULL || !strcmp(s, "0") || !strcasecmp(s, "false") || !strcasecmp(s, "no"));
+}
 
 static pid_t
 create_process(struct error *err, int flags)
@@ -145,25 +155,34 @@ change_rootfs(struct error *err, const char *rootfs, bool mount_proc, bool *drop
 }
 
 static int
-ajust_capabilities(struct error *err, uid_t uid)
+ajust_capabilities(struct error *err, uid_t uid, bool host_ldconfig)
 {
         cap_value_t cap = CAP_DAC_OVERRIDE;
 
-        /* Drop all the inheritable capabilities and the ambient capabilities consequently.
+        /*
+         * Drop all the inheritable capabilities and the ambient capabilities consequently.
          * Don't bother with the other capabilities, execve will take care of it.
-         * If allowed, set the CAP_DAC_OVERRIDE capability because some distributions rely on it
-         * (e.g. https://bugzilla.redhat.com/show_bug.cgi?id=517575).
          */
-        if (perm_set_capabilities(err, CAP_INHERITABLE, &cap, 1) < 0) {
-                if (err->code != EPERM)
-                        return (-1);
+        if (secure_mode() && !host_ldconfig) {
                 if (perm_set_capabilities(err, CAP_INHERITABLE, NULL, 0) < 0)
                         return (-1);
-                log_warn("could not set inheritable capabilities, containers may require additional tuning");
-        } else if (uid != 0 && perm_set_capabilities(err, CAP_AMBIENT, &cap, 1) < 0) {
-                if (err->code != EPERM)
-                        return (-1);
-                log_warn("could not set ambient capabilities, containers may require additional tuning");
+                log_warn("running in secure mode without host ldconfig, containers may require additional tuning");
+        } else {
+                /*
+                 * If allowed, set the CAP_DAC_OVERRIDE capability because some distributions rely on it
+                 * (e.g. https://bugzilla.redhat.com/show_bug.cgi?id=517575).
+                 */
+                if (perm_set_capabilities(err, CAP_INHERITABLE, &cap, 1) < 0) {
+                        if (err->code != EPERM)
+                                return (-1);
+                        if (perm_set_capabilities(err, CAP_INHERITABLE, NULL, 0) < 0)
+                                return (-1);
+                        log_warn("could not set inheritable capabilities, containers may require additional tuning");
+                } else if (uid != 0 && perm_set_capabilities(err, CAP_AMBIENT, &cap, 1) < 0) {
+                        if (err->code != EPERM)
+                                return (-1);
+                        log_warn("could not set ambient capabilities, containers may require additional tuning");
+                }
         }
 
         /* Drop all the bounding set */
@@ -272,9 +291,13 @@ limit_syscalls(struct error *err)
 }
 #else
 static int
-limit_syscalls(maybe_unused struct error *err)
+limit_syscalls(struct error *err)
 {
-        log_warn("secure computing is disabled, all syscalls are allowed");
+        if (secure_mode()) {
+                error_setx(err, "running in secure mode with seccomp disabled");
+                return (-1);
+        }
+        log_warn("seccomp is disabled, all syscalls are allowed");
         return (0);
 }
 #endif /* WITH_SECCOMP */
@@ -286,7 +309,7 @@ nvc_ldcache_update(struct nvc_context *ctx, const struct nvc_container *cnt)
         pid_t child;
         int status;
         bool drop_groups = true;
-        bool mount_proc = false;
+        bool host_ldconfig = false;
         int fd = -1;
 
         if (validate_context(ctx) < 0)
@@ -303,7 +326,7 @@ nvc_ldcache_update(struct nvc_context *ctx, const struct nvc_container *cnt)
                 ++argv[0];
                 if ((fd = xopen(&ctx->err, argv[0], O_RDONLY|O_CLOEXEC)) < 0)
                         return (-1);
-                mount_proc = true;
+                host_ldconfig = true;
                 log_infof("executing %s from host at %s", argv[0], cnt->cfg.rootfs);
         } else {
                 log_infof("executing %s at %s", argv[0], cnt->cfg.rootfs);
@@ -316,9 +339,9 @@ nvc_ldcache_update(struct nvc_context *ctx, const struct nvc_container *cnt)
 
                 if (nsenter(&ctx->err, cnt->mnt_ns, CLONE_NEWNS) < 0)
                         goto fail;
-                if (ajust_capabilities(&ctx->err, cnt->uid) < 0)
+                if (ajust_capabilities(&ctx->err, cnt->uid, host_ldconfig) < 0)
                         goto fail;
-                if (change_rootfs(&ctx->err, cnt->cfg.rootfs, mount_proc, &drop_groups) < 0)
+                if (change_rootfs(&ctx->err, cnt->cfg.rootfs, host_ldconfig, &drop_groups) < 0)
                         goto fail;
                 if (limit_resources(&ctx->err) < 0)
                         goto fail;

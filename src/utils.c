@@ -57,8 +57,11 @@ log_open(const char *path)
         if (path == NULL || log_active())
                 return;
         logfile = fopen(path, "ae");
-        setbuf(logfile, NULL);
         assert(logfile != NULL);
+        if (log_active()) {
+                setbuf(logfile, NULL);
+                fprintf(logfile, "\n-- WARNING, the following logs are for debugging purposes only --\n\n");
+        }
 }
 
 void
