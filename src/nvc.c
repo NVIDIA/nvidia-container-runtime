@@ -190,7 +190,7 @@ nvc_init(struct nvc_context *ctx, const struct nvc_config *cfg, const char *opts
         if ((flags = options_parse(&ctx->err, opts, library_opts, nitems(library_opts))) < 0)
                 return (-1);
 
-        log_open(getenv("NVC_DEBUG_FILE"));
+        log_open(secure_getenv("NVC_DEBUG_FILE"));
         log_infof("initializing library context (version=%s, build=%s)", NVC_VERSION, BUILD_REVISION);
 
         if (flags & OPT_LOAD_KMODS)

@@ -192,7 +192,7 @@ find_binary_paths(struct error *err, struct nvc_driver_info *info,
         char path[PATH_MAX];
         int rv = -1;
 
-        if ((env = getenv("PATH")) == NULL) {
+        if ((env = secure_getenv("PATH")) == NULL) {
                 error_setx(err, "environment variable PATH not found");
                 return (-1);
         }
@@ -366,7 +366,7 @@ lookup_ipcs(struct error *err, struct nvc_driver_info *info, int32_t flags)
                         return (-1);
         }
         if (!(flags & OPT_NO_MPS)) {
-                if ((mps = getenv("CUDA_MPS_PIPE_DIRECTORY")) == NULL)
+                if ((mps = secure_getenv("CUDA_MPS_PIPE_DIRECTORY")) == NULL)
                         mps = NV_MPS_PIPE_DIR;
                 if (find_ipc_path(err, mps, ptr++) < 0)
                         return (-1);
