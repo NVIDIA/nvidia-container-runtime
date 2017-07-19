@@ -573,6 +573,7 @@ path_resolve(struct error *err, char *buf, const char *root, const char *path)
 
         *ptr = '\0';
         *realpath = '\0';
+        assert(*root == '/');
 
         if ((fd = openrel(err, -1, root)) < 0)
                 goto fail;

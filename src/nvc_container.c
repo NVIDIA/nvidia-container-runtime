@@ -206,11 +206,15 @@ copy_config(struct error *err, struct nvc_container *cnt, const struct nvc_conta
         const char *ldconfig = cfg->ldconfig;
         int multiarch, ret;
 
+        cnt->cfg.pid = cfg->pid;
+        if ((cnt->cfg.rootfs = xrealpath(err, cfg->rootfs, NULL)) == NULL)
+                return (-1);
+
         if (bins_dir == NULL)
                 bins_dir = USR_BIN_DIR;
         if (libs_dir == NULL || libs32_dir == NULL) {
                 /* Debian and its derivatives use a multiarch directory scheme. */
-                if (path_resolve(err, path, cfg->rootfs, "/etc/debian_version") < 0)
+                if (path_resolve(err, path, cnt->cfg.rootfs, "/etc/debian_version") < 0)
                         return (-1);
                 if ((multiarch = file_exists(err, path)) < 0)
                         return (-1);
@@ -229,14 +233,14 @@ copy_config(struct error *err, struct nvc_container *cnt, const struct nvc_conta
                                  * Check which one is used in the rootfs.
                                  */
                                 libs32_dir = USR_LIB32_DIR;
-                                if (path_resolve(err, path, cfg->rootfs, USR_LIB32_DIR) < 0)
+                                if (path_resolve(err, path, cnt->cfg.rootfs, USR_LIB32_DIR) < 0)
                                         return (-1);
                                 if ((ret = file_exists(err, path)) < 0)
                                         return (-1);
                                 if (!ret) {
-                                        if (path_resolve(err, tmp, cfg->rootfs, libs_dir) < 0)
+                                        if (path_resolve(err, tmp, cnt->cfg.rootfs, libs_dir) < 0)
                                                 return (-1);
-                                        if (path_resolve(err, path, cfg->rootfs, USR_LIB32_ALT_DIR) < 0)
+                                        if (path_resolve(err, path, cnt->cfg.rootfs, USR_LIB32_ALT_DIR) < 0)
                                                 return (-1);
                                         if ((ret = file_exists(err, path)) < 0)
                                                 return (-1);
@@ -251,16 +255,13 @@ copy_config(struct error *err, struct nvc_container *cnt, const struct nvc_conta
                  * Some distributions have a wrapper script around ldconfig to reduce package install time.
                  * Always refer to the real one to prevent having our privileges dropped by a shebang.
                  */
-                if (path_resolve(err, path, cfg->rootfs, LDCONFIG_ALT_PATH) < 0)
+                if (path_resolve(err, path, cnt->cfg.rootfs, LDCONFIG_ALT_PATH) < 0)
                         return (-1);
                 if ((ret = file_exists(err, path)) < 0)
                         return (-1);
                 ldconfig = ret ? LDCONFIG_ALT_PATH : LDCONFIG_PATH;
         }
 
-        cnt->cfg.pid = cfg->pid;
-        if ((cnt->cfg.rootfs = xrealpath(err, cfg->rootfs, NULL)) == NULL)
-                return (-1);
         if ((cnt->cfg.bins_dir = xstrdup(err, bins_dir)) == NULL)
                 return (-1);
         if ((cnt->cfg.libs_dir = xstrdup(err, libs_dir)) == NULL)
