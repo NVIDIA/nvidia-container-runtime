@@ -43,6 +43,7 @@ struct context {
         char *devices;
         char *reqs[16];
         size_t nreqs;
+        char *ldconfig;
         bool load_kmods;
         char *init_flags;
         char *driver_flags;
@@ -81,6 +82,7 @@ static const struct argp configure_argp = {
                 {"pid", 'p', "PID", 0, "Container PID", -1},
                 {"device", 'd', "ID", 0, "Device UUID(s) or index(es) to isolate", -1},
                 {"require", 'r', "EXPR", 0, "Check container requirements", -1},
+                {"ldconfig", 'l', "PATH", 0, "Path to the ldconfig binary", -1},
                 {"compute", 'c', NULL, 0, "Enable compute capability", -1},
                 {"utility", 'u', NULL, 0, "Enable utility capability", -1},
                 {"video", 'v', NULL, 0, "Enable video capability", -1},
@@ -189,6 +191,9 @@ configure_parser(int key, char *arg, struct argp_state *state)
                         goto fatal;
                 }
                 ctx->reqs[ctx->nreqs++] = arg;
+                break;
+        case 'l':
+                ctx->ldconfig = arg;
                 break;
         case 'c':
                 if (strjoin(&err, &ctx->driver_flags, "compute", " ") < 0 ||
@@ -336,6 +341,7 @@ configure_command(const struct context *ctx)
                 warn("memory allocation failed");
                 goto fail;
         }
+        cfg->ldconfig = ctx->ldconfig;
         if (nvc_init(nvc, NULL, ctx->init_flags) < 0) {
                 warnx("initialization error: %s", nvc_error(nvc));
                 goto fail;
