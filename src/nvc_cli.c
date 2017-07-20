@@ -12,7 +12,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 
-#include "nvc.h"
+#include "nvc_internal.h"
 
 #include "debug.h"
 #include "dsl.h"
@@ -43,6 +43,7 @@ struct context {
         char *devices;
         char *reqs[16];
         size_t nreqs;
+        bool load_kmods;
         char *init_flags;
         char *driver_flags;
         char *device_flags;
@@ -144,6 +145,7 @@ main_parser(int key, char *arg, struct argp_state *state)
                 setenv("NVC_DEBUG_FILE", arg, 1);
                 break;
         case 'k':
+                ctx->load_kmods = true;
                 if (strjoin(&err, &ctx->init_flags, "load-kmods", " ") < 0)
                         goto fatal;
                 break;
@@ -312,29 +314,48 @@ configure_command(const struct context *ctx)
         struct error err = {0};
         int rv = EXIT_FAILURE;
 
-        nvc = nvc_context_new();
-        cfg = nvc_container_config_new(ctx->pid, ctx->rootfs);
-        if (nvc == NULL || cfg == NULL) {
-                warn("memory allocation failed");
-                goto fail;
+        if (geteuid() != 0) {
+                warnx("requires root privileges");
+                return (rv);
+        }
+        if (perm_set_capabilities(&err, CAP_PERMITTED, permitted_caps, nitems(permitted_caps)) < 0 ||
+            perm_set_capabilities(&err, CAP_INHERITABLE, inherited_caps, nitems(inherited_caps)) < 0 ||
+            perm_drop_bounds(&err) < 0) {
+                warnx("permission error: %s", err.msg);
+                return (rv);
         }
 
         /* Initialize the library and container contexts. */
+        int c = ctx->load_kmods ? CAPS_INIT_KMODS : CAPS_INIT;
+        if (perm_set_capabilities(&err, CAP_EFFECTIVE, effective_caps[c], effective_caps_size(c)) < 0) {
+                warnx("permission error: %s", err.msg);
+                goto fail;
+        }
+        if ((nvc = nvc_context_new()) == NULL ||
+            (cfg = nvc_container_config_new(ctx->pid, ctx->rootfs)) == NULL) {
+                warn("memory allocation failed");
+                goto fail;
+        }
         if (nvc_init(nvc, NULL, ctx->init_flags) < 0) {
                 warnx("initialization error: %s", nvc_error(nvc));
                 goto fail;
         }
+        if (perm_set_capabilities(&err, CAP_EFFECTIVE, effective_caps[CAPS_CONTAINER], effective_caps_size(CAPS_CONTAINER)) < 0) {
+                warnx("permission error: %s", err.msg);
+                goto fail;
+        }
         if ((cnt = nvc_container_new(nvc, cfg, ctx->container_flags)) == NULL) {
-                warnx("initialization error: %s", nvc_error(nvc));
+                warnx("container error: %s", nvc_error(nvc));
                 goto fail;
         }
 
         /* Query the driver and device information. */
-        if ((drv = nvc_driver_info_new(nvc, ctx->driver_flags)) == NULL) {
-                warnx("detection error: %s", nvc_error(nvc));
+        if (perm_set_capabilities(&err, CAP_EFFECTIVE, effective_caps[CAPS_INFO], effective_caps_size(CAPS_INFO)) < 0) {
+                warnx("permission error: %s", err.msg);
                 goto fail;
         }
-        if ((dev = nvc_device_info_new(nvc, ctx->device_flags)) == NULL) {
+        if ((drv = nvc_driver_info_new(nvc, ctx->driver_flags)) == NULL ||
+            (dev = nvc_device_info_new(nvc, ctx->device_flags)) == NULL) {
                 warnx("detection error: %s", nvc_error(nvc));
                 goto fail;
         }
@@ -356,6 +377,10 @@ configure_command(const struct context *ctx)
         }
 
         /* Mount the driver and visible devices. */
+        if (perm_set_capabilities(&err, CAP_EFFECTIVE, effective_caps[CAPS_MOUNT], effective_caps_size(CAPS_MOUNT)) < 0) {
+                warnx("permission error: %s", err.msg);
+                goto fail;
+        }
         if (nvc_driver_mount(nvc, cnt, drv) < 0) {
                 warnx("mount error: %s", nvc_error(nvc));
                 goto fail;
@@ -366,11 +391,21 @@ configure_command(const struct context *ctx)
                         goto fail;
                 }
         }
+
+        /* Update the container ldcache. */
+        if (perm_set_capabilities(&err, CAP_EFFECTIVE, effective_caps[CAPS_LDCACHE], effective_caps_size(CAPS_LDCACHE)) < 0) {
+                warnx("permission error: %s", err.msg);
+                goto fail;
+        }
         if (nvc_ldcache_update(nvc, cnt) < 0) {
-                warnx("mount error: %s", nvc_error(nvc));
+                warnx("ldcache error: %s", nvc_error(nvc));
                 goto fail;
         }
 
+        if (perm_set_capabilities(&err, CAP_EFFECTIVE, effective_caps[CAPS_SHUTDOWN], effective_caps_size(CAPS_SHUTDOWN)) < 0) {
+                warnx("permission error: %s", err.msg);
+                goto fail;
+        }
         rv = EXIT_SUCCESS;
  fail:
         nvc_shutdown(nvc);

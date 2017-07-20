@@ -121,7 +121,7 @@ LIB_LDLIBS         = $(LIB_LDLIBS_STATIC) $(LIB_LDLIBS_SHARED)
 BIN_CPPFLAGS       = $(CPPFLAGS) -include $(BUILD_DEFS)
 BIN_CFLAGS         = $(CFLAGS) -fPIE -flto
 BIN_LDFLAGS        = $(LDFLAGS) -L. -pie
-BIN_LDLIBS         = $(LDLIBS) -l:$(LIB_SHARED)
+BIN_LDLIBS         = $(LDLIBS) -l:$(LIB_SHARED) -lcap
 
 $(word 1,$(LIB_RPC_SRCS)): RPCGENFLAGS=-h
 $(word 2,$(LIB_RPC_SRCS)): RPCGENFLAGS=-c

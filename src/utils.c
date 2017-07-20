@@ -719,7 +719,7 @@ perm_set_capabilities(struct error *err, cap_flag_t type, const cap_value_t caps
                 /* Ambient capabilities are only supported since Linux 4.3 and are not available in libcap. */
                 if (prctl(PR_CAP_AMBIENT, PR_CAP_AMBIENT_CLEAR_ALL, 0, 0, 0) < 0 && errno != EINVAL)
                         goto fail;
-                if (caps != NULL) {
+                if (caps != NULL && size > 0) {
                         for (size_t i = 0; i < size; ++i) {
                                 if (prctl(PR_CAP_AMBIENT, PR_CAP_AMBIENT_RAISE, caps[i], 0, 0) < 0 && errno != EINVAL)
                                         goto fail;
@@ -732,7 +732,7 @@ perm_set_capabilities(struct error *err, cap_flag_t type, const cap_value_t caps
                 goto fail;
         if (cap_clear_flag(state, type) < 0)
                 goto fail;
-        if (caps != NULL) {
+        if (caps != NULL && size > 0) {
                 if (cap_set_flag(state, type, (int)size, caps, CAP_SET) < 0)
                         goto fail;
         }
@@ -741,7 +741,7 @@ perm_set_capabilities(struct error *err, cap_flag_t type, const cap_value_t caps
                         goto fail;
                 if (cap_clear_flag(state, CAP_EFFECTIVE) < 0)
                         goto fail;
-                if (caps != NULL) {
+                if (caps != NULL && size > 0) {
                         for (size_t i = 0; i < size; ++i) {
                                 if (cap_get_flag(tmp, caps[i], CAP_EFFECTIVE, &flag) < 0)
                                         goto fail;

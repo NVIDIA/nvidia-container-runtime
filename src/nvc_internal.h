@@ -5,6 +5,7 @@
 #ifndef HEADER_NVC_INTERNAL_H
 #define HEADER_NVC_INTERNAL_H
 
+#include <sys/capability.h>
 #include <sys/types.h>
 
 #include <paths.h>
@@ -19,6 +20,7 @@
 #include "driver.h"
 #include "error.h"
 #include "ldcache.h"
+#include "utils.h"
 
 #define NV_DEVICE_MAJOR          195
 #define NV_CTL_DEVICE_MINOR      255
@@ -45,6 +47,58 @@ struct nvc_container {
         char *mnt_ns;
         char *dev_cg;
 };
+
+enum {
+        CAPS_INIT,
+        CAPS_INIT_KMODS,
+        CAPS_SHUTDOWN,
+        CAPS_CONTAINER,
+        CAPS_INFO,
+        CAPS_MOUNT,
+        CAPS_LDCACHE,
+};
+
+static const cap_value_t permitted_caps[] = {
+        CAP_DAC_OVERRIDE,    /* rhel, cgroups */
+        CAP_DAC_READ_SEARCH, /* userns */
+        CAP_KILL,            /* privsep */
+        CAP_MKNOD,           /* kmods */
+        CAP_SETGID,          /* privsep, userns */
+        CAP_SETPCAP,         /* bounds, userns */
+        CAP_SETUID,          /* privsep, userns */
+        CAP_SYS_ADMIN,       /* setns, mount */
+        CAP_SYS_CHROOT,      /* setns, chroot */
+        CAP_SYS_MODULE,      /* kmods */
+        CAP_SYS_PTRACE,      /* procns */
+};
+
+static const cap_value_t effective_caps[][nitems(permitted_caps) + 1] = {
+        [CAPS_INIT]       = {CAP_KILL, CAP_SETGID, CAP_SETUID, -1},
+        [CAPS_INIT_KMODS] = {CAP_MKNOD, CAP_SYS_MODULE, CAP_KILL, CAP_SETGID, CAP_SETUID, -1},
+        [CAPS_SHUTDOWN]   = {CAP_KILL, -1},
+        [CAPS_CONTAINER]  = {CAP_DAC_READ_SEARCH, -1},
+        [CAPS_INFO]       = {-1},
+        [CAPS_MOUNT]      = {CAP_DAC_READ_SEARCH, CAP_SETGID, CAP_SETUID, CAP_SYS_ADMIN,
+                             CAP_SYS_CHROOT, CAP_SYS_PTRACE, -1},
+        [CAPS_LDCACHE]    = {CAP_DAC_READ_SEARCH, CAP_SETGID, CAP_SETPCAP, CAP_SETUID,
+                             CAP_SYS_ADMIN, CAP_SYS_CHROOT, CAP_SYS_PTRACE, -1},
+};
+
+static const cap_value_t inherited_caps[] = {
+        CAP_DAC_OVERRIDE,
+};
+
+static inline size_t
+effective_caps_size(int idx)
+{
+        size_t i;
+
+        for (i = 0; i < nitems(*effective_caps); ++i) {
+            if (effective_caps[idx][i] == -1)
+                break;
+        }
+        return (i);
+}
 
 static inline int
 validate_context(struct nvc_context *ctx)
