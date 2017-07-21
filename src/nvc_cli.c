@@ -375,11 +375,13 @@ configure_command(const struct context *ctx)
         }
 
         /* Select the visible GPU devices. */
-        gpus = alloca(dev->ngpus * sizeof(*gpus));
-        memset(gpus, 0, dev->ngpus * sizeof(*gpus));
-        if (select_gpu_devices(&err, ctx->devices, gpus, dev->gpus, dev->ngpus) < 0) {
-                warnx("device error: %s", err.msg);
-                goto fail;
+        if (dev->ngpus > 0) {
+                gpus = alloca(dev->ngpus * sizeof(*gpus));
+                memset(gpus, 0, dev->ngpus * sizeof(*gpus));
+                if (select_gpu_devices(&err, ctx->devices, gpus, dev->gpus, dev->ngpus) < 0) {
+                        warnx("device error: %s", err.msg);
+                        goto fail;
+                }
         }
 
         /* Mount the driver and visible devices. */
