@@ -185,6 +185,8 @@ nvc_init(struct nvc_context *ctx, const struct nvc_config *cfg, const char *opts
                 return (0);
         if (cfg == NULL)
                 cfg = &(struct nvc_config){NULL, (uid_t)-1, (gid_t)-1};
+        if (validate_args(ctx, !strempty(cfg->ldcache)) < 0)
+                return (-1);
         if (opts == NULL)
                 opts = default_library_opts;
         if ((flags = options_parse(&ctx->err, opts, library_opts, nitems(library_opts))) < 0)

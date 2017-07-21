@@ -282,7 +282,8 @@ nvc_container_new(struct nvc_context *ctx, const struct nvc_container_config *cf
 
         if (validate_context(ctx) < 0)
                 return (NULL);
-        if (validate_args(ctx, cfg != NULL && cfg->pid > 0 && cfg->rootfs != NULL) < 0)
+        if (validate_args(ctx, cfg != NULL && cfg->pid > 0 && cfg->rootfs != NULL && !strempty(cfg->rootfs) &&
+            !strempty(cfg->bins_dir) && !strempty(cfg->libs_dir) && !strempty(cfg->libs32_dir) && !strempty(cfg->ldconfig)) < 0)
                 return (NULL);
         if (opts == NULL)
                 opts = default_container_opts;

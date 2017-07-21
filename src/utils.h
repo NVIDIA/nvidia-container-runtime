@@ -45,6 +45,7 @@ int  log_pipe_output(struct error *, int[2]);
 void strlower(char *);
 int  strpcmp(const char *, const char *);
 int  strrcmp(const char *, const char *);
+bool strempty(const char *);
 bool strmatch(const char *, const char * const [], size_t);
 int  strtopid(struct error *, const char *, pid_t *);
 int  strjoin(struct error *, char **, const char *, const char *);

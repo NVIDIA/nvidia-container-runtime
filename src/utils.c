@@ -152,6 +152,12 @@ strrcmp(const char *s1, const char *s2)
 }
 
 bool
+strempty(const char *str)
+{
+        return (str != NULL && *str == '\0');
+}
+
+bool
 strmatch(const char *str, const char * const arr[], size_t size)
 {
         for (size_t i = 0; i < size; ++i) {
