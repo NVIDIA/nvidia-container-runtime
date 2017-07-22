@@ -267,7 +267,7 @@ static int
 check_driver_version(void *data, enum dsl_comparator cmp, const char *version)
 {
         const struct nvc_driver_info *drv = data;
-        return (dsl_compare_version(drv->kmod_version, cmp, version));
+        return (dsl_compare_version(drv->nvrm_version, cmp, version));
 }
 
 static int

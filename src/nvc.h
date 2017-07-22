@@ -42,7 +42,7 @@ struct nvc_device_node {
 };
 
 struct nvc_driver_info {
-        char *kmod_version;
+        char *nvrm_version;
         char *cuda_version;
         char **bins;
         size_t nbins;

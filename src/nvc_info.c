@@ -127,7 +127,7 @@ select_libraries(struct error *err, void *ptr, const char *orig_path, const char
                         goto done;
         }
         /* Check the driver version. */
-        if ((rv = !strrcmp(lib, info->kmod_version)) == false)
+        if ((rv = !strrcmp(lib, info->nvrm_version)) == false)
                 goto done;
         if (strmatch(lib, graphic_libs_compat, nitems(graphic_libs_compat))) {
                 /* Only choose OpenGL/EGL libraries issued by NVIDIA. */
@@ -392,7 +392,7 @@ nvc_driver_info_new(struct nvc_context *ctx, const char *opts)
         if ((info = xcalloc(&ctx->err, 1, sizeof(*info))) == NULL)
                 return (NULL);
 
-        if (driver_get_rm_version(&ctx->drv, &info->kmod_version) < 0)
+        if (driver_get_rm_version(&ctx->drv, &info->nvrm_version) < 0)
                 goto fail;
         if (driver_get_cuda_version(&ctx->drv, &info->cuda_version) < 0)
                 goto fail;
@@ -416,7 +416,7 @@ nvc_driver_info_free(struct nvc_driver_info *info)
 {
         if (info == NULL)
                 return;
-        free(info->kmod_version);
+        free(info->nvrm_version);
         free(info->cuda_version);
         array_free(info->bins, info->nbins);
         array_free(info->libs, info->nlibs);

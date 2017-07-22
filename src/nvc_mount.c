@@ -243,14 +243,14 @@ nvc_driver_mount(struct nvc_context *ctx, const struct nvc_container *cnt, const
         if (info->libs != NULL && info->nlibs > 0) {
                 if ((*mnt = mount_files(&ctx->err, cnt, cnt->cfg.libs_dir, info->libs, info->nlibs)) == NULL)
                         goto fail;
-                if (symlink_libraries(&ctx->err, cnt, *mnt, info->libs, info->nlibs, info->kmod_version) < 0)
+                if (symlink_libraries(&ctx->err, cnt, *mnt, info->libs, info->nlibs, info->nvrm_version) < 0)
                         goto fail;
                 ++mnt;
         }
         if (info->libs32 != NULL && info->nlibs32 > 0) {
                 if ((*mnt = mount_files(&ctx->err, cnt, cnt->cfg.libs32_dir, info->libs32, info->nlibs32)) == NULL)
                         goto fail;
-                if (symlink_libraries(&ctx->err, cnt, *mnt, info->libs32, info->nlibs32, info->kmod_version) < 0)
+                if (symlink_libraries(&ctx->err, cnt, *mnt, info->libs32, info->nlibs32, info->nvrm_version) < 0)
                         goto fail;
                 ++mnt;
         }
