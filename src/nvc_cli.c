@@ -25,7 +25,9 @@ struct context;
 static void print_version(FILE *, struct argp_state *);
 static const struct command *parse_command(struct argp_state *);
 static error_t main_parser(int, char *, struct argp_state *);
+static error_t list_parser(int, char *, struct argp_state *);
 static error_t configure_parser(int, char *, struct argp_state *);
+static int list_command(const struct context *);
 static int configure_command(const struct context *);
 static int check_cuda_version(void *, enum dsl_comparator, const char *);
 static int check_driver_version(void *, enum dsl_comparator, const char *);
@@ -45,6 +47,7 @@ struct context {
         size_t nreqs;
         char *ldconfig;
         bool load_kmods;
+        bool list_info;
         char *init_flags;
         char *driver_flags;
         char *device_flags;
@@ -65,12 +68,33 @@ static struct argp main_argp = {
                 {"debug", 'd', "FILE", 0, "Log debug information", -1},
                 {"load-kmods", 'k', NULL, 0, "Load kernel modules", -1},
                 {NULL, 0, NULL, 0, "Commands:", 0},
+                {"list", 0, NULL, OPTION_DOC|OPTION_NO_USAGE, "List host driver components", 0},
                 {"configure", 0, NULL, OPTION_DOC|OPTION_NO_USAGE, "Configure a container with GPU support", 0},
                 {0},
         },
         main_parser,
         "COMMAND [ARG...]",
         "Command line utility for manipulating NVIDIA GPU containers.",
+        NULL,
+        NULL,
+        NULL,
+};
+
+static const struct argp list_argp = {
+        (const struct argp_option[]){
+                {NULL, 0, NULL, 0, "Options:", -1},
+                {"info", 'i', NULL, 0, "List driver version information", -1},
+                {"device", 'd', "ID", 0, "Device UUID(s) or index(es) to list", -1},
+                {"compute", 'c', NULL, 0, "List compute components", -1},
+                {"utility", 'u', NULL, 0, "List utility components", -1},
+                {"video", 'v', NULL, 0, "List video components", -1},
+                {"graphic", 'g', NULL, 0, "List graphic components", -1},
+                {"compat32", 0x80, NULL, 0, "List 32bits components", -1},
+                {0},
+        },
+        list_parser,
+        NULL,
+        "Query the host driver and list the components required in order to configure a container with GPU support.",
         NULL,
         NULL,
         NULL,
@@ -104,6 +128,7 @@ static const struct argp configure_argp = {
 };
 
 static const struct command commands[] = {
+        {"list", &list_argp, &list_command},
         {"configure", &configure_argp, &configure_command},
 };
 
@@ -159,6 +184,54 @@ main_parser(int key, char *arg, struct argp_state *state)
         case ARGP_KEY_END:
                 if (ctx->command == NULL)
                         argp_usage(state);
+                break;
+        default:
+                return (ARGP_ERR_UNKNOWN);
+        }
+        return (0);
+
+ fatal:
+        errx(EXIT_FAILURE, "input error: %s", err.msg);
+        return (0);
+}
+
+static error_t
+list_parser(int key, char *arg, struct argp_state *state)
+{
+        struct context *ctx = state->input;
+        struct error err = {0};
+
+        switch (key) {
+        case 'i':
+                ctx->list_info = true;
+                break;
+        case 'd':
+                if (strjoin(&err, &ctx->devices, arg, ",") < 0)
+                        goto fatal;
+                break;
+        case 'c':
+                if (strjoin(&err, &ctx->driver_flags, "compute", " ") < 0 ||
+                    strjoin(&err, &ctx->device_flags, "compute", " ") < 0)
+                        goto fatal;
+                break;
+        case 'u':
+                if (strjoin(&err, &ctx->driver_flags, "utility", " ") < 0 ||
+                    strjoin(&err, &ctx->device_flags, "utility", " ") < 0)
+                        goto fatal;
+                break;
+        case 'v':
+                if (strjoin(&err, &ctx->driver_flags, "video", " ") < 0 ||
+                    strjoin(&err, &ctx->device_flags, "video", " ") < 0)
+                        goto fatal;
+                break;
+        case 'g':
+                if (strjoin(&err, &ctx->driver_flags, "graphic", " ") < 0 ||
+                    strjoin(&err, &ctx->device_flags, "graphic", " ") < 0)
+                        goto fatal;
+                break;
+        case 0x80:
+                if (strjoin(&err, &ctx->driver_flags, "compat32", " ") < 0)
+                        goto fatal;
                 break;
         default:
                 return (ARGP_ERR_UNKNOWN);
@@ -305,6 +378,112 @@ select_gpu_devices(struct error *err, char *devs, const struct nvc_device *selec
          next: ;
         }
         return (0);
+}
+
+static int
+list_command(const struct context *ctx)
+{
+        struct nvc_context *nvc = NULL;
+        struct nvc_config *cfg = NULL;
+        struct nvc_driver_info *drv = NULL;
+        struct nvc_device_info *dev = NULL;
+        const struct nvc_device **gpus = NULL;
+        struct error err = {0};
+        int rv = EXIT_FAILURE;
+        uid_t uid;
+        gid_t gid;
+
+        uid = geteuid();
+        gid = getegid();
+        if (uid != 0 && ctx->load_kmods) {
+                warnx("requires root privileges");
+                return (rv);
+        }
+        const cap_value_t *pcaps = (uid == 0) ? permitted_caps : NULL;
+        size_t pcaps_size = (uid == 0) ? nitems(permitted_caps) : 0;
+        if (perm_set_capabilities(&err, CAP_PERMITTED, pcaps, pcaps_size) < 0) {
+                warnx("permission error: %s", err.msg);
+                return (rv);
+        }
+
+        /* Initialize the library. */
+        int c = ctx->load_kmods ? CAPS_INIT_KMODS : CAPS_INIT;
+        if (uid == 0 && perm_set_capabilities(&err, CAP_EFFECTIVE, effective_caps[c], effective_caps_size(c)) < 0) {
+                warnx("permission error: %s", err.msg);
+                goto fail;
+        }
+        if ((nvc = nvc_context_new()) == NULL ||
+            (cfg = nvc_config_new()) == NULL) {
+                warn("memory allocation failed");
+                goto fail;
+        }
+        if (uid != 0) {
+                cfg->uid = uid;
+                cfg->gid = gid;
+        }
+        if (nvc_init(nvc, cfg, ctx->init_flags) < 0) {
+                warnx("initialization error: %s", nvc_error(nvc));
+                goto fail;
+        }
+
+        /* Query the driver and device information. */
+        if (uid == 0 && perm_set_capabilities(&err, CAP_EFFECTIVE, effective_caps[CAPS_INFO], effective_caps_size(CAPS_INFO)) < 0) {
+                warnx("permission error: %s", err.msg);
+                goto fail;
+        }
+        if ((drv = nvc_driver_info_new(nvc, (ctx->driver_flags != NULL) ? ctx->driver_flags : "")) == NULL ||
+            (dev = nvc_device_info_new(nvc, (ctx->device_flags != NULL) ? ctx->device_flags : "")) == NULL) {
+                warnx("detection error: %s", nvc_error(nvc));
+                goto fail;
+        }
+
+        /* List the driver information. */
+        if (ctx->list_info) {
+                printf("NVRM version: %s\n", drv->nvrm_version);
+                printf("CUDA version: %s\n", drv->cuda_version);
+        }
+
+        /* List the visible GPU devices. */
+        if (dev->ngpus > 0) {
+                gpus = alloca(dev->ngpus * sizeof(*gpus));
+                memset(gpus, 0, dev->ngpus * sizeof(*gpus));
+                if (select_gpu_devices(&err, ctx->devices, gpus, dev->gpus, dev->ngpus) < 0) {
+                        warnx("device error: %s", err.msg);
+                        goto fail;
+                }
+        }
+        if (ctx->devices != NULL) {
+                for (size_t i = 0; i < drv->ndevs; ++i)
+                        printf("%s\n", drv->devs[i].path);
+                for (size_t i = 0; i < dev->ngpus; ++i) {
+                        if (gpus[i] != NULL)
+                                printf("%s\n", gpus[i]->node.path);
+                }
+        }
+
+        /* List the driver components */
+        for (size_t i = 0; i < drv->nbins; ++i)
+                printf("%s\n", drv->bins[i]);
+        for (size_t i = 0; i < drv->nlibs; ++i)
+                printf("%s\n", drv->libs[i]);
+        for (size_t i = 0; i < drv->nlibs32; ++i)
+                printf("%s\n", drv->libs32[i]);
+        for (size_t i = 0; i < drv->nipcs; ++i)
+                printf("%s\n", drv->ipcs[i]);
+
+        if (uid == 0 && perm_set_capabilities(&err, CAP_EFFECTIVE, effective_caps[CAPS_SHUTDOWN], effective_caps_size(CAPS_SHUTDOWN)) < 0) {
+                warnx("permission error: %s", err.msg);
+                goto fail;
+        }
+        rv = EXIT_SUCCESS;
+ fail:
+        nvc_shutdown(nvc);
+        nvc_device_info_free(dev);
+        nvc_driver_info_free(drv);
+        nvc_config_free(cfg);
+        nvc_context_free(nvc);
+        error_reset(&err);
+        return (rv);
 }
 
 static int
