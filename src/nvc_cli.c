@@ -22,6 +22,7 @@
 struct command;
 struct context;
 
+static bool is_root_dir(const char *);
 static void print_version(FILE *, struct argp_state *);
 static const struct command *parse_command(struct argp_state *);
 static error_t main_parser(int, char *, struct argp_state *);
@@ -136,6 +137,19 @@ static const struct dsl_rule rules[] = {
         {"cuda", &check_cuda_version},
         {"driver", &check_driver_version},
 };
+
+static bool
+is_root_dir(const char *path)
+{
+        bool rv = false;
+        char *p;
+
+        p = realpath(path, NULL);
+        if (p != NULL && !strcmp(p, "/"))
+                rv = true;
+        free(p);
+        return (rv);
+}
 
 static void
 print_version(FILE *stream, maybe_unused struct argp_state *state)
@@ -303,6 +317,10 @@ configure_parser(int key, char *arg, struct argp_state *state)
         case ARGP_KEY_ARG:
                 if (state->arg_num > 0)
                         argp_usage(state);
+                if (is_root_dir(arg)) {
+                        error_setx(&err, "invalid rootfs directory");
+                        goto fatal;
+                }
                 ctx->rootfs = arg;
                 break;
         case ARGP_KEY_SUCCESS:
