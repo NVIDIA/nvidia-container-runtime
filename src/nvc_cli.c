@@ -120,7 +120,7 @@ static const struct argp configure_argp = {
         configure_parser,
         "ROOTFS",
         "Configure a container with GPU support by exposing device drivers to it.\n\n"
-        "This command enters the namespace of the container process referred by PID (or the current process if none specified) "
+        "This command enters the namespace of the container process referred by PID (or the current parent process if none specified) "
         "and performs the necessary steps to ensure that the given capabilities are available inside the container.\n"
         "It is assumed that the container has been created but not yet started, and the host filesystem is accessible (i.e. chroot/pivot_root hasn't been called).",
         NULL,
@@ -328,7 +328,7 @@ configure_parser(int key, char *arg, struct argp_state *state)
                         if (strjoin(&err, &ctx->container_flags, "supervised", " ") < 0)
                                 goto fatal;
                 } else {
-                        ctx->pid = getpid();
+                        ctx->pid = getppid();
                         if (strjoin(&err, &ctx->container_flags, "standalone", " ") < 0)
                                 goto fatal;
                 }
