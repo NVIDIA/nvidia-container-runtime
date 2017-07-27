@@ -310,6 +310,16 @@ file_map(struct error *err, const char *path, size_t *length)
         return (p);
 }
 
+int
+file_unmap(struct error *err, const char *path, void *addr, size_t length)
+{
+        if (munmap(addr, length) < 0) {
+                error_set(err, "file unmapping failed: %s", path);
+                return (-1);
+        }
+        return (0);
+}
+
 static mode_t
 get_umask(void)
 {

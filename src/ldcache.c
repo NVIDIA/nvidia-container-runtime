@@ -90,17 +90,15 @@ ldcache_open(struct ldcache *ctx)
 
  fail:
         error_setx(ctx->err, "unsupported file format: %s", ctx->path);
-        munmap(ctx->addr, ctx->size);
+        file_unmap(NULL, ctx->path, ctx->addr, ctx->size);
         return (-1);
 }
 
 int
 ldcache_close(struct ldcache *ctx)
 {
-        if (munmap(ctx->addr, ctx->size) < 0) {
-                error_set(ctx->err, "file unmapping failed: %s", ctx->path);
+        if (file_unmap(ctx->err, ctx->path, ctx->addr, ctx->size) < 0)
                 return (-1);
-        }
 
         ctx->addr = NULL;
         ctx->ptr = NULL;
