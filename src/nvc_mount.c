@@ -157,7 +157,8 @@ setup_cgroup(struct error *err, const char *cgroup, dev_t id)
                 return (-1);
 
         log_infof("whitelisting device node %u:%u", major(id), minor(id));
-        if (fprintf(fs, CGROUP_DEVICE_STR, major(id), minor(id), "rwm") < 0 || ferror(fs)) {
+        /* XXX dprintf doesn't seem to catch the write errors, flush the stream explicitly instead. */
+        if (fprintf(fs, CGROUP_DEVICE_STR, major(id), minor(id), "rwm") < 0 || fflush(fs) == EOF || ferror(fs)) {
                 error_set(err, "write error: %s", path);
                 goto fail;
         }
