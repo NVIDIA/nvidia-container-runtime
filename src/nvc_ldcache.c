@@ -359,6 +359,8 @@ nvc_ldcache_update(struct nvc_context *ctx, const struct nvc_container *cnt)
                 log_errf("could not start %s: %s", argv[0], ctx->err.msg);
                 (ctx->err.code == ENOENT) ? _exit(EXIT_SUCCESS) : _exit(EXIT_FAILURE);
         }
+
+        xclose(fd);
         if (waitpid(child, &status, 0) < 0) {
                 error_set(&ctx->err, "process reaping failed");
                 return (-1);
