@@ -361,11 +361,11 @@ lookup_ipcs(struct error *err, struct nvc_driver_info *info, int32_t flags)
         if (info->ipcs == NULL)
                 return (-1);
 
-        if (!(flags & OPT_NO_PERSISTENCED)) {
+        if ((flags & OPT_UTILITY_LIBS) && !(flags & OPT_NO_PERSISTENCED)) {
                 if (find_ipc_path(err, NV_PERSISTENCED_SOCKET, ptr++) < 0)
                         return (-1);
         }
-        if (!(flags & OPT_NO_MPS)) {
+        if ((flags & OPT_COMPUTE_LIBS) && !(flags & OPT_NO_MPS)) {
                 if ((mps = secure_getenv("CUDA_MPS_PIPE_DIRECTORY")) == NULL)
                         mps = NV_MPS_PIPE_DIR;
                 if (find_ipc_path(err, mps, ptr++) < 0)
