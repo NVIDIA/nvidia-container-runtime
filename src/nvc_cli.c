@@ -417,11 +417,18 @@ list_command(const struct context *ctx)
                 warnx("requires root privileges");
                 return (rv);
         }
-        const cap_value_t *pcaps = (uid == 0) ? permitted_caps : NULL;
-        size_t pcaps_size = (uid == 0) ? nitems(permitted_caps) : 0;
-        if (perm_set_capabilities(&err, CAP_PERMITTED, pcaps, pcaps_size) < 0) {
-                warnx("permission error: %s", err.msg);
-                return (rv);
+        if (uid == 0) {
+                if (perm_set_capabilities(&err, CAP_PERMITTED, permitted_caps, nitems(permitted_caps)) < 0 ||
+                    perm_set_capabilities(&err, CAP_INHERITABLE, inherited_caps, nitems(inherited_caps)) < 0 ||
+                    perm_drop_bounds(&err) < 0) {
+                        warnx("permission error: %s", err.msg);
+                        return (rv);
+                }
+        } else {
+                if (perm_set_capabilities(&err, CAP_PERMITTED, NULL, 0) < 0) {
+                        warnx("permission error: %s", err.msg);
+                        return (rv);
+                }
         }
 
         /* Initialize the library. */

@@ -68,13 +68,12 @@ static const cap_value_t permitted_caps[] = {
         CAP_SETUID,          /* privsep, userns */
         CAP_SYS_ADMIN,       /* setns, mount */
         CAP_SYS_CHROOT,      /* setns, chroot */
-        CAP_SYS_MODULE,      /* kmods */
         CAP_SYS_PTRACE,      /* procns */
 };
 
 static const cap_value_t effective_caps[][nitems(permitted_caps) + 1] = {
         [CAPS_INIT]       = {CAP_KILL, CAP_SETGID, CAP_SETUID, -1},
-        [CAPS_INIT_KMODS] = {CAP_MKNOD, CAP_SYS_MODULE, CAP_KILL, CAP_SETGID, CAP_SETUID, -1},
+        [CAPS_INIT_KMODS] = {CAP_MKNOD, CAP_KILL, CAP_SETGID, CAP_SETUID, -1},
         [CAPS_SHUTDOWN]   = {CAP_KILL, -1},
         [CAPS_CONTAINER]  = {CAP_DAC_READ_SEARCH, -1},
         [CAPS_INFO]       = {-1},
@@ -86,6 +85,7 @@ static const cap_value_t effective_caps[][nitems(permitted_caps) + 1] = {
 
 static const cap_value_t inherited_caps[] = {
         CAP_DAC_OVERRIDE,
+        CAP_SYS_MODULE,
 };
 
 static inline size_t
