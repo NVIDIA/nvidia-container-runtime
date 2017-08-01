@@ -5,6 +5,7 @@
 #include <rpc/rpc.h>
 
 #include <dlfcn.h>
+#include <errno.h>
 
 #include <cuda.h>
 #include <libelf.h>
@@ -76,6 +77,18 @@ error_set_rpc(struct error *err, int errcode, const char *fmt, ...)
 
         va_start(ap, fmt);
         rv = error_vset(err, errcode, clnt_sperrno((enum clnt_stat)errcode), fmt, ap);
+        va_end(ap);
+        return (rv);
+}
+
+int
+error_set_dl(struct error *err, const char *fmt, ...)
+{
+        va_list ap;
+        int rv;
+
+        va_start(ap, fmt);
+        rv = error_vset(err, ELIBACC, dlerror(), fmt, ap);
         va_end(ap);
         return (rv);
 }

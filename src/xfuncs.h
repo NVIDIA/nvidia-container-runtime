@@ -16,8 +16,6 @@
 #include <string.h>
 #include <unistd.h>
 
-#include "error.h"
-
 static inline void xclose(int);
 static inline int  xopen(struct error *, const char *, int);
 static inline void *xcalloc(struct error *, size_t, size_t);
@@ -33,6 +31,8 @@ static inline void *xdlopen(struct error *, const char *, int);
 static inline int  xdlclose(struct error *, void *);
 static inline int  xmount(struct error *, const char *, const char *,
     const char *, unsigned long, const void *);
+
+#include "error.h"
 
 static inline void
 xclose(int fd)
@@ -138,7 +138,7 @@ xdlopen(struct error *err, const char *filename, int flags)
         void *h;
 
         if ((h = dlopen(filename, flags)) == NULL)
-                error_setx(err, "load library failed: %s", dlerror());
+                error_set_dl(err, "load library failed");
         return (h);
 }
 
@@ -148,7 +148,7 @@ xdlclose(struct error *err, void *handle)
         if (handle == NULL)
                 return (0);
         if (dlclose(handle) != 0) {
-                error_setx(err, "unload library failed: %s", dlerror());
+                error_set_dl(err, "unload library failed");
                 return (-1);
         }
         return (0);

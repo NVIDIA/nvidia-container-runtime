@@ -38,7 +38,6 @@ error_vset(struct error *err, int errcode, const char *errmsg, const char *fmt, 
         }
         if (errmsg == NULL) {
                 err->msg = msg;
-                strlower(err->msg);
                 return (0);
         }
         if (asprintf(&err->msg, "%s: %s", msg, errmsg) < 0) {
@@ -46,7 +45,7 @@ error_vset(struct error *err, int errcode, const char *errmsg, const char *fmt, 
                 goto fail;
         }
         err->msg[strcspn(err->msg, "\n")] = '\0';
-        strlower(err->msg);
+        strlower(strrchr(err->msg, ':'));
         rv = 0;
 
  fail:

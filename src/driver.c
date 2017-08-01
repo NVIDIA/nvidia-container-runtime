@@ -69,7 +69,7 @@ static int reap_process(struct error *, pid_t, int, bool);
         static_assert(sizeof(ptr_t) >= sizeof(intptr_t), "incompatible types");                        \
         sigaction(SIGPIPE, &sa_, &osa_);                                                               \
         if ((r_ = func((ptr_t)ctx, ##__VA_ARGS__, res, (ctx)->rpc_clt)) != RPC_SUCCESS)                \
-                error_set_rpc((ctx)->err, r_, "rpc error");                                            \
+                error_set_rpc((ctx)->err, r_, "driver error");                                         \
         else if ((res)->errcode != 0)                                                                  \
                 error_from_xdr((ctx)->err, res);                                                       \
         sigaction(SIGPIPE, &osa_, NULL);                                                               \

@@ -9,7 +9,6 @@
 #include <stdalign.h>
 
 #include "error_generic.h"
-#include "xfuncs.h"
 
 int error_set_elf(struct error *, const char *, ...)
     __attribute__((format(printf, 2, 3), nonnull(2)));
@@ -19,6 +18,10 @@ int error_set_cuda(struct error *, void *, int, const char *, ...)
     __attribute__((format(printf, 4, 5), nonnull(4)));
 int error_set_rpc(struct error *, int, const char *, ...)
     __attribute__((format(printf, 3, 4), nonnull(3)));
+int error_set_dl(struct error *, const char *, ...)
+    __attribute__((format(printf, 2, 3), nonnull(2)));
+
+#include "xfuncs.h"
 
 #define error_from_xdr(err, xdr) do {                                             \
         struct error *xdrerr_ = (struct error *)xdr;                              \
