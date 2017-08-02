@@ -48,6 +48,7 @@ struct context {
         size_t nreqs;
         char *ldconfig;
         bool load_kmods;
+        bool no_privsep;
         bool list_info;
         char *init_flags;
         char *driver_flags;
@@ -68,6 +69,7 @@ static struct argp main_argp = {
                 {NULL, 0, NULL, 0, "Options:", -1},
                 {"debug", 'd', "FILE", 0, "Log debug information", -1},
                 {"load-kmods", 'k', NULL, 0, "Load kernel modules", -1},
+                {"no-privsep", 'S', NULL, 0, "Disable privilege separation", -1},
                 {NULL, 0, NULL, 0, "Commands:", 0},
                 {"list", 0, NULL, OPTION_DOC|OPTION_NO_USAGE, "List host driver components", 0},
                 {"configure", 0, NULL, OPTION_DOC|OPTION_NO_USAGE, "Configure a container with GPU support", 0},
@@ -189,6 +191,9 @@ main_parser(int key, char *arg, struct argp_state *state)
                 ctx->load_kmods = true;
                 if (strjoin(&err, &ctx->init_flags, "load-kmods", " ") < 0)
                         goto fatal;
+                break;
+        case 'S':
+                ctx->no_privsep = true;
                 break;
         case ARGP_KEY_ARGS:
                 state->argv += state->next;
@@ -402,7 +407,7 @@ static int
 list_command(const struct context *ctx)
 {
         struct nvc_context *nvc = NULL;
-        struct nvc_config *cfg = NULL;
+        struct nvc_config *nvc_cfg = NULL;
         struct nvc_driver_info *drv = NULL;
         struct nvc_device_info *dev = NULL;
         const struct nvc_device **gpus = NULL;
@@ -431,22 +436,22 @@ list_command(const struct context *ctx)
                 }
         }
 
-        /* Initialize the library. */
+        /* Initialize the library context. */
         int c = ctx->load_kmods ? CAPS_INIT_KMODS : CAPS_INIT;
         if (uid == 0 && perm_set_capabilities(&err, CAP_EFFECTIVE, effective_caps[c], effective_caps_size(c)) < 0) {
                 warnx("permission error: %s", err.msg);
                 goto fail;
         }
         if ((nvc = nvc_context_new()) == NULL ||
-            (cfg = nvc_config_new()) == NULL) {
+            (nvc_cfg = nvc_config_new()) == NULL) {
                 warn("memory allocation failed");
                 goto fail;
         }
-        if (uid != 0) {
-                cfg->uid = uid;
-                cfg->gid = gid;
+        if (uid != 0 || ctx->no_privsep) {
+                nvc_cfg->uid = uid;
+                nvc_cfg->gid = gid;
         }
-        if (nvc_init(nvc, cfg, ctx->init_flags) < 0) {
+        if (nvc_init(nvc, nvc_cfg, ctx->init_flags) < 0) {
                 warnx("initialization error: %s", nvc_error(nvc));
                 goto fail;
         }
@@ -505,7 +510,7 @@ list_command(const struct context *ctx)
         nvc_shutdown(nvc);
         nvc_device_info_free(dev);
         nvc_driver_info_free(drv);
-        nvc_config_free(cfg);
+        nvc_config_free(nvc_cfg);
         nvc_context_free(nvc);
         error_reset(&err);
         return (rv);
@@ -515,15 +520,20 @@ static int
 configure_command(const struct context *ctx)
 {
         struct nvc_context *nvc = NULL;
+        struct nvc_config *nvc_cfg = NULL;
         struct nvc_driver_info *drv = NULL;
         struct nvc_device_info *dev = NULL;
-        struct nvc_container_config *cfg = NULL;
         struct nvc_container *cnt = NULL;
+        struct nvc_container_config *cnt_cfg = NULL;
         const struct nvc_device **gpus = NULL;
         struct error err = {0};
         int rv = EXIT_FAILURE;
+        uid_t uid;
+        gid_t gid;
 
-        if (geteuid() != 0) {
+        uid = geteuid();
+        gid = getegid();
+        if (uid != 0) {
                 warnx("requires root privileges");
                 return (rv);
         }
@@ -541,12 +551,16 @@ configure_command(const struct context *ctx)
                 goto fail;
         }
         if ((nvc = nvc_context_new()) == NULL ||
-            (cfg = nvc_container_config_new(ctx->pid, ctx->rootfs)) == NULL) {
+            (nvc_cfg = nvc_config_new()) == NULL ||
+            (cnt_cfg = nvc_container_config_new(ctx->pid, ctx->rootfs)) == NULL) {
                 warn("memory allocation failed");
                 goto fail;
         }
-        cfg->ldconfig = ctx->ldconfig;
-        if (nvc_init(nvc, NULL, ctx->init_flags) < 0) {
+        if (ctx->no_privsep) {
+                nvc_cfg->uid = uid;
+                nvc_cfg->gid = gid;
+        }
+        if (nvc_init(nvc, nvc_cfg, ctx->init_flags) < 0) {
                 warnx("initialization error: %s", nvc_error(nvc));
                 goto fail;
         }
@@ -554,7 +568,8 @@ configure_command(const struct context *ctx)
                 warnx("permission error: %s", err.msg);
                 goto fail;
         }
-        if ((cnt = nvc_container_new(nvc, cfg, ctx->container_flags)) == NULL) {
+        cnt_cfg->ldconfig = ctx->ldconfig;
+        if ((cnt = nvc_container_new(nvc, cnt_cfg, ctx->container_flags)) == NULL) {
                 warnx("container error: %s", nvc_error(nvc));
                 goto fail;
         }
@@ -624,7 +639,8 @@ configure_command(const struct context *ctx)
         nvc_container_free(cnt);
         nvc_device_info_free(dev);
         nvc_driver_info_free(drv);
-        nvc_container_config_free(cfg);
+        nvc_container_config_free(cnt_cfg);
+        nvc_config_free(nvc_cfg);
         nvc_context_free(nvc);
         error_reset(&err);
         return (rv);
