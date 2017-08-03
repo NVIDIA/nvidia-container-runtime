@@ -1,0 +1,46 @@
+os: linux
+dist: trusty
+sudo: required
+language: c
+
+compiler:
+    - gcc
+
+env:
+    global:
+        - secure: "jV9WdgzDemtQaw83SwFKbDfc1/5BPE4DGQGrrwHRIHCqw9NzCULGEi9CL41hWIBv9zHjX/zpAJzqKQUsZusEjsmud4pg5Gu6I2OA3KLFurG11+Bipcs9f4MUnLwa4dhIHrIColYy4ul4QYiCGUaNr12Idj+mELUzo79Sc3a/k3MOq+J01QvNKVrpUCn+MZMR1gHepZSMqxJw5/QE+6crN7WDOqv3D6ZlYQvha2ZDKzJjBQ9nVe4NNCrK8qrwWKkSwi8cPEPUCEQogn7AO4OO4M4crJ6PdhNo+I2N/u7PIgA9UoyV4gpJSJaHI3DSOuXMp4U48g9s2eccbuJGFF3deJ5SWUYm4Y2ZPfK/PN5+dYR7w3vgu8IUVW8A/ac+Bez0ABiuSVJDCqCwu2KtjD3sL910aHmfXsZS09Vhws+xLkWpSev7v1TKCPQdD2CbmnEIkJMQ7NJdRrpn79O/F0nzYmP4XylfG3M2AuHsmVF95ZtgAMkAir/0ou789xNIsknl79SyFQRgeLdBbsjVrDPfAliTmNOH1tLLX+n4ezy6sZQFSPXL+HoJ843sSv+1ZsFjBPc5I6h7qhXTpV26xl/Fuy9SNZFT+e5khd7N3QKD6YaYND/2mJ2LfH3FBtjRpl5FAAFIJRsgehX+3MREy3iYR3cx4jIyrmNQt1f2sOaDsA8="
+
+addons:
+    apt:
+        packages:
+            - build-essential
+            - bmake
+            - lsb-release
+            - curl
+            - ca-certificates
+            - bzip2
+            - m4
+            - libcap-dev
+            - libseccomp-dev
+    coverity_scan:
+        project:
+            name: "NVIDIA/libnvidia-container"
+            version: "1.0.0"
+            description: "alpha"
+        notification_email: fabecassis@nvidia.com
+        build_command_prepend: "make clean"
+        build_command: "make"
+        branch_pattern: master
+
+install:
+    - NVIDIA_GPGKEY_SUM=d1be581509378368edeec8c1eb2958702feedf3bc3d17011adbf24efacce4ab5
+    - NVIDIA_GPGKEY_FPR=ae09fe4bbd223a84b2ccfce3f60f4b3d7fa2af80
+    - sudo apt-key adv --fetch-keys http://developer.download.nvidia.com/compute/cuda/repos/ubuntu1404/x86_64/7fa2af80.pub
+    - apt-key adv --export --no-emit-version -a $NVIDIA_GPGKEY_FPR | tail -n +5 > cudasign.pub
+    - echo "$NVIDIA_GPGKEY_SUM  cudasign.pub" | sha256sum -c --strict - && rm cudasign.pub
+    - echo "deb http://developer.download.nvidia.com/compute/cuda/repos/ubuntu1404/x86_64 /" | sudo tee /etc/apt/sources.list.d/cuda.list
+    - sudo apt-get update
+    - sudo apt-get install -y --no-install-recommends cuda-misc-headers-8-0 cuda-nvml-dev-8-0
+
+script:
+    - make
