@@ -1,13 +1,43 @@
 # libnvidia-container
 
-<a href="https://scan.coverity.com/projects/nvidia-libnvidia-container">
-    <img alt="Coverity Scan Build Status" src="https://scan.coverity.com/projects/12444/badge.svg"/>
-</a>
+[![GitHub license](https://img.shields.io/badge/license-New%20BSD-blue.svg)](https://raw.githubusercontent.com/NVIDIA/libnvidia-container/master/LICENSE)
+[![Travis](https://img.shields.io/travis/NVIDIA/libnvidia-container.svg)](https://travis-ci.org/NVIDIA/libnvidia-container)
+[![Coverity Scan](https://img.shields.io/coverity/scan/12444.svg)](https://scan.coverity.com/projects/nvidia-libnvidia-container)
 
 **Warning: This project is an alpha release, it is not intended to be used in production systems.**
 
-This repository provides a library to automatically configure GNU/Linux containers leveraging NVIDIA hardware.\
-The implementation relies on low-level kernel primitives and is designed to be agnostic of the container runtime.
+This repository provides a library and a simple CLI utility to automatically configure GNU/Linux containers leveraging NVIDIA hardware.\
+The implementation relies on kernel primitives and is designed to be agnostic of the container runtime.
+
+## CLI usage example
+
+```sh
+# Setup a rootfs based on Ubuntu 16.04 inside new namespaces
+cd $(mktemp -d) && mkdir rootfs
+sudo unshare --mount --pid --fork
+curl http://cdimage.ubuntu.com/ubuntu-base/releases/16.04/release/ubuntu-base-16.04-core-amd64.tar.gz | tar -C rootfs -xz
+useradd -R $(realpath rootfs) -U -u 1000 -s /bin/bash nvidia
+mount --bind rootfs rootfs
+mount --make-private rootfs
+cd rootfs
+
+# Mount standard filesystems
+mount -t proc none proc
+mount -t sysfs none sys
+mount -t tmpfs none tmp
+mount -t tmpfs none run
+
+# Isolate the first GPU device along with basic utilities
+nvidia-container-cli --load-kmods configure --no-cgroups --utility --device 0 .
+
+# Change into the new rootfs
+pivot_root . mnt
+umount -l mnt
+exec chroot --userspec 1000:1000 . env -i bash
+
+# Run nvidia-smi from within the container
+nvidia-smi -L
+```
 
 ## Copyright and License
 
