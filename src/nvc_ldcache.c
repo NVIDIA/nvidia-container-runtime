@@ -332,8 +332,10 @@ nvc_ldcache_update(struct nvc_context *ctx, const struct nvc_container *cnt)
                 log_infof("executing %s at %s", argv[0], cnt->cfg.rootfs);
         }
 
-        if ((child = create_process(&ctx->err, CLONE_NEWPID|CLONE_NEWIPC)) < 0)
+        if ((child = create_process(&ctx->err, CLONE_NEWPID|CLONE_NEWIPC)) < 0) {
+                xclose(fd);
                 return (-1);
+        }
         if (child == 0) {
                 prctl(PR_SET_NAME, (unsigned long)"nvc:[ldconfig]", 0, 0, 0);
 
