@@ -236,7 +236,11 @@ find_device_node(struct error *err, const char *path, struct nvc_device_node *no
                 *node = (struct nvc_device_node){(char *)path, s.st_rdev};
                 return (true);
         }
-        return (errno == ENOENT ? false : -1);
+        if (errno == ENOENT) {
+                log_warnf("missing device %s", path);
+                return (false);
+        }
+        return (-1);
 }
 
 static int
@@ -248,7 +252,7 @@ find_ipc_path(struct error *err, const char *path, char **ipc)
                 return (-1);
 
         if (ret == 0)
-                log_infof("missing ipc %s", path);
+                log_warnf("missing ipc %s", path);
         else {
                 log_infof("listing ipc %s", path);
                 if ((*ipc = xrealpath(err, path, NULL)) == NULL)
