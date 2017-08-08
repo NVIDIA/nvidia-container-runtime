@@ -49,6 +49,7 @@ nvc_entrypoint(void)
         printf("version: %s\n", NVC_VERSION);
         printf("build date: %s\n", BUILD_DATE);
         printf("build revision: %s\n", BUILD_REVISION);
+        printf("build compiler: %s\n", BUILD_COMPILER);
         printf("build flags: %s\n", BUILD_FLAGS);
         exit(EXIT_SUCCESS);
 }

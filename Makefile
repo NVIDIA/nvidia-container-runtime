@@ -23,12 +23,16 @@ include $(MAKE_DIR)/common.mk
 
 DATE     := $(shell date -u --iso-8601=minutes)
 REVISION := $(shell git rev-parse HEAD)
+COMPILER := $(realpath $(shell which $(CC)))
 
 ifeq ($(DATE),)
 $(error Invalid date format)
 endif
 ifeq ($(REVISION),)
 $(error Invalid commit hash)
+endif
+ifeq ($(COMPILER),)
+$(error Invalid compiler)
 endif
 
 ##### Source definitions #####
@@ -136,9 +140,10 @@ LIB_STATIC_OBJ := $(SRCS_DIR)/$(LIB_STATIC:.a=.lo)
 DEPENDENCIES   := $(BIN_OBJS:%.o=%.d) $(LIB_OBJS:%.lo=%.d)
 
 $(BUILD_DEFS):
-	@printf '#define BUILD_DATE     "%s"\n' '$(DATE)' >$(BUILD_DEFS)
-	@printf '#define BUILD_FLAGS    "%s"\n' '$(CPPFLAGS) $(CFLAGS) $(LDFLAGS)' >>$(BUILD_DEFS)
-	@printf '#define BUILD_REVISION "%s"\n' '$(REVISION)' >>$(BUILD_DEFS)
+	@printf '#define BUILD_DATE     "%s"\n' '$(strip $(DATE))' >$(BUILD_DEFS)
+	@printf '#define BUILD_COMPILER "%s " __VERSION__\n' '$(notdir $(COMPILER))' >>$(BUILD_DEFS)
+	@printf '#define BUILD_FLAGS    "%s"\n' '$(strip $(CPPFLAGS) $(CFLAGS) $(LDFLAGS))' >>$(BUILD_DEFS)
+	@printf '#define BUILD_REVISION "%s"\n' '$(strip $(REVISION))' >>$(BUILD_DEFS)
 
 $(LIB_RPC_SRCS): $(LIB_RPC_SPEC)
 	$(RM) $@
@@ -158,15 +163,16 @@ $(LIB_SHARED): $(LIB_OBJS)
 	$(OBJCPY) --only-keep-debug $@ $(LIB_SONAME)
 	$(OBJCPY) --add-gnu-debuglink=$(LIB_SONAME) $@
 	$(MV) $(LIB_SONAME) $(DEBUG_DIR)
-	$(STRIP) --strip-unneeded $@
+	$(STRIP) --strip-unneeded -R .comment $@
 
 $(LIB_STATIC_OBJ): $(LIB_OBJS)
 	$(LD) -d -r --exclude-libs ALL -L$(DEPS_DIR)/usr/local/lib $(OUTPUT_OPTION) $^ $(LIB_LDLIBS_STATIC)
 	$(OBJCPY) --localize-hidden $@
-	$(STRIP) --strip-unneeded $@
+	$(STRIP) --strip-unneeded -R .comment $@
 
 $(BIN_UTILS): $(BIN_OBJS)
 	$(CC) $(BIN_CFLAGS) $(BIN_CPPFLAGS) $(BIN_LDFLAGS) $(OUTPUT_OPTION) $^ $(BIN_SCRIPT) $(BIN_LDLIBS)
+	$(STRIP) --strip-unneeded -R .comment $@
 
 ##### Public rules #####
 
@@ -177,7 +183,6 @@ debug: STRIP  := @echo skipping: strip
 debug: shared static utils
 
 release: CPPFLAGS += -DNDEBUG
-release: BIN_LDFLAGS += -Wl,--strip-all
 release: shared static utils
 
 utils: $(BIN_UTILS)
@@ -207,7 +212,7 @@ install: all
 	# Install debugging symbols
 	$(INSTALL) -m 644 $(DEBUG_DIR)/$(LIB_SONAME) $(DESTDIR)$(libdbgdir)
 	# Install configuration files
-	$(M4) -D'$$VERSION=$(VERSION)' -D'$$PRIVATE_LIBS=$(LIB_LDLIBS_SHARED)' $(MAKE_DIR)/$(LIB_PKGCFG).m4 > $(DESTDIR)$(pkgconfdir)/$(LIB_PKGCFG)
+	$(M4) -D'$$VERSION=$(strip $(VERSION))' -D'$$PRIVATE_LIBS=$(strip $(LIB_LDLIBS_SHARED))' $(MAKE_DIR)/$(LIB_PKGCFG).m4 > $(DESTDIR)$(pkgconfdir)/$(LIB_PKGCFG)
 	# Install binary files
 	$(INSTALL) -m 755 $(BIN_UTILS) $(DESTDIR)$(bindir)
 
