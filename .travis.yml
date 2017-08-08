@@ -3,9 +3,6 @@ dist: trusty
 sudo: required
 language: c
 
-compiler:
-    - gcc
-
 env:
     global:
         - secure: "jV9WdgzDemtQaw83SwFKbDfc1/5BPE4DGQGrrwHRIHCqw9NzCULGEi9CL41hWIBv9zHjX/zpAJzqKQUsZusEjsmud4pg5Gu6I2OA3KLFurG11+Bipcs9f4MUnLwa4dhIHrIColYy4ul4QYiCGUaNr12Idj+mELUzo79Sc3a/k3MOq+J01QvNKVrpUCn+MZMR1gHepZSMqxJw5/QE+6crN7WDOqv3D6ZlYQvha2ZDKzJjBQ9nVe4NNCrK8qrwWKkSwi8cPEPUCEQogn7AO4OO4M4crJ6PdhNo+I2N/u7PIgA9UoyV4gpJSJaHI3DSOuXMp4U48g9s2eccbuJGFF3deJ5SWUYm4Y2ZPfK/PN5+dYR7w3vgu8IUVW8A/ac+Bez0ABiuSVJDCqCwu2KtjD3sL910aHmfXsZS09Vhws+xLkWpSev7v1TKCPQdD2CbmnEIkJMQ7NJdRrpn79O/F0nzYmP4XylfG3M2AuHsmVF95ZtgAMkAir/0ou789xNIsknl79SyFQRgeLdBbsjVrDPfAliTmNOH1tLLX+n4ezy6sZQFSPXL+HoJ843sSv+1ZsFjBPc5I6h7qhXTpV26xl/Fuy9SNZFT+e5khd7N3QKD6YaYND/2mJ2LfH3FBtjRpl5FAAFIJRsgehX+3MREy3iYR3cx4jIyrmNQt1f2sOaDsA8="
@@ -39,8 +36,25 @@ install:
     - apt-key adv --export --no-emit-version -a $NVIDIA_GPGKEY_FPR | tail -n +5 > cudasign.pub
     - echo "$NVIDIA_GPGKEY_SUM  cudasign.pub" | sha256sum -c --strict - && rm cudasign.pub
     - echo "deb http://developer.download.nvidia.com/compute/cuda/repos/ubuntu1404/x86_64 /" | sudo tee /etc/apt/sources.list.d/cuda.list
+    - sudo apt-key adv --fetch-keys http://apt.llvm.org/llvm-snapshot.gpg.key
+    - echo "deb http://apt.llvm.org/trusty/ llvm-toolchain-trusty-4.0 main" | sudo tee /etc/apt/sources.list.d/clang.list
     - sudo apt-get update
-    - sudo apt-get install -y --no-install-recommends cuda-misc-headers-8-0 cuda-nvml-dev-8-0
+    - sudo apt-get install -y --no-install-recommends cuda-misc-headers-8-0 cuda-nvml-dev-8-0 clang-4.0 llvm-4.0-dev
 
-script:
-    - make
+jobs:
+    include:
+        - stage: build
+          script:
+              - CC=gcc make
+        - stage: build
+          script:
+              # clang-4.0 + -flto is broken on trusty, even when using the gold linker
+              - CC=clang-4.0 CFLAGS=-fno-lto make
+        - stage: scan
+          before_script:
+              - sudo apt-get install -y --no-install-recommends cppcheck
+          script:
+              - cppcheck --std=posix --inconclusive --enable=all src/*.c src/*.h
+        - stage: scan
+          script:
+              - scan-build-4.0 make
