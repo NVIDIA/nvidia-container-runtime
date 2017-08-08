@@ -24,9 +24,9 @@
 #define MAX_LIBS (nitems(utility_libs) + \
                   nitems(compute_libs) + \
                   nitems(video_libs) + \
-                  nitems(graphic_libs) + \
-                  nitems(graphic_libs_glvnd) + \
-                  nitems(graphic_libs_compat))
+                  nitems(graphics_libs) + \
+                  nitems(graphics_libs_glvnd) + \
+                  nitems(graphics_libs_compat))
 
 static int select_libraries(struct error *, void *, const char *, const char *);
 static int find_library_paths(struct error *, struct nvc_driver_info *, int32_t, const char *, const char * const [], size_t);
@@ -81,7 +81,7 @@ static const char * const video_libs[] = {
         "libnvcuvid.so",                    /* Video decoder */
 };
 
-static const char * const graphic_libs[] = {
+static const char * const graphics_libs[] = {
         //"libnvidia-egl-wayland.so",       /* EGL wayland platform extension (used by libEGL_nvidia) */
         "libnvidia-eglcore.so",             /* EGL core (used by libGLES*[_nvidia] and libEGL_nvidia) */
         "libnvidia-glcore.so",              /* OpenGL core (used by libGL or libGLX_nvidia) */
@@ -91,7 +91,7 @@ static const char * const graphic_libs[] = {
         "libnvidia-ifr.so",                 /* OpenGL framebuffer capture */
 };
 
-static const char * const graphic_libs_glvnd[] = {
+static const char * const graphics_libs_glvnd[] = {
         //"libGLX.so",                      /* GLX ICD loader */
         //"libOpenGL.so",                   /* OpenGL ICD loader */
         //"libGLdispatch.so",               /* OpenGL dispatch (used by libOpenGL, libEGL and libGLES*) */
@@ -101,7 +101,7 @@ static const char * const graphic_libs_glvnd[] = {
         "libGLESv1_CM_nvidia.so",           /* OpenGL ES v1 common profile ICD */
 };
 
-static const char * const graphic_libs_compat[] = {
+static const char * const graphics_libs_compat[] = {
         "libGL.so",                         /* OpenGL/GLX legacy _or_ compatibility wrapper (GLVND) */
         "libEGL.so",                        /* EGL legacy _or_ ICD loader (GLVND) */
         "libGLESv1_CM.so",                  /* OpenGL ES v1 common profile legacy _or_ ICD loader (GLVND) */
@@ -129,7 +129,7 @@ select_libraries(struct error *err, void *ptr, const char *orig_path, const char
         /* Check the driver version. */
         if ((rv = !strrcmp(lib, info->nvrm_version)) == false)
                 goto done;
-        if (strmatch(lib, graphic_libs_compat, nitems(graphic_libs_compat))) {
+        if (strmatch(lib, graphics_libs_compat, nitems(graphics_libs_compat))) {
                 /* Only choose OpenGL/EGL libraries issued by NVIDIA. */
                 if ((rv = elftool_has_dependency(&et, "libnvidia-glcore.so")) != false)
                         goto done;
@@ -273,15 +273,15 @@ lookup_libraries(struct error *err, struct nvc_driver_info *info, int32_t flags,
                 ptr = array_append(ptr, compute_libs, nitems(compute_libs));
         if (flags & OPT_VIDEO_LIBS)
                 ptr = array_append(ptr, video_libs, nitems(video_libs));
-        if (flags & OPT_GRAPHIC_LIBS) {
-                ptr = array_append(ptr, graphic_libs, nitems(graphic_libs));
+        if (flags & OPT_GRAPHICS_LIBS) {
+                ptr = array_append(ptr, graphics_libs, nitems(graphics_libs));
                 if (flags & OPT_NO_GLVND)
-                        ptr = array_append(ptr, graphic_libs_compat, nitems(graphic_libs_compat));
+                        ptr = array_append(ptr, graphics_libs_compat, nitems(graphics_libs_compat));
                 else
-                        ptr = array_append(ptr, graphic_libs_glvnd, nitems(graphic_libs_glvnd));
+                        ptr = array_append(ptr, graphics_libs_glvnd, nitems(graphics_libs_glvnd));
         }
 
-        if (flags & (OPT_UTILITY_LIBS|OPT_COMPUTE_LIBS|OPT_VIDEO_LIBS|OPT_GRAPHIC_LIBS)) {
+        if (flags & (OPT_UTILITY_LIBS|OPT_COMPUTE_LIBS|OPT_VIDEO_LIBS|OPT_GRAPHICS_LIBS)) {
                 if (find_library_paths(err, info, flags, ldcache, libs, (size_t)(ptr - libs)) < 0)
                         return (-1);
         }

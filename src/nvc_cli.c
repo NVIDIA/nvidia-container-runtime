@@ -91,7 +91,7 @@ static const struct argp list_argp = {
                 {"compute", 'c', NULL, 0, "List compute components", -1},
                 {"utility", 'u', NULL, 0, "List utility components", -1},
                 {"video", 'v', NULL, 0, "List video components", -1},
-                {"graphic", 'g', NULL, 0, "List graphic components", -1},
+                {"graphics", 'g', NULL, 0, "List graphics components", -1},
                 {"compat32", 0x80, NULL, 0, "List 32bits components", -1},
                 {0},
         },
@@ -113,7 +113,7 @@ static const struct argp configure_argp = {
                 {"compute", 'c', NULL, 0, "Enable compute capability", -1},
                 {"utility", 'u', NULL, 0, "Enable utility capability", -1},
                 {"video", 'v', NULL, 0, "Enable video capability", -1},
-                {"graphic", 'g', NULL, 0, "Enable graphic capability", -1},
+                {"graphics", 'g', NULL, 0, "Enable graphics capability", -1},
                 {"compat32", 0x80, NULL, 0, "Enable 32bits compatibility", -1},
                 {"no-cgroups", 0x81, NULL, 0, "Don't use cgroup enforcement", -1},
                 {"no-devbind", 0x82, NULL, 0, "Don't bind mount devices", -1},
@@ -245,8 +245,8 @@ list_parser(int key, char *arg, struct argp_state *state)
                         goto fatal;
                 break;
         case 'g':
-                if (strjoin(&err, &ctx->driver_flags, "graphic", " ") < 0 ||
-                    strjoin(&err, &ctx->device_flags, "graphic", " ") < 0)
+                if (strjoin(&err, &ctx->driver_flags, "graphics", " ") < 0 ||
+                    strjoin(&err, &ctx->device_flags, "graphics", " ") < 0)
                         goto fatal;
                 break;
         case 0x80:
@@ -304,8 +304,8 @@ configure_parser(int key, char *arg, struct argp_state *state)
                         goto fatal;
                 break;
         case 'g':
-                if (strjoin(&err, &ctx->driver_flags, "graphic", " ") < 0 ||
-                    strjoin(&err, &ctx->device_flags, "graphic", " ") < 0)
+                if (strjoin(&err, &ctx->driver_flags, "graphics", " ") < 0 ||
+                    strjoin(&err, &ctx->device_flags, "graphics", " ") < 0)
                         goto fatal;
                 break;
         case 0x80:

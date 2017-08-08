@@ -30,7 +30,7 @@ enum {
         OPT_UTILITY_LIBS    = 1 << 0,
         OPT_COMPUTE_LIBS    = 1 << 1,
         OPT_VIDEO_LIBS      = 1 << 2,
-        OPT_GRAPHIC_LIBS    = 1 << 3,
+        OPT_GRAPHICS_LIBS   = 1 << 3,
         OPT_UTILITY_BINS    = 1 << 4,
         OPT_COMPUTE_BINS    = 1 << 5,
         OPT_COMPAT32        = 1 << 6,
@@ -44,7 +44,7 @@ static const struct option driver_opts[] = {
         {"utility", OPT_UTILITY_BINS|OPT_UTILITY_LIBS},
         {"compute", OPT_COMPUTE_BINS|OPT_COMPUTE_LIBS},
         {"video", OPT_VIDEO_LIBS},
-        {"graphic", OPT_GRAPHIC_LIBS},
+        {"graphics", OPT_GRAPHICS_LIBS},
         {"compat32", OPT_COMPAT32},
         {"no-glvnd", OPT_NO_GLVND},
         {"no-uvm", OPT_NO_UVM},
@@ -59,7 +59,7 @@ static const struct option device_opts[] = {
         {"utility", 0},
         {"compute", 0},
         {"video", 0},
-        {"graphic", 0},
+        {"graphics", 0},
 };
 
 static const char * const default_device_opts = "utility";
