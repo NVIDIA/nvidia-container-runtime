@@ -96,36 +96,50 @@ LIB_PKGCFG  := $(LIB_NAME).pc
 
 ##### Flags definitions #####
 
+# Common flags
 ARFLAGS  := -rU
-CPPFLAGS += -D_GNU_SOURCE -D_FORTIFY_SOURCE=2
-CFLAGS   += -std=gnu11 -O2 -g -fdata-sections -ffunction-sections -fstack-protector -fno-strict-aliasing -fvisibility=hidden \
+CPPFLAGS := -D_GNU_SOURCE -D_FORTIFY_SOURCE=2 $(CPPFLAGS)
+CFLAGS   := -std=gnu11 -O2 -g -fdata-sections -ffunction-sections -fstack-protector -fno-strict-aliasing -fvisibility=hidden \
             -Wall -Wextra -Wcast-align -Wpointer-arith -Wmissing-prototypes -Wnonnull \
             -Wwrite-strings -Wlogical-op -Wformat=2 -Wmissing-format-attribute -Winit-self -Wshadow \
             -Wstrict-prototypes -Wunreachable-code -Wconversion -Wsign-conversion \
-            -Wno-unknown-warning-option -Wno-format-extra-args -Wno-gnu-alignof-expression
-LDFLAGS  += -Wl,-zrelro -Wl,-znow -Wl,-zdefs -Wl,--gc-sections
+            -Wno-unknown-warning-option -Wno-format-extra-args -Wno-gnu-alignof-expression $(CFLAGS)
+LDFLAGS  := -Wl,-zrelro -Wl,-znow -Wl,-zdefs -Wl,--gc-sections $(LDFLAGS)
 
-LIB_CPPFLAGS       = $(CPPFLAGS) -DNV_LINUX -isystem $(CUDA_DIR)/include -isystem $(DEPS_DIR)/usr/local/include -include $(BUILD_DEFS)
-LIB_CFLAGS         = $(CFLAGS) -fPIC
-LIB_LDLIBS_STATIC  = $(LDLIBS) -l:libelf.a -l:libnvidia-modprobe-utils.a
-LIB_LDLIBS_SHARED  = $(LDLIBS) -ldl -lcap
-LIB_LDFLAGS        = $(LDFLAGS) -L$(DEPS_DIR)/usr/local/lib -shared -Wl,-soname=$(LIB_SONAME)
-
+# Library flags
+_LIB_CPPFLAGS       := -DNV_LINUX -isystem $(CUDA_DIR)/include -isystem $(DEPS_DIR)/usr/local/include -include $(BUILD_DEFS)
+_LIB_CFLAGS         := -fPIC
+_LIB_LDFLAGS        := -L$(DEPS_DIR)/usr/local/lib -shared -Wl,-soname=$(LIB_SONAME)
+_LIB_LDLIBS_STATIC  := -l:libelf.a -l:libnvidia-modprobe-utils.a
+_LIB_LDLIBS_SHARED  := -ldl -lcap
 ifeq ($(WITH_TIRPC), 1)
-LIB_CPPFLAGS       += -isystem $(DEPS_DIR)/usr/local/include/tirpc -DWITH_TIRPC
-LIB_LDLIBS_STATIC  += -l:libtirpc.a
-LIB_LDLIBS_SHARED  += -lpthread
+_LIB_CPPFLAGS       += -isystem $(DEPS_DIR)/usr/local/include/tirpc -DWITH_TIRPC
+_LIB_LDLIBS_STATIC  += -l:libtirpc.a
+_LIB_LDLIBS_SHARED  += -lpthread
 endif
 ifeq ($(WITH_SECCOMP), 1)
-LIB_CPPFLAGS       += -DWITH_SECCOMP
-LIB_LDLIBS_SHARED  += -lseccomp
+_LIB_CPPFLAGS       += -DWITH_SECCOMP
+_LIB_LDLIBS_SHARED  += -lseccomp
 endif
-LIB_LDLIBS         = $(LIB_LDLIBS_STATIC) $(LIB_LDLIBS_SHARED)
+_LIB_LDLIBS         := $(_LIB_LDLIBS_STATIC) $(_LIB_LDLIBS_SHARED)
+# Library flags + common flags (recursively expanded to handle target-specific flags)
+LIB_CPPFLAGS        = $(_LIB_CPPFLAGS) $(CPPFLAGS)
+LIB_CFLAGS          = $(_LIB_CFLAGS) $(CFLAGS)
+LIB_LDFLAGS         = $(_LIB_LDFLAGS) $(LDFLAGS)
+LIB_LDLIBS_STATIC   = $(_LIB_LDLIBS_STATIC)
+LIB_LDLIBS_SHARED   = $(_LIB_LDLIBS_SHARED) $(LDLIBS)
+LIB_LDLIBS          = $(_LIB_LDLIBS) $(LDLIBS)
 
-BIN_CPPFLAGS       = $(CPPFLAGS) -include $(BUILD_DEFS)
-BIN_CFLAGS         = $(CFLAGS) -fPIE -flto
-BIN_LDFLAGS        = $(LDFLAGS) -L. -pie
-BIN_LDLIBS         = $(LDLIBS) -l:$(LIB_SHARED) -lcap
+# Binary flags
+_BIN_CPPFLAGS       := -include $(BUILD_DEFS)
+_BIN_CFLAGS         := -fPIE -flto
+_BIN_LDFLAGS        := -L. -pie
+_BIN_LDLIBS         := -l:$(LIB_SHARED) -lcap
+# Binary flags + common flags (recursively expanded to handle target-specific flags)
+BIN_CPPFLAGS        = $(_BIN_CPPFLAGS) $(CPPFLAGS)
+BIN_CFLAGS          = $(_BIN_CFLAGS) $(CFLAGS)
+BIN_LDFLAGS         = $(_BIN_LDFLAGS) $(LDFLAGS)
+BIN_LDLIBS          = $(_BIN_LDLIBS) $(LDLIBS)
 
 $(word 1,$(LIB_RPC_SRCS)): RPCGENFLAGS=-h
 $(word 2,$(LIB_RPC_SRCS)): RPCGENFLAGS=-c
@@ -166,6 +180,7 @@ $(LIB_SHARED): $(LIB_OBJS)
 	$(STRIP) --strip-unneeded -R .comment $@
 
 $(LIB_STATIC_OBJ): $(LIB_OBJS)
+	# FIXME Handle user-defined LDFLAGS and LDLIBS
 	$(LD) -d -r --exclude-libs ALL -L$(DEPS_DIR)/usr/local/lib $(OUTPUT_OPTION) $^ $(LIB_LDLIBS_STATIC)
 	$(OBJCPY) --localize-hidden $@
 	$(STRIP) --strip-unneeded -R .comment $@
@@ -179,6 +194,7 @@ $(BIN_UTILS): $(BIN_OBJS)
 all: release
 
 debug: CFLAGS += -pedantic -fsanitize=undefined -fno-omit-frame-pointer -fno-common
+debug: LDLIBS += -lubsan
 debug: STRIP  := @echo skipping: strip
 debug: shared static utils
 

@@ -22,8 +22,8 @@ LIB_SRCS       := $(MODPROBE_UTILS)/nvidia-modprobe-utils.c \
 ##### Flags definitions #####
 
 ARFLAGS  := -rU
-CPPFLAGS += -D_FORTIFY_SOURCE=2 -DNV_LINUX
-CFLAGS   += -fdata-sections -ffunction-sections -fstack-protector -fPIC -O2
+CPPFLAGS := -D_FORTIFY_SOURCE=2 -DNV_LINUX
+CFLAGS   := -O2 -g -fdata-sections -ffunction-sections -fstack-protector -fno-strict-aliasing -fPIC
 
 ##### Private rules #####
 

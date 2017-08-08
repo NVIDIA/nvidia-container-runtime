@@ -26,8 +26,8 @@ COMMON   := $(SRCS_DIR)/common
 
 ##### Flags definitions #####
 
-export CPPFLAGS += -D_FORTIFY_SOURCE=2
-export CFLAGS   += -fdata-sections -ffunction-sections -fstack-protector -fPIC -O2
+export CPPFLAGS := -D_FORTIFY_SOURCE=2
+export CFLAGS   := -O2 -g -fdata-sections -ffunction-sections -fstack-protector -fno-strict-aliasing -fPIC
 
 ##### Private rules #####
 
