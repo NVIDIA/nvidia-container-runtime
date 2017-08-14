@@ -680,11 +680,29 @@ perm_drop_privileges(struct error *err, uid_t uid, gid_t gid, bool drop_groups)
 {
         uid_t euid;
         gid_t egid;
+        gid_t egroup;
 
         euid = geteuid();
         egid = getegid();
-        if (drop_groups && setgroups(1, &gid) < 0)
-                goto fail;
+
+        if (drop_groups) {
+                switch (getgroups(0, NULL)) {
+                case -1:
+                        goto fail;
+                case 0:
+                        break;
+                case 1:
+                        if (getgroups(1, &egroup) < 0)
+                                goto fail;
+                        if (egroup == gid)
+                                break;
+                        /* Fallthrough */
+                default:
+                        if (setgroups(1, &gid) < 0)
+                                goto fail;
+                        break;
+                }
+        }
         if (egid != gid && setregid(gid, gid) < 0)
                 goto fail;
         if (euid != uid && setreuid(uid, uid) < 0)
