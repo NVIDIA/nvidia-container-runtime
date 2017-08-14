@@ -96,7 +96,7 @@ mount_device(struct error *err, const struct nvc_container *cnt, const char *dev
         log_infof("mounting %s at %s", dev, path);
         if (xmount(err, dev, path, NULL, MS_BIND, NULL) < 0)
                 goto fail;
-        if (xmount(err, NULL, path, NULL, MS_BIND|MS_REMOUNT | MS_NOSUID|MS_NOEXEC, NULL) < 0)
+        if (xmount(err, NULL, path, NULL, MS_BIND|MS_REMOUNT | MS_RDONLY|MS_NOSUID|MS_NOEXEC, NULL) < 0)
                 goto fail;
         if ((mnt = xstrdup(err, path)) == NULL)
                 goto fail;
@@ -306,6 +306,7 @@ int
 nvc_device_mount(struct nvc_context *ctx, const struct nvc_container *cnt, const struct nvc_device *dev)
 {
         char *mnt = NULL;
+        struct stat s;
         int rv = -1;
 
         if (validate_context(ctx) < 0)
@@ -317,6 +318,12 @@ nvc_device_mount(struct nvc_context *ctx, const struct nvc_container *cnt, const
                 return (-1);
 
         if (!(cnt->flags & OPT_NO_DEVBIND)) {
+                if (xstat(&ctx->err, dev->node.path, &s) < 0)
+                        return (-1);
+                if (s.st_rdev != dev->node.id) {
+                        error_setx(&ctx->err, "invalid device node: %s", dev->node.path);
+                        return (-1);
+                }
                 if ((mnt = mount_device(&ctx->err, cnt, dev->node.path)) == NULL)
                         goto fail;
         }
