@@ -148,7 +148,7 @@ strrcmp(const char *s1, const char *s2)
 
         l1 = strlen(s1);
         l2 = strlen(s2);
-        return (l1 >= l2) ? strcmp(s1 + l1 - l2, s2) : -1;
+        return ((l1 >= l2) ? strcmp(s1 + l1 - l2, s2) : -1);
 }
 
 bool

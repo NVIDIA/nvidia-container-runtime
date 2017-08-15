@@ -236,7 +236,7 @@ find_device_node(struct error *err, const char *path, struct nvc_device_node *no
                 *node = (struct nvc_device_node){(char *)path, s.st_rdev};
                 return (true);
         }
-        if (errno == ENOENT) {
+        if (err->code == ENOENT) {
                 log_warnf("missing device %s", path);
                 return (false);
         }
