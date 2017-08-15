@@ -524,14 +524,14 @@ file_read_line(struct error *err, const char *path, char *buf, size_t size)
 }
 
 int
-file_read_ulong(struct error *err, const char *path, unsigned long *v)
+file_read_uint32(struct error *err, const char *path, uint32_t *v)
 {
         FILE *fs;
         int rv = 0;
 
         if ((fs = xfopen(err, path, "r")) == NULL)
                 return (-1);
-        if (fscanf(fs, "%lu", v) != 1) {
+        if (fscanf(fs, "%"PRIu32, v) != 1) {
                 error_setx(err, "file read error: %s", path);
                 rv = -1;
         }
@@ -744,10 +744,10 @@ perm_drop_privileges(struct error *err, uid_t uid, gid_t gid, bool drop_groups)
 int
 perm_drop_bounds(struct error *err)
 {
-        unsigned long n;
+        uint32_t n;
         cap_value_t last_cap = CAP_LAST_CAP;
 
-        if (file_read_ulong(err, PROC_LAST_CAP_PATH, &n) < 0)
+        if (file_read_uint32(err, PROC_LAST_CAP_PATH, &n) < 0)
                 return (-1);
         if ((cap_value_t)n >= 0 && (cap_value_t)n > last_cap)
                 last_cap = (cap_value_t)n;

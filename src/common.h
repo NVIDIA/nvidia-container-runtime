@@ -5,7 +5,9 @@
 #ifndef HEADER_COMMON_H
 #define HEADER_COMMON_H
 
-#define PROC_PID                  "/proc/%ld"
+#include <inttypes.h>
+
+#define PROC_PID                  "/proc/%"PRId32
 #define PROC_SELF                 "/proc/self"
 #define PROC_MOUNTS_PATH(proc)    proc "/mountinfo"
 #define PROC_CGROUP_PATH(proc)    proc "/cgroup"

@@ -4,6 +4,7 @@
 
 #include <sys/types.h>
 
+#include <inttypes.h>
 #include <limits.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -12,6 +13,7 @@
 
 #include "nvc_internal.h"
 
+#include "common.h"
 #include "error.h"
 #include "options.h"
 #include "utils.h"
@@ -150,11 +152,11 @@ find_cgroup_path(struct error *err, const struct nvc_container *cnt, const char 
         pid = (cnt->flags & OPT_STANDALONE) ? cnt->cfg.pid : getpid();
         prefix = (cnt->flags & OPT_STANDALONE) ? cnt->cfg.rootfs : "";
 
-        if (xsnprintf(err, path, sizeof(path), "%s"PROC_MOUNTS_PATH(PROC_PID), prefix, (long)pid) < 0)
+        if (xsnprintf(err, path, sizeof(path), "%s"PROC_MOUNTS_PATH(PROC_PID), prefix, (int32_t)pid) < 0)
                 goto fail;
         if ((mount = parse_proc_file(err, path, cgroup_mount, root_prefix, subsys)) == NULL)
                 goto fail;
-        if (xsnprintf(err, path, sizeof(path), "%s"PROC_CGROUP_PATH(PROC_PID), prefix, (long)cnt->cfg.pid) < 0)
+        if (xsnprintf(err, path, sizeof(path), "%s"PROC_CGROUP_PATH(PROC_PID), prefix, (int32_t)cnt->cfg.pid) < 0)
                 goto fail;
         if ((root = parse_proc_file(err, path, cgroup_root, root_prefix, subsys)) == NULL)
                 goto fail;
@@ -174,7 +176,7 @@ find_namespace_path(struct error *err, const struct nvc_container *cnt, const ch
         char *ns = NULL;
 
         prefix = (cnt->flags & OPT_STANDALONE) ? cnt->cfg.rootfs : "";
-        xasprintf(err, &ns, "%s"PROC_NS_PATH(PROC_PID), prefix, (long)cnt->cfg.pid, namespace);
+        xasprintf(err, &ns, "%s"PROC_NS_PATH(PROC_PID), prefix, (int32_t)cnt->cfg.pid, namespace);
         return (ns);
 }
 
@@ -186,7 +188,7 @@ lookup_owner(struct error *err, struct nvc_container *cnt)
         struct stat s;
 
         prefix = (cnt->flags & OPT_STANDALONE) ? cnt->cfg.rootfs : "";
-        if (xsnprintf(err, path, sizeof(path), "%s"PROC_PID, prefix, (long)cnt->cfg.pid) < 0)
+        if (xsnprintf(err, path, sizeof(path), "%s"PROC_PID, prefix, (int32_t)cnt->cfg.pid) < 0)
                 return (-1);
         if (xstat(err, path, &s) < 0)
                 return (-1);
@@ -310,9 +312,9 @@ nvc_container_new(struct nvc_context *ctx, const struct nvc_container_config *cf
                         goto fail;
         }
 
-        log_infof("setting pid to %ld", (long)cnt->cfg.pid);
+        log_infof("setting pid to %"PRId32, (int32_t)cnt->cfg.pid);
         log_infof("setting rootfs to %s", cnt->cfg.rootfs);
-        log_infof("setting owner to %lu:%lu", (unsigned long)cnt->uid, (unsigned long)cnt->gid);
+        log_infof("setting owner to %"PRIu32":%"PRIu32, (uint32_t)cnt->uid, (uint32_t)cnt->gid);
         log_infof("setting bins directory to %s", cnt->cfg.bins_dir);
         log_infof("setting libs directory to %s", cnt->cfg.libs_dir);
         log_infof("setting libs32 directory to %s", cnt->cfg.libs32_dir);

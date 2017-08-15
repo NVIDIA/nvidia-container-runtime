@@ -8,6 +8,7 @@
 #include <sys/types.h>
 #include <sys/wait.h>
 
+#include <inttypes.h>
 #include <poll.h>
 #include <signal.h>
 #include <stdio.h>
@@ -193,7 +194,7 @@ reap_process(struct error *err, pid_t pid, int fd, bool force)
                 }
         }
         if (ret < 0)
-                error_set(err, "process reaping failed (pid %ld)", (long)pid);
+                error_set(err, "process reaping failed (pid %"PRId32")", (int32_t)pid);
         else
                 log_infof("driver service terminated %s%.0d",
                     WIFSIGNALED(status) ? "with signal " : "successfully",
@@ -241,7 +242,7 @@ driver_init(struct driver *ctx, struct error *err, uid_t uid, gid_t gid)
 
  fail:
         if (ctx->pid > 0 && reap_process(NULL, ctx->pid, ctx->fd[SOCK_CLT], true) < 0)
-                log_warnf("could not terminate driver service (pid %ld)", (long)ctx->pid);
+                log_warnf("could not terminate driver service (pid %"PRId32")", (int32_t)ctx->pid);
         if (ctx->rpc_clt != NULL)
                 clnt_destroy(ctx->rpc_clt);
 

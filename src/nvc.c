@@ -7,6 +7,7 @@
 #include <sys/types.h>
 
 #include <errno.h>
+#include <inttypes.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -17,6 +18,7 @@
 
 #include "nvc_internal.h"
 
+#include "common.h"
 #include "driver.h"
 #include "debug.h"
 #include "error.h"
@@ -199,7 +201,7 @@ static int
 copy_config(struct error *err, struct nvc_context *ctx, const struct nvc_config *cfg)
 {
         const char *ldcache;
-        unsigned long uid, gid;
+        uint32_t uid, gid;
 
         ldcache = (cfg->ldcache != NULL) ? cfg->ldcache : LDCACHE_PATH;
         if ((ctx->cfg.ldcache = xrealpath(err, ldcache, NULL)) == NULL)
@@ -208,20 +210,20 @@ copy_config(struct error *err, struct nvc_context *ctx, const struct nvc_config 
         if (cfg->uid != (uid_t)-1)
                 ctx->cfg.uid = cfg->uid;
         else {
-                if (file_read_ulong(err, PROC_OVERFLOW_UID, &uid) < 0)
+                if (file_read_uint32(err, PROC_OVERFLOW_UID, &uid) < 0)
                         return (-1);
                 ctx->cfg.uid = (uid_t)uid;
         }
         if (cfg->gid != (gid_t)-1)
                 ctx->cfg.gid = cfg->gid;
         else {
-                if (file_read_ulong(err, PROC_OVERFLOW_GID, &gid) < 0)
+                if (file_read_uint32(err, PROC_OVERFLOW_GID, &gid) < 0)
                         return (-1);
                 ctx->cfg.gid = (gid_t)gid;
         }
 
         log_infof("using ldcache %s", ctx->cfg.ldcache);
-        log_infof("using unprivileged user %lu:%lu", (unsigned long)ctx->cfg.uid, (unsigned long)ctx->cfg.gid);
+        log_infof("using unprivileged user %"PRIu32":%"PRIu32, (uint32_t)ctx->cfg.uid, (uint32_t)ctx->cfg.gid);
         return (0);
 }
 
