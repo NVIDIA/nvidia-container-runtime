@@ -59,8 +59,10 @@ enum {
 };
 
 static const cap_value_t permitted_caps[] = {
+        CAP_CHOWN,           /* kmods */
         CAP_DAC_OVERRIDE,    /* rhel, cgroups */
         CAP_DAC_READ_SEARCH, /* userns */
+        CAP_FOWNER,          /* kmods */
         CAP_KILL,            /* privsep */
         CAP_MKNOD,           /* kmods */
         CAP_SETGID,          /* privsep, userns */
@@ -73,7 +75,7 @@ static const cap_value_t permitted_caps[] = {
 
 static const cap_value_t effective_caps[][nitems(permitted_caps) + 1] = {
         [CAPS_INIT]       = {CAP_KILL, CAP_SETGID, CAP_SETUID, -1},
-        [CAPS_INIT_KMODS] = {CAP_MKNOD, CAP_KILL, CAP_SETGID, CAP_SETUID, -1},
+        [CAPS_INIT_KMODS] = {CAP_CHOWN, CAP_FOWNER, CAP_MKNOD, CAP_KILL, CAP_SETGID, CAP_SETUID, -1},
         [CAPS_SHUTDOWN]   = {CAP_KILL, -1},
         [CAPS_CONTAINER]  = {CAP_DAC_READ_SEARCH, -1},
         [CAPS_INFO]       = {-1},
