@@ -93,7 +93,6 @@ change_rootfs(struct error *err, const char *rootfs, bool mount_proc, bool *drop
         int rv = -1;
         int oldroot = -1;
         int newroot = -1;
-        FILE *fs;
         char buf[8] = {0};
         const char *mounts[] = {"/proc", "/sys", "/dev"};
 
@@ -132,11 +131,7 @@ change_rootfs(struct error *err, const char *rootfs, bool mount_proc, bool *drop
          * Check if we are in standalone mode, within a user namespace and
          * restricted from setting supplementary groups.
          */
-        if ((fs = fopen(PROC_SETGROUPS_PATH(PROC_SELF), "r")) != NULL) {
-                if (fgets(buf, sizeof(buf), fs) == NULL)
-                        *buf = '\0';
-                fclose(fs);
-        }
+        file_read_line(NULL, PROC_SETGROUPS_PATH(PROC_SELF), buf, sizeof(buf));
         *drop_groups = strpcmp(buf, "deny");
 
         /* Hide sensitive mountpoints. */

@@ -11,6 +11,8 @@
 #define PROC_CGROUP_PATH(proc)    proc "/cgroup"
 #define PROC_NS_PATH(proc)        proc "/ns/%s"
 #define PROC_SETGROUPS_PATH(proc) proc "/setgroups"
+#define PROC_UID_MAP_PATH(proc)   proc "/uid_map"
+#define PROC_GID_MAP_PATH(proc)   proc "/gid_map"
 #define PROC_LAST_CAP_PATH        "/proc/sys/kernel/cap_last_cap"
 #define PROC_OVERFLOW_UID         "/proc/sys/kernel/overflowuid"
 #define PROC_OVERFLOW_GID         "/proc/sys/kernel/overflowgid"

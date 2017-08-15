@@ -64,6 +64,7 @@ int  file_create(struct error *, const char *, void *, uid_t, gid_t, mode_t);
 int  file_remove(struct error *, const char *);
 int  file_exists(struct error *, const char *);
 int  file_mode(struct error *, const char *, mode_t *);
+int  file_read_line(struct error *, const char *, char *, size_t);
 int  file_read_ulong(struct error *, const char *, unsigned long *);
 
 int path_append(struct error *, char *, const char *);

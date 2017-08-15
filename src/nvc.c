@@ -6,6 +6,7 @@
 
 #include <sys/types.h>
 
+#include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -23,8 +24,9 @@
 #include "utils.h"
 #include "xfuncs.h"
 
-static void load_kernel_modules(void);
-static int  copy_config(struct error *, struct nvc_context *, const struct nvc_config *);
+static int init_within_userns(struct error *);
+static int load_kernel_modules(struct error *);
+static int copy_config(struct error *, struct nvc_context *, const struct nvc_config *);
 
 const char interpreter[] __attribute__((section(".interp"))) = LIB_DIR "/" LD_SO;
 
@@ -99,9 +101,46 @@ nvc_context_free(struct nvc_context *ctx)
         free(ctx);
 }
 
-static void
-load_kernel_modules(void)
+static int
+init_within_userns(struct error *err)
 {
+        char buf[64];
+        uint32_t start, pstart, len;
+
+        if (file_read_line(err, PROC_UID_MAP_PATH(PROC_SELF), buf, sizeof(buf)) < 0)
+                return ((err->code == ENOENT) ? false : -1); /* User namespace unsupported. */
+        if (strempty(buf))
+                return (true); /* User namespace uninitialized. */
+        if (sscanf(buf, "%"PRIu32" %"PRIu32" %"PRIu32, &start, &pstart, &len) < 3) {
+                error_setx(err, "invalid map file: %s", PROC_UID_MAP_PATH(PROC_SELF));
+                return (-1);
+        }
+        if (start != 0 || pstart != 0 || len != UINT32_MAX)
+                return (true); /* User namespace mapping exists. */
+
+        if (file_read_line(err, PROC_GID_MAP_PATH(PROC_SELF), buf, sizeof(buf)) < 0)
+                return ((err->code == ENOENT) ? false : -1);
+        if (strempty(buf))
+                return (true);
+        if (sscanf(buf, "%"PRIu32" %"PRIu32" %"PRIu32, &start, &pstart, &len) < 3) {
+                error_setx(err, "invalid map file: %s", PROC_GID_MAP_PATH(PROC_SELF));
+                return (-1);
+        }
+        if (start != 0 || pstart != 0 || len != UINT32_MAX)
+                return (true);
+
+        if (file_read_line(err, PROC_SETGROUPS_PATH(PROC_SELF), buf, sizeof(buf)) < 0)
+                return ((err->code == ENOENT) ? false : -1);
+        if (!strpcmp(buf, "deny"))
+                return (true);
+
+        return (false);
+}
+
+static int
+load_kernel_modules(struct error *err)
+{
+        int userns;
         struct pci_id_match devs = {
                 0x10de,        /* vendor (NVIDIA) */
                 PCI_MATCH_ANY, /* device */
@@ -111,6 +150,17 @@ load_kernel_modules(void)
                 0xff00,        /* class mask (any subclass) */
                 0,             /* match count */
         };
+
+        /*
+         * Prevent loading the kernel modules if we are inside a user namespace because we could potentially adjust the host
+         * device nodes based on the (wrong) driver registry parameters and we won't have the right capabilities anyway.
+         */
+        if ((userns = init_within_userns(err)) < 0)
+                return (-1);
+        if (userns) {
+                log_warn("skipping kernel modules load due to user namespace");
+                return (0);
+        }
 
         if (pci_enum_match_id(&devs) != 0 || devs.num_matches == 0)
                 log_warn("failed to detect NVIDIA devices");
@@ -142,6 +192,7 @@ load_kernel_modules(void)
                 if (nvidia_modeset_mknod() == 0)
                         log_err("could not create kernel module device node");
         }
+        return (0);
 }
 
 static int
@@ -196,8 +247,10 @@ nvc_init(struct nvc_context *ctx, const struct nvc_config *cfg, const char *opts
         log_open(secure_getenv("NVC_DEBUG_FILE"));
         log_infof("initializing library context (version=%s, build=%s)", NVC_VERSION, BUILD_REVISION);
 
-        if (flags & OPT_LOAD_KMODS)
-                load_kernel_modules();
+        if (flags & OPT_LOAD_KMODS) {
+                if (load_kernel_modules(&ctx->err) < 0)
+                        return (-1);
+        }
 
         memset(&ctx->cfg, 0, sizeof(ctx->cfg));
         ctx->mnt_ns = -1;

@@ -123,8 +123,6 @@ setup_rpc_client(struct driver *ctx)
 static void
 setup_rpc_service(struct driver *ctx, uid_t uid, gid_t gid, pid_t ppid)
 {
-        bool drop_groups = true;
-
         log_info("starting driver service");
         prctl(PR_SET_NAME, (unsigned long)"nvc:[driver]", 0, 0, 0);
 
@@ -137,9 +135,18 @@ setup_rpc_service(struct driver *ctx, uid_t uid, gid_t gid, pid_t ppid)
         if (getppid() != ppid)
                 kill(getpid(), SIGTERM);
 
-        if (geteuid() == uid && getegid() == gid)
-                drop_groups = false;
-        if (perm_drop_privileges(ctx->err, uid, gid, drop_groups) < 0)
+        /*
+         * Drop privileges and capabilities for security reasons.
+         *
+         * We might be inside a user namespace with full capabilities, this should also help prevent CUDA and NVML
+         * from potentially adjusting the host device nodes based on the (wrong) driver registry parameters.
+         *
+         * If we are not changing group, then keep our supplementary groups as well.
+         * This is arguable but allows us to support unprivileged processes (i.e. without CAP_SETGID) and user namespaces.
+         */
+        if (perm_drop_privileges(ctx->err, uid, gid, (getegid() != gid)) < 0)
+                goto fail;
+        if (perm_set_capabilities(ctx->err, CAP_PERMITTED, NULL, 0) < 0)
                 goto fail;
         if (reset_cuda_environment(ctx->err) < 0)
                 goto fail;

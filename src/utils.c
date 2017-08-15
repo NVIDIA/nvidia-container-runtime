@@ -504,6 +504,26 @@ file_mode(struct error *err, const char *path, mode_t *mode)
 }
 
 int
+file_read_line(struct error *err, const char *path, char *buf, size_t size)
+{
+        FILE *fs;
+        int rv = 0;
+
+        if ((fs = xfopen(err, path, "r")) == NULL)
+                return (-1);
+        if (fgets(buf, (int)size, fs) == NULL) {
+                if (feof(fs))
+                        *buf = '\0';
+                else {
+                        error_setx(err, "file read error: %s", path);
+                        rv = -1;
+                }
+        }
+        fclose(fs);
+        return (rv);
+}
+
+int
 file_read_ulong(struct error *err, const char *path, unsigned long *v)
 {
         FILE *fs;
