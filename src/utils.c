@@ -213,6 +213,37 @@ strtopid(struct error *err, const char *str, pid_t *pid)
 }
 
 int
+strtougid(struct error *err, const char *str, uid_t *uid, gid_t *gid)
+{
+        char *ptr;
+        uintmax_t n1, n2;
+
+        n1 = strtoumax(str, &ptr, 10);
+        if (ptr == str || *ptr != ':') {
+                errno = EINVAL;
+                goto fail;
+        }
+        str = ptr + 1;
+        n2 = strtoumax(str, &ptr, 10);
+        if (ptr == str || *ptr != '\0') {
+                errno = EINVAL;
+                goto fail;
+        }
+        if (n1 == UINTMAX_MAX || n1 != (uid_t)n1 ||
+            n2 == UINTMAX_MAX || n2 != (gid_t)n2) {
+                errno = ERANGE;
+                goto fail;
+        }
+        *uid = (uid_t)n1;
+        *gid = (gid_t)n2;
+        return (0);
+
+ fail:
+        error_set(err, "parse userspec failed");
+        return (-1);
+}
+
+int
 nsenterat(struct error *err, int fd, int nstype)
 {
         if (setns(fd, nstype) < 0) {

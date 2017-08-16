@@ -41,6 +41,8 @@ struct command {
 };
 
 struct context {
+        uid_t uid;
+        gid_t gid;
         pid_t pid;
         char *rootfs;
         char *devices;
@@ -48,7 +50,6 @@ struct context {
         size_t nreqs;
         char *ldconfig;
         bool load_kmods;
-        bool no_privsep;
         bool list_info;
         char *init_flags;
         char *driver_flags;
@@ -69,7 +70,7 @@ static struct argp main_argp = {
                 {NULL, 0, NULL, 0, "Options:", -1},
                 {"debug", 'd', "FILE", 0, "Log debug information", -1},
                 {"load-kmods", 'k', NULL, 0, "Load kernel modules", -1},
-                {"no-privsep", 'S', NULL, 0, "Disable privilege separation", -1},
+                {"userspec", 'u', "UID:GID", OPTION_ARG_OPTIONAL, "User and group to use for privilege separation", -1},
                 {NULL, 0, NULL, 0, "Commands:", 0},
                 {"list", 0, NULL, OPTION_DOC|OPTION_NO_USAGE, "List host driver components", 0},
                 {"configure", 0, NULL, OPTION_DOC|OPTION_NO_USAGE, "Configure a container with GPU support", 0},
@@ -193,8 +194,14 @@ main_parser(int key, char *arg, struct argp_state *state)
                 if (strjoin(&err, &ctx->init_flags, "load-kmods", " ") < 0)
                         goto fatal;
                 break;
-        case 'S':
-                ctx->no_privsep = true;
+        case 'u':
+                if (arg != NULL) {
+                        if (strtougid(&err, arg, &ctx->uid, &ctx->gid) < 0)
+                                goto fatal;
+                } else {
+                        ctx->uid = geteuid();
+                        ctx->gid = getegid();
+                }
                 break;
         case ARGP_KEY_ARGS:
                 state->argv += state->next;
@@ -407,6 +414,7 @@ select_gpu_devices(struct error *err, char *devs, const struct nvc_device *selec
 static int
 list_command(const struct context *ctx)
 {
+        bool run_as_root;
         struct nvc_context *nvc = NULL;
         struct nvc_config *nvc_cfg = NULL;
         struct nvc_driver_info *drv = NULL;
@@ -414,16 +422,13 @@ list_command(const struct context *ctx)
         const struct nvc_device **gpus = NULL;
         struct error err = {0};
         int rv = EXIT_FAILURE;
-        uid_t uid;
-        gid_t gid;
 
-        uid = geteuid();
-        gid = getegid();
-        if (uid != 0 && ctx->load_kmods) {
+        run_as_root = (geteuid() == 0);
+        if (!run_as_root && ctx->load_kmods) {
                 warnx("requires root privileges");
                 return (rv);
         }
-        if (uid == 0) {
+        if (run_as_root) {
                 if (perm_set_capabilities(&err, CAP_PERMITTED, permitted_caps, nitems(permitted_caps)) < 0 ||
                     perm_set_capabilities(&err, CAP_INHERITABLE, inherited_caps, nitems(inherited_caps)) < 0 ||
                     perm_drop_bounds(&err) < 0) {
@@ -439,7 +444,7 @@ list_command(const struct context *ctx)
 
         /* Initialize the library context. */
         int c = ctx->load_kmods ? CAPS_INIT_KMODS : CAPS_INIT;
-        if (uid == 0 && perm_set_capabilities(&err, CAP_EFFECTIVE, effective_caps[c], effective_caps_size(c)) < 0) {
+        if (run_as_root && perm_set_capabilities(&err, CAP_EFFECTIVE, effective_caps[c], effective_caps_size(c)) < 0) {
                 warnx("permission error: %s", err.msg);
                 goto fail;
         }
@@ -448,17 +453,15 @@ list_command(const struct context *ctx)
                 warn("memory allocation failed");
                 goto fail;
         }
-        if (uid != 0 || ctx->no_privsep) {
-                nvc_cfg->uid = uid;
-                nvc_cfg->gid = gid;
-        }
+        nvc_cfg->uid = (!run_as_root && ctx->uid == (uid_t)-1) ? geteuid() : ctx->uid;
+        nvc_cfg->gid = (!run_as_root && ctx->gid == (gid_t)-1) ? getegid() : ctx->gid;
         if (nvc_init(nvc, nvc_cfg, ctx->init_flags) < 0) {
                 warnx("initialization error: %s", nvc_error(nvc));
                 goto fail;
         }
 
         /* Query the driver and device information. */
-        if (uid == 0 && perm_set_capabilities(&err, CAP_EFFECTIVE, effective_caps[CAPS_INFO], effective_caps_size(CAPS_INFO)) < 0) {
+        if (run_as_root && perm_set_capabilities(&err, CAP_EFFECTIVE, effective_caps[CAPS_INFO], effective_caps_size(CAPS_INFO)) < 0) {
                 warnx("permission error: %s", err.msg);
                 goto fail;
         }
@@ -502,7 +505,7 @@ list_command(const struct context *ctx)
         for (size_t i = 0; i < drv->nipcs; ++i)
                 printf("%s\n", drv->ipcs[i]);
 
-        if (uid == 0 && perm_set_capabilities(&err, CAP_EFFECTIVE, effective_caps[CAPS_SHUTDOWN], effective_caps_size(CAPS_SHUTDOWN)) < 0) {
+        if (run_as_root && perm_set_capabilities(&err, CAP_EFFECTIVE, effective_caps[CAPS_SHUTDOWN], effective_caps_size(CAPS_SHUTDOWN)) < 0) {
                 warnx("permission error: %s", err.msg);
                 goto fail;
         }
@@ -529,12 +532,8 @@ configure_command(const struct context *ctx)
         const struct nvc_device **gpus = NULL;
         struct error err = {0};
         int rv = EXIT_FAILURE;
-        uid_t uid;
-        gid_t gid;
 
-        uid = geteuid();
-        gid = getegid();
-        if (uid != 0) {
+        if (geteuid() != 0) {
                 warnx("requires root privileges");
                 return (rv);
         }
@@ -557,10 +556,8 @@ configure_command(const struct context *ctx)
                 warn("memory allocation failed");
                 goto fail;
         }
-        if (ctx->no_privsep) {
-                nvc_cfg->uid = uid;
-                nvc_cfg->gid = gid;
-        }
+        nvc_cfg->uid = ctx->uid;
+        nvc_cfg->gid = ctx->gid;
         if (nvc_init(nvc, nvc_cfg, ctx->init_flags) < 0) {
                 warnx("initialization error: %s", nvc_error(nvc));
                 goto fail;
@@ -650,7 +647,7 @@ configure_command(const struct context *ctx)
 int
 main(int argc, char *argv[])
 {
-        struct context ctx = {0};
+        struct context ctx = {.uid = (uid_t)-1, .gid = (gid_t)-1};
         int rv;
 
         argp_parse(&main_argp, argc, argv, ARGP_IN_ORDER, NULL, &ctx);
