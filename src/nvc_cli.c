@@ -7,6 +7,7 @@
 #include <alloca.h>
 #include <argp.h>
 #include <err.h>
+#include <inttypes.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -380,7 +381,7 @@ select_gpu_devices(struct error *err, char *devs, const struct nvc_device *selec
 {
         char *gpu, *ptr;
         size_t i;
-        long n;
+        uintmax_t n;
 
         while ((gpu = strsep(&devs, ",")) != NULL) {
                 if (*gpu == '\0')
@@ -398,8 +399,8 @@ select_gpu_devices(struct error *err, char *devs, const struct nvc_device *selec
                                 }
                         }
                 } else {
-                        n = strtol(gpu, &ptr, 10);
-                        if (*ptr == '\0' && n >= 0 && (size_t)n < size) {
+                        n = strtoumax(gpu, &ptr, 10);
+                        if (*ptr == '\0' && n < UINTMAX_MAX && (size_t)n < size) {
                                 selected[n] = &available[n];
                                 goto next;
                         }

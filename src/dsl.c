@@ -2,12 +2,13 @@
  * Copyright (c) 2017, NVIDIA CORPORATION. All rights reserved.
  */
 
+
+#include <inttypes.h>
 #include <limits.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-
 #include "dsl.h"
 #include "utils.h"
 
@@ -33,7 +34,7 @@ int
 dsl_compare_version(const char *v1, enum dsl_comparator cmp, const char *v2)
 {
         char *ptr1, *ptr2;
-        unsigned long n1, n2;
+        uintmax_t n1, n2;
 
         if (strspn(v1, "0123456789.") != strlen(v1))
                 return (-1);
@@ -41,9 +42,9 @@ dsl_compare_version(const char *v1, enum dsl_comparator cmp, const char *v2)
                 return (-1);
 
         while (*v1 != '\0' && *v2 != '\0') {
-                if ((n1 = strtoul(v1, &ptr1, 10)) == ULONG_MAX || v1 == ptr1)
+                if ((n1 = strtoumax(v1, &ptr1, 10)) == UINTMAX_MAX || v1 == ptr1)
                         return (-1);
-                if ((n2 = strtoul(v2, &ptr2, 10)) == ULONG_MAX || v2 == ptr2)
+                if ((n2 = strtoumax(v2, &ptr2, 10)) == UINTMAX_MAX || v2 == ptr2)
                         return (-1);
                 if (n1 != n2) {
                         if (cmp == EQUAL)
