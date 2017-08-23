@@ -2,17 +2,9 @@
 # Copyright (c) 2017, NVIDIA CORPORATION. All rights reserved.
 #
 
-export prefix      ?= /usr/local
-export exec_prefix ?= $(prefix)
-export bindir      ?= $(exec_prefix)/bin
-export libdir      ?= $(exec_prefix)/lib
-export libdbgdir   ?= $(libdir)/debug/$(libdir)
-export includedir  ?= $(prefix)/include
-export pkgconfdir  ?= $(libdir)/pkgconfig
-
 MV       ?= mv -f
+CP       ?= cp -a
 LN       ?= ln
-M4       ?= m4
 TAR      ?= tar
 CURL     ?= curl
 MKDIR    ?= mkdir

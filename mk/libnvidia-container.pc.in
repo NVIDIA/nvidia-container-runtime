@@ -1,0 +1,20 @@
+#! /bin/sh
+
+set -u
+
+VERSION="$1"
+PRIVATE_LIBS="$2"
+
+cat <<EOF
+prefix=$prefix
+exec_prefix=$exec_prefix
+libdir=$libdir
+includedir=$includedir
+
+Name: libnvidia-container
+Description: NVIDIA container library
+Version: $VERSION
+Libs: -L\${libdir} -lnvidia-container
+Libs.private: $PRIVATE_LIBS
+Cflags: -I\${includedir}
+EOF

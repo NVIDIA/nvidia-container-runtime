@@ -1,0 +1,41 @@
+FROM centos:7
+
+RUN NVIDIA_GPGKEY_SUM=d1be581509378368edeec8c1eb2958702feedf3bc3d17011adbf24efacce4ab5 && \
+    curl -fsSL http://developer.download.nvidia.com/compute/cuda/repos/rhel7/x86_64/7fa2af80.pub | sed '/^Version/d' > /etc/pki/rpm-gpg/RPM-GPG-KEY-NVIDIA && \
+    echo "$NVIDIA_GPGKEY_SUM  /etc/pki/rpm-gpg/RPM-GPG-KEY-NVIDIA" | sha256sum -c --strict -
+
+COPY mk/cuda.repo /etc/yum.repos.d/cuda.repo
+
+RUN yum install -y \
+        bzip2 \
+        cuda-misc-headers-8-0-8.0.61-1 \
+        cuda-nvml-dev-8-0-8.0.61-1 \
+        gcc \
+        git \
+        libcap-devel \
+        libseccomp-devel \
+        m4 \
+        redhat-lsb-core \
+        rpm-build \
+        rpmlint \
+        which && \
+    rm -rf /var/cache/yum/*
+
+RUN cd $(mktemp -d) && \
+    curl -fsSL -O https://mirrors.kernel.org/mageia/distrib/6/x86_64/media/core/release/pmake-1.45-16.mga6.x86_64.rpm && \
+    curl -fsSL -O https://mirrors.kernel.org/mageia/distrib/6/x86_64/media/core/release/bmake-20161212-1.mga6.x86_64.rpm && \
+    rpm -i *.rpm && \
+    rm -rf $PWD
+
+ARG USERSPEC=0:0
+
+WORKDIR /tmp/libnvidia-container
+COPY . .
+RUN chown -R $USERSPEC $PWD
+USER $USERSPEC
+
+RUN make distclean && make -j"$(nproc)"
+
+ENV DIST_DIR /mnt
+VOLUME $DIST_DIR
+CMD make dist && make rpm

@@ -8,6 +8,7 @@ include $(MAKE_DIR)/common.mk
 
 export MKSHARE   := no
 export MKPROFILE := no
+export LORDER    := echo
 export INSTALL   := $(INSTALL) -D
 export BINOWN    := $(shell id -u)
 export BINGRP    := $(shell id -g)

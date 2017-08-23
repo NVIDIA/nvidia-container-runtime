@@ -1,0 +1,5 @@
+libnvidia-container (1.0.0~alpha.1-1) UNRELEASED; urgency=medium
+
+  * Initial release
+
+ -- NVIDIA CORPORATION <cudatools@nvidia.com>  Tue, 05 Sep 2017 14:31:33 -0700
