@@ -17,7 +17,7 @@ Source1: nvidia-container-runtime-hook
 Source2: config.toml
 Source3: LICENSE
 
-Requires: libnvidia-container-tools
+Requires: libnvidia-container-tools >= 0.1.0, libnvidia-container-tools < 2.0.0
 Requires: libseccomp
 
 %description
