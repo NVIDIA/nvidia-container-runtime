@@ -1,0 +1,16 @@
+Source: nvidia-container-runtime
+Section: devel
+Priority: optional
+Maintainer: NVIDIA CORPORATION <cudatools@nvidia.com>
+Standards-Version: 3.9.8
+Homepage: https://github.com/NVIDIA/nvidia-container-runtime/wiki
+Vcs-Git: https://github.com/NVIDIA/nvidia-container-runtime
+Vcs-Browser: https://github.com/NVIDIA/nvidia-container-runtime
+Build-Depends: debhelper (>= 9)
+
+Package: nvidia-container-runtime
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}, libnvidia-container-tools, libapparmor1, libseccomp2
+Description: NVIDIA container tools
+ Provides a modified version of runc allowing users to run GPU enabled
+ containers.

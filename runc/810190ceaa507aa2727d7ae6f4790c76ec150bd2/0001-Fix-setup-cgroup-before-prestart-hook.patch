@@ -1,0 +1,56 @@
+From f1db2f8c3ee6026460e152990bb5d8676869aa92 Mon Sep 17 00:00:00 2001
+From: Wentao Zhang <zhangwentao234@huawei.com>
+Date: Tue, 20 Dec 2016 06:21:10 -0500
+Subject: [PATCH 1/2] Fix setup cgroup before prestart hook
+
+* User Case:
+User could use prestart hook to add block devices to container. so the
+hook should have a way to set the permissions of the devices.
+
+Just move cgroup config operation before prestart hook will work.
+
+Signed-off-by: Wentao Zhang <zhangwentao234@huawei.com>
+---
+ libcontainer/process_linux.go | 12 +++++++++---
+ 1 file changed, 9 insertions(+), 3 deletions(-)
+
+diff --git a/libcontainer/process_linux.go b/libcontainer/process_linux.go
+index bfe9955..323ba72 100644
+--- a/libcontainer/process_linux.go
++++ b/libcontainer/process_linux.go
+@@ -280,9 +280,6 @@ func (p *initProcess) start() error {
+ 	ierr := parseSync(p.parentPipe, func(sync *syncT) error {
+ 		switch sync.Type {
+ 		case procReady:
+-			if err := p.manager.Set(p.config.Config); err != nil {
+-				return newSystemErrorWithCause(err, "setting cgroup config for ready process")
+-			}
+ 			// set rlimits, this has to be done here because we lose permissions
+ 			// to raise the limits once we enter a user-namespace
+ 			if err := setupRlimits(p.config.Rlimits, p.pid()); err != nil {
+@@ -290,6 +287,11 @@ func (p *initProcess) start() error {
+ 			}
+ 			// call prestart hooks
+ 			if !p.config.Config.Namespaces.Contains(configs.NEWNS) {
++				// Setup cgroup before prestart hook, so that the prestart hook could apply cgroup permissions.
++				if err := p.manager.Set(p.config.Config); err != nil {
++					return newSystemErrorWithCause(err, "setting cgroup config for ready process")
++				}
++
+ 				if p.config.Config.Hooks != nil {
+ 					s := configs.HookState{
+ 						Version: p.container.config.Version,
+@@ -310,6 +312,10 @@ func (p *initProcess) start() error {
+ 			}
+ 			sentRun = true
+ 		case procHooks:
++			// Setup cgroup before prestart hook, so that the prestart hook could apply cgroup permissions.
++			if err := p.manager.Set(p.config.Config); err != nil {
++				return newSystemErrorWithCause(err, "setting cgroup config for procHooks process")
++			}
+ 			if p.config.Config.Hooks != nil {
+ 				s := configs.HookState{
+ 					Version: p.container.config.Version,
+-- 
+2.7.4
+
