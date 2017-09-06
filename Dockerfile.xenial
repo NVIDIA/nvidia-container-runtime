@@ -35,6 +35,8 @@ ARG PKG_ARCH
 ENV DEBFULLNAME "NVIDIA CORPORATION"
 ENV DEBEMAIL "cudatools@nvidia.com"
 ENV REVISION "$PKG_VERS-$PKG_REV"
+ENV DISTRIB "UNRELEASED"
+ENV SECTION ""
 
 # output directory
 ENV DIST_DIR=/tmp/nvidia-container-runtime-$PKG_VERS
@@ -63,8 +65,8 @@ COPY config.toml.xenial $DIST_DIR/config.toml
 WORKDIR $DIST_DIR
 COPY debian ./debian
 
-RUN dch --create --package nvidia-container-runtime -v "$REVISION" "v$REVISION" && \
+RUN dch --create --package nvidia-container-runtime -v "$REVISION" "v$REVISION" -D "$DISTRIB" && \
     dch -r ""
 
-CMD debuild -i -us -uc -b && \
+CMD debuild -eSECTION --dpkg-buildpackage-hook='sh debian/prepare' -i -us -uc -b && \
     mv /tmp/*.deb /dist

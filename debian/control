@@ -1,5 +1,5 @@
 Source: nvidia-container-runtime
-Section: devel
+Section: @SECTION@utils
 Priority: optional
 Maintainer: NVIDIA CORPORATION <cudatools@nvidia.com>
 Standards-Version: 3.9.8
