@@ -1,8 +1,11 @@
 # libnvidia-container
 
-[![GitHub license](https://img.shields.io/badge/license-New%20BSD-blue.svg)](https://raw.githubusercontent.com/NVIDIA/libnvidia-container/master/LICENSE)
-[![Travis](https://img.shields.io/travis/NVIDIA/libnvidia-container.svg)](https://travis-ci.org/NVIDIA/libnvidia-container)
-[![Coverity Scan](https://img.shields.io/coverity/scan/12444.svg)](https://scan.coverity.com/projects/nvidia-libnvidia-container)
+[![GitHub license](https://img.shields.io/badge/license-New%20BSD-blue.svg?style=flat-square)](https://raw.githubusercontent.com/NVIDIA/libnvidia-container/master/LICENSE)
+[![GitHub release](https://img.shields.io/github/release/NVIDIA/libnvidia-container/all.svg?style=flat-square)]()
+[![Packages ubuntu](https://img.shields.io/badge/packages-ubuntu-b956e8.svg?style=flat-square)](https://packages.nvidia.com/app/compute/container/search?q=libnvidia-container&filter=debs)
+[![Packages centos](https://img.shields.io/badge/packages-centos-b956e8.svg?style=flat-square)](https://packages.nvidia.com/app/compute/container/search?q=libnvidia-container&filter=rpms)
+[![Travis](https://img.shields.io/travis/NVIDIA/libnvidia-container.svg?style=flat-square)](https://travis-ci.org/NVIDIA/libnvidia-container)
+[![Coverity Scan](https://img.shields.io/coverity/scan/12444.svg?style=flat-square)](https://scan.coverity.com/projects/nvidia-libnvidia-container)
 
 **Warning: This project is an alpha release, it is not intended to be used in production systems.**
 
