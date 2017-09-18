@@ -391,7 +391,7 @@ select_gpu_devices(struct error *err, char *devs, const struct nvc_device *selec
                                 selected[i] = &available[i];
                         break;
                 }
-                if (!strncasecmp(gpu, "GPU-", strlen("GPU-"))) {
+                if (!strncasecmp(gpu, "GPU-", strlen("GPU-")) && strlen(gpu) > strlen("GPU-")) {
                         for (i = 0; i < size; ++i) {
                                 if (!strncasecmp(available[i].uuid, gpu, strlen(gpu))) {
                                         selected[i] = &available[i];
