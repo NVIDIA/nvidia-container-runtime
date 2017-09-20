@@ -1,6 +1,6 @@
-From 4eb04f3f5a59d29cbd6043203e79507b223f00ee Mon Sep 17 00:00:00 2001
+From b65733155b4c957ce542b781886fbf60fb2b339e Mon Sep 17 00:00:00 2001
 From: Felix Abecassis <fabecassis@nvidia.com>
-Date: Mon, 7 Aug 2017 11:45:22 -0700
+Date: Wed, 20 Sep 2017 09:58:44 -0700
 Subject: [PATCH 2/2] Add prestart hook nvidia-container-runtime-hook to the
  config
 
@@ -9,7 +9,7 @@ Subject: [PATCH 2/2] Add prestart hook nvidia-container-runtime-hook to the
  1 file changed, 15 insertions(+)
 
 diff --git a/utils.go b/utils.go
-index 55a7e9d..b398ebd 100644
+index 55a7e9d..ccbca80 100644
 --- a/utils.go
 +++ b/utils.go
 @@ -3,6 +3,7 @@ package main
@@ -25,7 +25,7 @@ index 55a7e9d..b398ebd 100644
  		return nil, err
  	}
 +
-+	path, err := exec.LookPath("nvidia-oci-hook")
++	path, err := exec.LookPath("nvidia-container-runtime-hook")
 +	if err != nil {
 +		return nil, err
 +	}
