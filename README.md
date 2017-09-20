@@ -21,6 +21,46 @@ sed -i 's;\("TERM=xterm"\);\1, "NVIDIA_VISIBLE_DEVICES=0";' config.json
 sudo nvidia-container-runtime run nvidia_smi
 ```
 
+## Environment variables (OCI spec)
+
+Each environment variable maps to an command-line argument for `nvidia-container-cli` from [libnvidia-container](https://github.com/NVIDIA/libnvidia-container).  
+These variables are already set in our [official CUDA images](https://hub.docker.com/r/nvidia/cuda/).
+
+### `NVIDIA_VISIBLE_DEVICES`
+This variable controls which GPUs will be made accessible inside the container.  
+
+#### Possible values
+* `0,1,2`, `GPU-fef8089b` …: a comma-separated list of GPU UUID(s) or index(es),
+* `all`: all GPUs will be accessible, this is the default value in our container images,
+* `none`: no GPU will be accessible, but driver capabilities will be enabled.
+* *empty*: `nvidia-container-runtime` will have the same behavior as `runc`.
+
+### `NVIDIA_DRIVER_CAPABILITIES`
+This option controls which driver libraries/binaries will be mounted inside the container.
+
+#### Possible values
+* `compute,video`, `graphics,utility` …: a comma-separated list of driver features the container needs,
+* `all`: enable all available driver capabilities.
+* *empty*: use default driver capabilities, determined by `nvidia-container-cli`.
+
+#### Supported driver capabilities
+* `compute`: required for CUDA and OpenCL applications,
+* `compat32`: required for running 32-bit applications,
+* `graphics`: required for running OpenGL and Vulkan applications,
+* `utility`: required for using `nvidia-smi` and NVML,
+* `video`: required for using the Video Codec SDK.
+
+### `NVIDIA_CUDA_VERSION`
+The version of the CUDA toolkit used by the container.  
+If the version of the NVIDIA driver is insufficient to run this version of CUDA, the container will not be started.
+
+#### Possible values
+* `7.5`, `8.0`, `9.0` …: any valid CUDA version in the form `major.minor`.
+
+### `CUDA_VERSION`
+Similar to `NVIDIA_CUDA_VERSION`, for legacy CUDA images.  
+In addition, if `NVIDIA_CUDA_VERSION` is not set, `NVIDIA_VISIBLE_DEVICES` and `NVIDIA_DRIVER_CAPABILITIES` will default to `all`.
+
 ## Copyright and License
 
 This project is released under the [BSD 3-clause license](https://github.com/NVIDIA/nvidia-container-runtime/blob/master/LICENSE).
