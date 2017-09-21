@@ -85,6 +85,7 @@ reset_cuda_environment(struct error *err)
                 {"CUDA_CACHE_DISABLE", "1"},
                 {"CUDA_DEVICE_ORDER", "FASTEST_FIRST"},
                 {"CUDA_VISIBLE_DEVICES", NULL},
+                {"CUDA_MPS_PIPE_DIRECTORY", "/dev/null"},
         };
         int ret;
 
