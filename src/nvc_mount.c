@@ -45,15 +45,9 @@ mount_files(struct error *err, const struct nvc_container *cnt, const char *dir,
 
         ptr = path + strlen(path);
 
-        /* Bind mount the top directory with slave propagation. */
-        if (xmount(err, path, path, NULL, MS_BIND|MS_REC, NULL) < 0)
+        /* Bind mount the top directory and every files under it with read-only permissions. */
+        if (xmount(err, path, path, NULL, MS_BIND, NULL) < 0)
                 goto fail;
-        if (xmount(err, NULL, path, NULL, MS_BIND|MS_REC|MS_REMOUNT | MS_NODEV|MS_NOSUID, NULL) < 0)
-                goto fail;
-        if (xmount(err, NULL, path, NULL, MS_SLAVE|MS_REC, NULL) < 0)
-                goto fail;
-
-        /* Bind mount every files under the top directory with read-only permissions. */
         for (size_t i = 0; i < size; ++i) {
                 if (path_append(err, path, basename(paths[i])) < 0)
                         goto fail;
