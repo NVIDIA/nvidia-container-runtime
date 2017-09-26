@@ -19,12 +19,11 @@
 #include "utils.h"
 #include "xfuncs.h"
 
-#define CGROUP_DEVICE_ALLOW "devices.allow"
-#define CGROUP_DEVICE_STR   "c %u:%u %s"
-
 static char *mount_files(struct error *, const struct nvc_container *, const char *, char *[], size_t);
 static char *mount_device(struct error *, const struct nvc_container *, const char *);
 static char *mount_ipc(struct error *, const struct nvc_container *, const char *);
+static char *mount_procfs(struct error *, const struct nvc_container *);
+static char *mount_procfs_gpu(struct error *, const struct nvc_container *, const char *);
 static void unmount(const char *);
 static int  setup_cgroup(struct error *, const char *, dev_t);
 static int  symlink_library(struct error *, const char *, const char *, const char *, const char *, uid_t, gid_t);
@@ -129,10 +128,95 @@ mount_ipc(struct error *err, const struct nvc_container *cnt, const char *ipc)
         return (NULL);
 }
 
+static char *
+mount_procfs(struct error *err, const struct nvc_container *cnt)
+{
+        char path[PATH_MAX];
+        char *ptr, *mnt, *param;
+        mode_t mode;
+        char *buf = NULL;
+        const char *files[] = {
+                NV_PROC_DRIVER "/params",
+                NV_PROC_DRIVER "/version",
+                NV_PROC_DRIVER "/registry",
+        };
+
+        if (path_resolve(err, path, cnt->cfg.rootfs, NV_PROC_DRIVER) < 0)
+                return (NULL);
+        log_infof("mounting tmpfs at %s", path);
+        if (xmount(err, "tmpfs", path, "tmpfs", 0, "mode=0555") < 0)
+                return (NULL);
+
+        ptr = path + strlen(path);
+
+        for (size_t i = 0; i < nitems(files); ++i) {
+                if (file_mode(err, files[i], &mode) < 0) {
+                        if (err->code == ENOENT)
+                                continue;
+                        goto fail;
+                }
+                if (file_read_text(err, files[i], &buf) < 0)
+                        goto fail;
+                /* Prevent NVRM from ajusting the device nodes. */
+                if (i == 0 && (param = strstr(buf, "ModifyDeviceFiles: 1")) != NULL)
+                        param[19] = '0';
+                if (path_append(err, path, basename(files[i])) < 0)
+                        goto fail;
+                if (file_create(err, path, buf, cnt->uid, cnt->gid, mode) < 0)
+                        goto fail;
+                *ptr = '\0';
+                free(buf);
+                buf = NULL;
+        }
+        if (xmount(err, NULL, path, NULL, MS_REMOUNT | MS_NODEV|MS_NOSUID|MS_NOEXEC, NULL) < 0)
+                goto fail;
+        if ((mnt = xstrdup(err, path)) == NULL)
+                goto fail;
+        return (mnt);
+
+ fail:
+        *ptr = '\0';
+        free(buf);
+        unmount(path);
+        return (NULL);
+}
+
+static char *
+mount_procfs_gpu(struct error *err, const struct nvc_container *cnt, const char *busid)
+{
+        char path[PATH_MAX] = {0};
+        char *gpu = NULL;
+        char *mnt = NULL;
+        mode_t mode;
+
+        if (xasprintf(err, &gpu, "%s/gpus/%s", NV_PROC_DRIVER, busid) < 0)
+                return (NULL);
+        if (file_mode(err, gpu, &mode) < 0)
+                goto fail;
+        if (path_resolve(err, path, cnt->cfg.rootfs, gpu) < 0)
+                goto fail;
+        if (file_create(err, path, NULL, cnt->uid, cnt->gid, mode) < 0)
+                goto fail;
+
+        log_infof("mounting %s at %s", gpu, path);
+        if (xmount(err, gpu, path, NULL, MS_BIND, NULL) < 0)
+                goto fail;
+        if (xmount(err, NULL, path, NULL, MS_BIND|MS_REMOUNT | MS_RDONLY|MS_NODEV|MS_NOSUID|MS_NOEXEC, NULL) < 0)
+                goto fail;
+        if ((mnt = xstrdup(err, path)) == NULL)
+                goto fail;
+
+ fail:
+        if (mnt == NULL)
+                unmount(path);
+        free(gpu);
+        return (mnt);
+}
+
 static void
 unmount(const char *path)
 {
-        if (path == NULL)
+        if (path == NULL || strempty(path))
                 return;
         umount2(path, MNT_DETACH);
         file_remove(NULL, path);
@@ -145,14 +229,14 @@ setup_cgroup(struct error *err, const char *cgroup, dev_t id)
         FILE *fs;
         int rv = -1;
 
-        if (path_join(err, path, cgroup, CGROUP_DEVICE_ALLOW) < 0)
+        if (path_join(err, path, cgroup, "devices.allow") < 0)
                 return (-1);
         if ((fs = xfopen(err, path, "a")) == NULL)
                 return (-1);
 
         log_infof("whitelisting device node %u:%u", major(id), minor(id));
         /* XXX dprintf doesn't seem to catch the write errors, flush the stream explicitly instead. */
-        if (fprintf(fs, CGROUP_DEVICE_STR, major(id), minor(id), "rwm") < 0 || fflush(fs) == EOF || ferror(fs)) {
+        if (fprintf(fs, "c %u:%u rw", major(id), minor(id)) < 0 || fflush(fs) == EOF || ferror(fs)) {
                 error_set(err, "write error: %s", path);
                 goto fail;
         }
@@ -208,6 +292,7 @@ symlink_libraries(struct error *err, const struct nvc_container *cnt, const char
 int
 nvc_driver_mount(struct nvc_context *ctx, const struct nvc_container *cnt, const struct nvc_driver_info *info)
 {
+        char *procfs_mnt = NULL;
         char **files_mnt = NULL;
         char **ipcs_mnt = NULL;
         char **devs_mnt = NULL;
@@ -224,6 +309,10 @@ nvc_driver_mount(struct nvc_context *ctx, const struct nvc_container *cnt, const
 
         if (nsenter(&ctx->err, cnt->mnt_ns, CLONE_NEWNS) < 0)
                 return (-1);
+
+        /* Procfs mount */
+        if ((procfs_mnt = mount_procfs(&ctx->err, cnt)) == NULL)
+                goto fail;
 
         /* File mounts */
         nfiles_mnt = 3;
@@ -279,6 +368,7 @@ nvc_driver_mount(struct nvc_context *ctx, const struct nvc_container *cnt, const
 
  fail:
         if (rv < 0) {
+                unmount(procfs_mnt);
                 for (size_t i = 0; files_mnt != NULL && i < nfiles_mnt; ++i)
                         unmount(files_mnt[i]);
                 for (size_t i = 0; ipcs_mnt != NULL && i < nipcs_mnt; ++i)
@@ -290,6 +380,7 @@ nvc_driver_mount(struct nvc_context *ctx, const struct nvc_container *cnt, const
                 rv = nsenterat(&ctx->err, ctx->mnt_ns, CLONE_NEWNS);
         }
 
+        free(procfs_mnt);
         array_free(files_mnt, nfiles_mnt);
         array_free(ipcs_mnt, nipcs_mnt);
         array_free(devs_mnt, ndevs_mnt);
@@ -299,7 +390,8 @@ nvc_driver_mount(struct nvc_context *ctx, const struct nvc_container *cnt, const
 int
 nvc_device_mount(struct nvc_context *ctx, const struct nvc_container *cnt, const struct nvc_device *dev)
 {
-        char *mnt = NULL;
+        char *dev_mnt = NULL;
+        char *proc_mnt = NULL;
         struct stat s;
         int rv = -1;
 
@@ -311,6 +403,8 @@ nvc_device_mount(struct nvc_context *ctx, const struct nvc_container *cnt, const
         if (nsenter(&ctx->err, cnt->mnt_ns, CLONE_NEWNS) < 0)
                 return (-1);
 
+        if ((proc_mnt = mount_procfs_gpu(&ctx->err, cnt, dev->busid)) == NULL)
+                goto fail;
         if (!(cnt->flags & OPT_NO_DEVBIND)) {
                 if (xstat(&ctx->err, dev->node.path, &s) < 0)
                         return (-1);
@@ -318,7 +412,7 @@ nvc_device_mount(struct nvc_context *ctx, const struct nvc_container *cnt, const
                         error_setx(&ctx->err, "invalid device node: %s", dev->node.path);
                         return (-1);
                 }
-                if ((mnt = mount_device(&ctx->err, cnt, dev->node.path)) == NULL)
+                if ((dev_mnt = mount_device(&ctx->err, cnt, dev->node.path)) == NULL)
                         goto fail;
         }
         if (!(cnt->flags & OPT_NO_CGROUPS)) {
@@ -329,12 +423,14 @@ nvc_device_mount(struct nvc_context *ctx, const struct nvc_container *cnt, const
 
  fail:
         if (rv < 0) {
-                unmount(mnt);
+                unmount(proc_mnt);
+                unmount(dev_mnt);
                 assert_func(nsenterat(NULL, ctx->mnt_ns, CLONE_NEWNS));
         } else {
                 rv = nsenterat(&ctx->err, ctx->mnt_ns, CLONE_NEWNS);
         }
 
-        free(mnt);
+        free(proc_mnt);
+        free(dev_mnt);
         return (rv);
 }

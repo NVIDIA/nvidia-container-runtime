@@ -436,6 +436,8 @@ file_create(struct error *err, const char *path, void *data, uid_t uid, gid_t gi
         gid_t egid;
         mode_t perm;
         int fd;
+        size_t size;
+        int flags = O_NOFOLLOW|O_CREAT;
         int rv = -1;
 
         if ((p = xstrdup(err, path)) == NULL)
@@ -462,8 +464,16 @@ file_create(struct error *err, const char *path, void *data, uid_t uid, gid_t gi
                 if (symlink(data, path) < 0 && errno != EEXIST)
                         goto fail;
         } else {
-                if ((fd = open(path, O_NOFOLLOW|O_CREAT, perm)) < 0)
+                if (data != NULL) {
+                        size = strlen(data);
+                        flags |= O_WRONLY;
+                }
+                if ((fd = open(path, flags, perm)) < 0)
                         goto fail;
+                if (data != NULL && write(fd, data, size) < (ssize_t)size) {
+                        close(fd);
+                        goto fail;
+                }
                 close(fd);
         }
         rv = 0;
@@ -550,6 +560,34 @@ file_read_line(struct error *err, const char *path, char *buf, size_t size)
                         rv = -1;
                 }
         }
+        fclose(fs);
+        return (rv);
+}
+
+int
+file_read_text(struct error *err, const char *path, char **txt)
+{
+        FILE *fs;
+        size_t n;
+        char buf[512];
+        int rv = -1;
+
+        if ((fs = xfopen(err, path, "r")) == NULL)
+                return (-1);
+        *txt = NULL;
+        while ((n = fread(buf, 1, sizeof(buf), fs)) > 0) {
+                buf[n] = '\0';
+                if (strjoin(err, txt, buf, "") < 0)
+                        goto fail;
+        }
+        if (feof(fs))
+                rv = 0;
+        else
+                error_setx(err, "file read error: %s", path);
+
+ fail:
+        if (rv < 0)
+                free(*txt);
         fclose(fs);
         return (rv);
 }

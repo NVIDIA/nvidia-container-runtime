@@ -30,6 +30,8 @@
 #define NV_UVM_TOOLS_DEVICE_PATH _PATH_DEV "nvidia-uvm-tools"
 #define NV_PERSISTENCED_SOCKET   _PATH_VARRUN "nvidia-persistenced/socket"
 #define NV_MPS_PIPE_DIR          _PATH_TMP "nvidia-mps"
+#define NV_PROC_DRIVER           "/proc/driver/nvidia"
+#define NV_UVM_PROC_DRIVER       "/proc/driver/nvidia-uvm"
 
 struct nvc_context {
         bool initialized;
