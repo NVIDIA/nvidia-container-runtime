@@ -30,28 +30,28 @@ type containerConfig struct {
 	nvidia *nvidiaConfig
 }
 
-// github.com/opencontainers/runtime-spec/blob/v1.0.0-rc5/specs-go/config.go#L94-L100
+// github.com/opencontainers/runtime-spec/blob/v1.0.0/specs-go/config.go#L94-L100
 type Root struct {
 	Path string `json:"path"`
 }
 
-// github.com/opencontainers/runtime-spec/blob/v1.0.0-rc5/specs-go/config.go#L32-L57
+// github.com/opencontainers/runtime-spec/blob/v1.0.0/specs-go/config.go#L30-L57
 type Process struct {
 	Env []string `json:"env,omitempty"`
 }
 
 // We use pointers to structs, similarly to the latest version of runtime-spec:
-// https://github.com/opencontainers/runtime-spec/blob/v1.0.0-rc6/specs-go/config.go
+// https://github.com/opencontainers/runtime-spec/blob/v1.0.0/specs-go/config.go#L5-L28
 type Spec struct {
 	Process *Process `json:"process,omitempty"`
 	Root    *Root    `json:"root,omitempty"`
 }
 
 type HookState struct {
-	Pid int `json:"pid"`
-	// In branch 17.06, runc is using the runtime spec:
+	Pid int `json:"pid,omitempty"`
+	// After 17.06, runc is using the runtime spec:
 	// github.com/docker/runc/blob/17.06/libcontainer/configs/config.go#L262-L263
-	// github.com/opencontainers/runtime-spec/blob/v1.0.0-rc5/specs-go/state.go#L3-L17
+        // github.com/opencontainers/runtime-spec/blob/v1.0.0/specs-go/state.go#L3-L17
 	Bundle string `json:"bundle"`
 	// Before 17.06, runc used a custom struct that didn't conform to the spec:
 	// github.com/docker/runc/blob/17.03.x/libcontainer/configs/config.go#L245-L252
