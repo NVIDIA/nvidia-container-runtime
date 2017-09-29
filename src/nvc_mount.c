@@ -403,8 +403,6 @@ nvc_device_mount(struct nvc_context *ctx, const struct nvc_container *cnt, const
         if (nsenter(&ctx->err, cnt->mnt_ns, CLONE_NEWNS) < 0)
                 return (-1);
 
-        if ((proc_mnt = mount_procfs_gpu(&ctx->err, cnt, dev->busid)) == NULL)
-                goto fail;
         if (!(cnt->flags & OPT_NO_DEVBIND)) {
                 if (xstat(&ctx->err, dev->node.path, &s) < 0)
                         return (-1);
@@ -415,6 +413,8 @@ nvc_device_mount(struct nvc_context *ctx, const struct nvc_container *cnt, const
                 if ((dev_mnt = mount_device(&ctx->err, cnt, dev->node.path)) == NULL)
                         goto fail;
         }
+        if ((proc_mnt = mount_procfs_gpu(&ctx->err, cnt, dev->busid)) == NULL)
+                goto fail;
         if (!(cnt->flags & OPT_NO_CGROUPS)) {
                 if (setup_cgroup(&ctx->err, cnt->dev_cg, dev->node.id) < 0)
                         goto fail;
