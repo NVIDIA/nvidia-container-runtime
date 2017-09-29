@@ -429,7 +429,7 @@ make_ancestors(char *path, mode_t perm)
 }
 
 int
-file_create(struct error *err, const char *path, void *data, uid_t uid, gid_t gid, mode_t mode)
+file_create(struct error *err, const char *path, const char *data, uid_t uid, gid_t gid, mode_t mode)
 {
         char *p;
         uid_t euid;
@@ -461,6 +461,10 @@ file_create(struct error *err, const char *path, void *data, uid_t uid, gid_t gi
                 if (mkdir(path, perm) < 0 && errno != EEXIST)
                         goto fail;
         } else if (S_ISLNK(mode)) {
+                if (data == NULL) {
+                        errno = EINVAL;
+                        goto fail;
+                }
                 if (symlink(data, path) < 0 && errno != EEXIST)
                         goto fail;
         } else {

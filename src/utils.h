@@ -61,7 +61,7 @@ const char **array_append(const char **, const char * const [], size_t);
 
 void *file_map(struct error *, const char *, size_t *);
 int  file_unmap(struct error *, const char *, void *, size_t);
-int  file_create(struct error *, const char *, void *, uid_t, gid_t, mode_t);
+int  file_create(struct error *, const char *, const char *, uid_t, gid_t, mode_t);
 int  file_remove(struct error *, const char *);
 int  file_exists(struct error *, const char *);
 int  file_mode(struct error *, const char *, mode_t *);
