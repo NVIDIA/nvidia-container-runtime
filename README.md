@@ -2,8 +2,7 @@
 
 [![GitHub license](https://img.shields.io/badge/license-New%20BSD-blue.svg?style=flat-square)](https://raw.githubusercontent.com/NVIDIA/libnvidia-container/master/LICENSE)
 [![GitHub release](https://img.shields.io/github/release/NVIDIA/libnvidia-container/all.svg?style=flat-square)](https://github.com/NVIDIA/libnvidia-container/releases)
-[![Packages ubuntu](https://img.shields.io/badge/packages-ubuntu-b956e8.svg?style=flat-square)](https://packages.nvidia.com/app/compute/container/search?q=libnvidia-container&filter=debs)
-[![Packages centos](https://img.shields.io/badge/packages-centos-b956e8.svg?style=flat-square)](https://packages.nvidia.com/app/compute/container/search?q=libnvidia-container&filter=rpms)
+[![Package repository](https://img.shields.io/badge/packages-repository-b956e8.svg?style=flat-square)](https://nvidia.github.io/libnvidia-container)
 [![Travis](https://img.shields.io/travis/NVIDIA/libnvidia-container.svg?style=flat-square)](https://travis-ci.org/NVIDIA/libnvidia-container)
 [![Coverity Scan](https://img.shields.io/coverity/scan/12444.svg?style=flat-square)](https://scan.coverity.com/projects/nvidia-libnvidia-container)
 
@@ -12,9 +11,25 @@
 This repository provides a library and a simple CLI utility to automatically configure GNU/Linux containers leveraging NVIDIA hardware.\
 The implementation relies on kernel primitives and is designed to be agnostic of the container runtime.
 
-## CLI usage example
+## Installing the library
+### From packages
+Refer to the [repository configuration](https://nvidia.github.io/libnvidia-container/) for your Linux distribution.
 
-```sh
+### From sources
+```bash
+make install
+
+# Alternatively in order to customize the installation paths
+DESTDIR=/path/to/root make install prefix=/usr
+```
+
+## Using the library
+### Container runtime example
+Refer to the [nvidia-container-runtime](https://github.com/NVIDIA/nvidia-container-runtime) project.
+
+### Command line example
+
+```bash
 # Setup a rootfs based on Ubuntu 16.04 inside new namespaces
 cd $(mktemp -d) && mkdir rootfs
 sudo unshare --mount --pid --fork
