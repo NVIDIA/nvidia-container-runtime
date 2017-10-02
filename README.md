@@ -1,4 +1,6 @@
 # nvidia-container-runtime
+[![GitHub license](https://img.shields.io/badge/license-New%20BSD-blue.svg?style=flat-square)](https://raw.githubusercontent.com/NVIDIA/nvidia-container-runtime/master/LICENSE)
+[![Package repository](https://img.shields.io/badge/packages-repository-b956e8.svg?style=flat-square)](https://nvidia.github.io/nvidia-container-runtime)
 
 **Warning: This project is an alpha release, it is not intended to be used in production systems.**
 
