@@ -11,6 +11,6 @@ Build-Depends: debhelper (>= 9)
 Package: nvidia-container-runtime
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}, libnvidia-container-tools (>= 0.1.0), libnvidia-container-tools (<< 2.0.0), libapparmor1, libseccomp2
-Description: NVIDIA container tools
+Description: NVIDIA container runtime
  Provides a modified version of runc allowing users to run GPU enabled
  containers.
