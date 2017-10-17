@@ -1,0 +1,6 @@
+instance_name = "QA-nvidia-docker 2.0"
+instance_type = "g2.2xlarge"
+ami = "ami-902ad2ea"
+key_name = "nvidia-docker-2.0-ubuntu"
+pubkey_path = "../keys/aws_terraform.pub"
+privkey_path = "../keys/aws_terraform"
