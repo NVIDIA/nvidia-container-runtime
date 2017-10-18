@@ -444,7 +444,7 @@ driver_get_device_1_svc(ptr_t ctxptr, u_int idx, driver_get_device_res *res, may
 {
         struct driver *ctx = (struct driver *)ctxptr;
         int domainid, deviceid, busid;
-        char buf[NVML_DEVICE_PCI_BUS_ID_BUFFER_SIZE];
+        char buf[NVML_DEVICE_PCI_BUS_ID_BUFFER_SIZE + 1];
 
         memset(res, 0, sizeof(*res));
         if (idx >= MAX_DEVICES) {
@@ -459,8 +459,8 @@ driver_get_device_1_svc(ptr_t ctxptr, u_int idx, driver_get_device_res *res, may
                 goto fail;
         if (call_cuda(ctx, cuDeviceGetAttribute, &deviceid, CU_DEVICE_ATTRIBUTE_PCI_DEVICE_ID, device_handles[idx].cuda) < 0)
                 goto fail;
-        snprintf(buf, sizeof(buf), "%04x:%02x:%02x.0", domainid, busid, deviceid);
-        if (call_nvml(ctx, nvmlDeviceGetHandleByPciBusId, buf, &device_handles[idx].nvml) < 0)
+        snprintf(buf, sizeof(buf), "%08x:%02x:%02x.0", domainid, busid, deviceid);
+        if (call_nvml(ctx, nvmlDeviceGetHandleByPciBusId_v2, buf, &device_handles[idx].nvml) < 0)
                 goto fail;
 
         res->driver_get_device_res_u.dev = (ptr_t)&device_handles[idx];
@@ -527,12 +527,16 @@ driver_get_device_busid_1_svc(ptr_t ctxptr, ptr_t dev, driver_get_device_busid_r
 {
         struct driver *ctx = (struct driver *)ctxptr;
         struct driver_device *handle = (struct driver_device *)dev;
-        nvmlPciInfo_t pci;
+        int domainid, deviceid, busid;
 
         memset(res, 0, sizeof(*res));
-        if (call_nvml(ctx, nvmlDeviceGetPciInfo_v2, handle->nvml, &pci) < 0)
+        if (call_cuda(ctx, cuDeviceGetAttribute, &domainid, CU_DEVICE_ATTRIBUTE_PCI_DOMAIN_ID, handle->cuda) < 0)
                 goto fail;
-        if ((res->driver_get_device_busid_res_u.busid = xstrdup(ctx->err, pci.busId)) == NULL)
+        if (call_cuda(ctx, cuDeviceGetAttribute, &busid, CU_DEVICE_ATTRIBUTE_PCI_BUS_ID, handle->cuda) < 0)
+                goto fail;
+        if (call_cuda(ctx, cuDeviceGetAttribute, &deviceid, CU_DEVICE_ATTRIBUTE_PCI_DEVICE_ID, handle->cuda) < 0)
+                goto fail;
+        if (xasprintf(ctx->err, &res->driver_get_device_busid_res_u.busid, "%08x:%02x:%02x.0", domainid, busid, deviceid) < 0)
                 goto fail;
         return (true);
 

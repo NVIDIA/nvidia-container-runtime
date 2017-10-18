@@ -189,7 +189,8 @@ mount_procfs_gpu(struct error *err, const struct nvc_container *cnt, const char 
         char *mnt = NULL;
         mode_t mode;
 
-        if (xasprintf(err, &gpu, "%s/gpus/%s", NV_PROC_DRIVER, busid) < 0)
+        /* XXX The driver procfs uses 16-bit PCI domain */
+        if (xasprintf(err, &gpu, "%s/gpus/%s", NV_PROC_DRIVER, busid + 4) < 0)
                 return (NULL);
         if (file_mode(err, gpu, &mode) < 0)
                 goto fail;
