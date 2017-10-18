@@ -436,7 +436,7 @@ nvc_device_info_new(struct nvc_context *ctx, const char *opts)
         struct nvc_device_info *info;
         struct nvc_device *gpu;
         unsigned int n, minor;
-        driver_device_handle dev;
+        struct driver_device *dev;
         int32_t flags;
 
         if (validate_context(ctx) < 0)
@@ -458,11 +458,13 @@ nvc_device_info_new(struct nvc_context *ctx, const char *opts)
                 goto fail;
 
         for (unsigned int i = 0; i < n; ++i, ++gpu) {
-                if (driver_get_device_handle(&ctx->drv, i, &dev, true) < 0)
+                if (driver_get_device(&ctx->drv, i, &dev) < 0)
                         goto fail;
                 if (driver_get_device_uuid(&ctx->drv, dev, &gpu->uuid) < 0)
                         goto fail;
                 if (driver_get_device_busid(&ctx->drv, dev, &gpu->busid) < 0)
+                        goto fail;
+                if (driver_get_device_arch(&ctx->drv, dev, &gpu->arch) < 0)
                         goto fail;
                 if (driver_get_device_minor(&ctx->drv, dev, &minor) < 0)
                         goto fail;
@@ -487,6 +489,7 @@ nvc_device_info_free(struct nvc_device_info *info)
         for (size_t i = 0; info->gpus != NULL && i < info->ngpus; ++i) {
                 free(info->gpus[i].uuid);
                 free(info->gpus[i].busid);
+                free(info->gpus[i].arch);
                 free(info->gpus[i].node.path);
         }
         free(info->gpus);

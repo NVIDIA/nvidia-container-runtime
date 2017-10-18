@@ -33,6 +33,7 @@ static int list_command(const struct context *);
 static int configure_command(const struct context *);
 static int check_cuda_version(void *, enum dsl_comparator, const char *);
 static int check_driver_version(void *, enum dsl_comparator, const char *);
+static int check_device_arch(void *, enum dsl_comparator, const char *);
 static int select_gpu_devices(struct error *, char *, const struct nvc_device *[], const struct nvc_device [], size_t);
 
 struct command {
@@ -58,6 +59,11 @@ struct context {
         char *container_flags;
 
         const struct command *command;
+};
+
+struct dsl_data {
+        struct nvc_driver_info *drv;
+        const struct nvc_device *dev;
 };
 
 #pragma GCC visibility push(default)
@@ -140,6 +146,7 @@ static const struct command commands[] = {
 static const struct dsl_rule rules[] = {
         {"cuda", &check_cuda_version},
         {"driver", &check_driver_version},
+        {"arch", &check_device_arch},
 };
 
 static bool
@@ -364,15 +371,28 @@ configure_parser(int key, char *arg, struct argp_state *state)
 static int
 check_cuda_version(void *data, enum dsl_comparator cmp, const char *version)
 {
-        const struct nvc_driver_info *drv = data;
-        return (dsl_compare_version(drv->cuda_version, cmp, version));
+        const struct dsl_data *ctx = data;
+
+        return (dsl_compare_version(ctx->drv->cuda_version, cmp, version));
 }
 
 static int
 check_driver_version(void *data, enum dsl_comparator cmp, const char *version)
 {
-        const struct nvc_driver_info *drv = data;
-        return (dsl_compare_version(drv->nvrm_version, cmp, version));
+        const struct dsl_data *ctx = data;
+
+        return (dsl_compare_version(ctx->drv->nvrm_version, cmp, version));
+}
+
+static int
+check_device_arch(void *data, enum dsl_comparator cmp, const char *arch)
+{
+        const struct dsl_data *ctx = data;
+
+        /* XXX No device is visible, assume the arch is ok. */
+        if (ctx->dev == NULL)
+                return (true);
+        return (dsl_compare_version(ctx->dev->arch, cmp, arch));
 }
 
 static int
@@ -531,6 +551,7 @@ configure_command(const struct context *ctx)
         struct nvc_container *cnt = NULL;
         struct nvc_container_config *cnt_cfg = NULL;
         const struct nvc_device **gpus = NULL;
+        bool eval_reqs = true;
         struct error err = {0};
         int rv = EXIT_FAILURE;
 
@@ -584,14 +605,6 @@ configure_command(const struct context *ctx)
                 goto fail;
         }
 
-        /* Check the container requirements. */
-        for (size_t i = 0; i < ctx->nreqs; ++i) {
-                if (dsl_evaluate(&err, ctx->reqs[i], drv, rules, nitems(rules)) < 0) {
-                        warnx("requirement error: %s", err.msg);
-                        goto fail;
-                }
-        }
-
         /* Select the visible GPU devices. */
         if (dev->ngpus > 0) {
                 gpus = alloca(dev->ngpus * sizeof(*gpus));
@@ -599,6 +612,33 @@ configure_command(const struct context *ctx)
                 if (select_gpu_devices(&err, ctx->devices, gpus, dev->gpus, dev->ngpus) < 0) {
                         warnx("device error: %s", err.msg);
                         goto fail;
+                }
+        }
+
+        /*
+         * Check the container requirements.
+         * Try evaluating per visible device first, and globally otherwise.
+         */
+        for (size_t i = 0; i < dev->ngpus; ++i) {
+                if (gpus[i] == NULL)
+                        continue;
+
+                struct dsl_data data = {drv, gpus[i]};
+                for (size_t j = 0; j < ctx->nreqs; ++j) {
+                        if (dsl_evaluate(&err, ctx->reqs[j], &data, rules, nitems(rules)) < 0) {
+                                warnx("requirement error: %s", err.msg);
+                                goto fail;
+                        }
+                }
+                eval_reqs = false;
+        }
+        if (eval_reqs) {
+                struct dsl_data data = {drv, NULL};
+                for (size_t j = 0; j < ctx->nreqs; ++j) {
+                        if (dsl_evaluate(&err, ctx->reqs[j], &data, rules, nitems(rules)) < 0) {
+                                warnx("requirement error: %s", err.msg);
+                                goto fail;
+                        }
                 }
         }
 

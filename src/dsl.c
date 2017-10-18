@@ -116,13 +116,17 @@ evaluate_rule(char *buf, char *expr, void *ctx, const struct dsl_rule rules[], s
 }
 
 int
-dsl_evaluate(struct error *err, char *expr, void *ctx, const struct dsl_rule rules[], size_t size)
+dsl_evaluate(struct error *err, const char *predicate, void *ctx, const struct dsl_rule rules[], size_t size)
 {
+        char *ptr, *expr = NULL;
         char *or_expr, *and_expr;
         int ret = true;
+        int rv = -1;
         char buf[EXPR_MAX];
 
-        while ((or_expr = strsep(&expr, " ")) != NULL) {
+        if ((expr = ptr = xstrdup(err, predicate)) == NULL)
+                goto fail;
+        while ((or_expr = strsep(&ptr, " ")) != NULL) {
                 if (*or_expr == '\0')
                         continue;
                 while ((and_expr = strsep(&or_expr, ",")) != NULL) {
@@ -130,17 +134,21 @@ dsl_evaluate(struct error *err, char *expr, void *ctx, const struct dsl_rule rul
                                 continue;
                         if ((ret = evaluate_rule(buf, and_expr, ctx, rules, size)) < 0) {
                                 error_setx(err, "invalid expression");
-                                return (-1);
+                                goto fail;
                         }
                         if (!ret)
                                 break;
                 }
                 if (and_expr == NULL)
-                        return (0);
+                        break;
         }
         if (!ret) {
                 error_setx(err, "unsatisfied condition: %s", buf);
-                return (-1);
+                goto fail;
         }
-        return (0);
+        rv = 0;
+
+ fail:
+        free(expr);
+        return (rv);
 }

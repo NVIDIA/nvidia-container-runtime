@@ -41,6 +41,18 @@ union driver_get_cuda_version_res switch (int errcode) {
                 string errmsg<>;
 };
 
+struct driver_device_arch {
+        unsigned int major;
+        unsigned int minor;
+};
+
+union driver_get_device_arch_res switch (int errcode) {
+        case 0:
+                driver_device_arch arch;
+        default:
+                string errmsg<>;
+};
+
 union driver_get_device_count_res switch (int errcode) {
         case 0:
                 unsigned int count;
@@ -48,9 +60,9 @@ union driver_get_device_count_res switch (int errcode) {
                 string errmsg<>;
 };
 
-union driver_get_device_handle_res switch (int errcode) {
+union driver_get_device_res switch (int errcode) {
         case 0:
-                ptr_t handle;
+                ptr_t dev;
         default:
                 string errmsg<>;
 };
@@ -83,9 +95,10 @@ program DRIVER_PROGRAM {
                 driver_get_rm_version_res DRIVER_GET_RM_VERSION(ptr_t) = 3;
                 driver_get_cuda_version_res DRIVER_GET_CUDA_VERSION(ptr_t) = 4;
                 driver_get_device_count_res DRIVER_GET_DEVICE_COUNT(ptr_t) = 5;
-                driver_get_device_handle_res DRIVER_GET_DEVICE_HANDLE(ptr_t, unsigned int, bool) = 6;
+                driver_get_device_res DRIVER_GET_DEVICE(ptr_t, unsigned int) = 6;
                 driver_get_device_minor_res DRIVER_GET_DEVICE_MINOR(ptr_t, ptr_t) = 7;
                 driver_get_device_busid_res DRIVER_GET_DEVICE_BUSID(ptr_t, ptr_t) = 8;
                 driver_get_device_uuid_res DRIVER_GET_DEVICE_UUID(ptr_t, ptr_t) = 9;
+                driver_get_device_arch_res DRIVER_GET_DEVICE_ARCH(ptr_t, ptr_t) = 10;
         } = 1;
 } = 0x1;

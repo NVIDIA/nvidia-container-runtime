@@ -59,6 +59,7 @@ struct nvc_driver_info {
 struct nvc_device {
         char *uuid;
         char *busid;
+        char *arch;
         struct nvc_device_node node;
 };
 
