@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"runtime"
+	"runtime/debug"
 	"strconv"
 	"strings"
 	"syscall"
@@ -13,6 +15,19 @@ import (
 var (
 	prestart = flag.Bool("prestart", false, "run the prestart hook")
 )
+
+func exit() {
+	if err := recover(); err != nil {
+		if _, ok := err.(runtime.Error); ok {
+			log.Println(err)
+		}
+		if os.Getenv("NV_DEBUG") != "" {
+			log.Printf("%s", debug.Stack())
+		}
+		os.Exit(1)
+	}
+	os.Exit(0)
+}
 
 func capToCLI(cap string) string {
 	switch cap {
@@ -27,12 +42,27 @@ func capToCLI(cap string) string {
 	case "video":
 		return "--video"
 	default:
-		log.Fatalln("unknown driver capability:", cap)
+		log.Panicln("unknown driver capability:", cap)
 	}
 	return ""
 }
 
+func parseCudaVersion(cudaVersion string) (vmaj, vmin, vpatch uint32) {
+	if _, err := fmt.Sscanf(cudaVersion, "%d.%d.%d\n", &vmaj, &vmin, &vpatch); err != nil {
+		vpatch = 0
+		if _, err := fmt.Sscanf(cudaVersion, "%d.%d\n", &vmaj, &vmin); err != nil {
+			vmin = 0
+			if _, err := fmt.Sscanf(cudaVersion, "%d\n", &vmaj); err != nil {
+				log.Panicln("invalid CUDA version:", cudaVersion)
+			}
+		}
+	}
+
+	return
+}
+
 func doPrestart() {
+	defer exit()
 	log.SetFlags(0)
 
 	cli := getCLIConfig()
@@ -69,10 +99,7 @@ func doPrestart() {
 	}
 
 	if len(nvidia.cudaVersion) > 0 {
-		var vmaj, vmin int
-		if _, err := fmt.Sscanf(nvidia.cudaVersion, "%d.%d", &vmaj, &vmin); err != nil {
-			log.Fatalln("invalid CUDA version:", nvidia.cudaVersion)
-		}
+		vmaj, vmin, _ := parseCudaVersion(nvidia.cudaVersion)
 		args = append(args, fmt.Sprintf("--require=cuda>=%d.%d", vmaj, vmin))
 	}
 
@@ -82,7 +109,7 @@ func doPrestart() {
 	log.Printf("exec command: %v", args)
 	env := append(os.Environ(), cli.Environment...)
 	err := syscall.Exec(cli.Path, args, env)
-	log.Fatalln("exec failed:", err)
+	log.Panicln("exec failed:", err)
 }
 
 func main() {

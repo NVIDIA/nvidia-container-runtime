@@ -51,7 +51,7 @@ type HookState struct {
 	Pid int `json:"pid,omitempty"`
 	// After 17.06, runc is using the runtime spec:
 	// github.com/docker/runc/blob/17.06/libcontainer/configs/config.go#L262-L263
-        // github.com/opencontainers/runtime-spec/blob/v1.0.0/specs-go/state.go#L3-L17
+	// github.com/opencontainers/runtime-spec/blob/v1.0.0/specs-go/state.go#L3-L17
 	Bundle string `json:"bundle"`
 	// Before 17.06, runc used a custom struct that didn't conform to the spec:
 	// github.com/docker/runc/blob/17.03.x/libcontainer/configs/config.go#L245-L252
