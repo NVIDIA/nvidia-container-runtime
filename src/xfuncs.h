@@ -161,7 +161,7 @@ xmount(struct error *err, const char *source, const char *target,
         int rv;
 
         if ((rv = mount(source, target, filesystemtype, mountflags, data)) < 0)
-                error_set(err, "mount operation failed: %s", (source != NULL) ? source : target);
+                error_set(err, "mount operation failed: %s", (source != NULL && *source == '/') ? source : target);
         return (rv);
 }
 
