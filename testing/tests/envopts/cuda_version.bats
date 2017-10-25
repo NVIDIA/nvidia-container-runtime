@@ -3,7 +3,7 @@
 load ../helpers
 
 image="ubuntu:16.04"
-envCUDAVersion="NVIDIA_CUDA_VERSION"
+envRequireCUDA="NVIDIA_REQUIRE_CUDA"
 envNVGPU="NVIDIA_VISIBLE_DEVICES"
 
 function setup() {
@@ -11,11 +11,11 @@ function setup() {
 }
 
 @test "NVIDIA_CUDA_VERSION=10.5" {
-      docker_run --runtime=nvidia -e $envCUDAVersion=10.5 -e $envNVGPU=0 $image
+      docker_run --runtime=nvidia -e $envRequireCUDA="cuda>=10.5" -e $envNVGPU=0 $image
       [ "$status" -ne 0 ]
 }
 
 @test "NVIDIA_CUDA_VERSION=8.0" {
-      docker_run --runtime=nvidia -e $envCUDAVersion=8.0 -e $envNVGPU=0 $image nvidia-smi
+      docker_run --runtime=nvidia -e $envRequireCUDA="cuda>=8.0" -e $envNVGPU=0 $image nvidia-smi
       [ "$status" -eq 0 ]
 }

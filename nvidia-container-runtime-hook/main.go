@@ -47,20 +47,6 @@ func capabilityToCLI(cap string) string {
 	return ""
 }
 
-func parseCudaVersion(cudaVersion string) (vmaj, vmin, vpatch uint32) {
-	if _, err := fmt.Sscanf(cudaVersion, "%d.%d.%d\n", &vmaj, &vmin, &vpatch); err != nil {
-		vpatch = 0
-		if _, err := fmt.Sscanf(cudaVersion, "%d.%d\n", &vmaj, &vmin); err != nil {
-			vmin = 0
-			if _, err := fmt.Sscanf(cudaVersion, "%d\n", &vmaj); err != nil {
-				log.Panicln("invalid CUDA version:", cudaVersion)
-			}
-		}
-	}
-
-	return
-}
-
 func doPrestart() {
 	defer exit()
 	log.SetFlags(0)
@@ -98,9 +84,10 @@ func doPrestart() {
 		args = append(args, capabilityToCLI(cap))
 	}
 
-	if len(nvidia.CudaVersion) > 0 {
-		vmaj, vmin, _ := parseCudaVersion(nvidia.CudaVersion)
-		args = append(args, fmt.Sprintf("--require=cuda>=%d.%d", vmaj, vmin))
+	if !cli.DisableRequire && !nvidia.DisableRequire {
+		for _, req := range nvidia.Requirements {
+			args = append(args, fmt.Sprintf("--require=%s", req))
+		}
 	}
 
 	args = append(args, fmt.Sprintf("--pid=%s", strconv.FormatUint(uint64(container.Pid), 10)))

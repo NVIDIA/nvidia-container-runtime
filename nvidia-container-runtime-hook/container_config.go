@@ -2,25 +2,30 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 	"log"
 	"os"
 	"path"
+	"strconv"
 	"strings"
 )
 
 const (
 	//	envSwarmGPU      = "DOCKER_RESOURCE_GPU"
+	envNVRequirePrefix      = "NVIDIA_REQUIRE_"
+	envLegacyCUDAVersion    = "CUDA_VERSION"
+	envNVRequireCUDA        = envNVRequirePrefix + "CUDA"
 	envNVGPU                = "NVIDIA_VISIBLE_DEVICES"
 	envNVDriverCapabilities = "NVIDIA_DRIVER_CAPABILITIES"
-	envLegacyCUDAVersion    = "CUDA_VERSION"
-	envNVCUDAVersion        = "NVIDIA_CUDA_VERSION"
 	allCapabilities         = "compute,compat32,graphics,utility,video"
+	envNVDisableRequire     = "NVIDIA_DISABLE_REQUIRE"
 )
 
 type nvidiaConfig struct {
-	Devices      string
-	Capabilities string
-	CudaVersion  string
+	Devices        string
+	Capabilities   string
+	Requirements   []string
+	DisableRequire bool
 }
 
 type containerConfig struct {
@@ -58,6 +63,20 @@ type HookState struct {
 	BundlePath string `json:"bundlePath"`
 }
 
+func parseCudaVersion(cudaVersion string) (vmaj, vmin, vpatch uint32) {
+	if _, err := fmt.Sscanf(cudaVersion, "%d.%d.%d\n", &vmaj, &vmin, &vpatch); err != nil {
+		vpatch = 0
+		if _, err := fmt.Sscanf(cudaVersion, "%d.%d\n", &vmaj, &vmin); err != nil {
+			vmin = 0
+			if _, err := fmt.Sscanf(cudaVersion, "%d\n", &vmaj); err != nil {
+				log.Panicln("invalid CUDA version:", cudaVersion)
+			}
+		}
+	}
+
+	return
+}
+
 func getEnvMap(e []string) (m map[string]string) {
 	m = make(map[string]string)
 	for _, s := range e {
@@ -89,6 +108,17 @@ func loadSpec(path string) (spec *Spec) {
 	return
 }
 
+func getRequirements(env map[string]string) []string {
+	// All variables with the "NVIDIA_REQUIRE_" prefix are passed to nvidia-container-cli
+	var requirements []string
+	for name, value := range env {
+		if strings.HasPrefix(name, envNVRequirePrefix) {
+			requirements = append(requirements, value)
+		}
+	}
+	return requirements
+}
+
 // Mimic the new CUDA images if no capabilities or devices are specified.
 func getNvidiaConfigLegacy(env map[string]string) *nvidiaConfig {
 	devices := env[envNVGPU]
@@ -104,18 +134,27 @@ func getNvidiaConfigLegacy(env map[string]string) *nvidiaConfig {
 		capabilities = allCapabilities
 	}
 
-	cudaVersion := env[envLegacyCUDAVersion]
+	requirements := getRequirements(env)
+
+	vmaj, vmin, _ := parseCudaVersion(env[envLegacyCUDAVersion])
+	cudaRequire := fmt.Sprintf("cuda>=%d.%d", vmaj, vmin)
+	requirements = append(requirements, cudaRequire)
+
+	// Don't fail on invalid values.
+	disableRequire, _ := strconv.ParseBool(env[envNVDisableRequire])
+
 	return &nvidiaConfig{
-		Devices:      devices,
-		Capabilities: capabilities,
-		CudaVersion:  cudaVersion,
+		Devices:        devices,
+		Capabilities:   capabilities,
+		Requirements:   requirements,
+		DisableRequire: disableRequire,
 	}
 }
 
 func getNvidiaConfig(env map[string]string) *nvidiaConfig {
 	legacyCudaVersion := env[envLegacyCUDAVersion]
-	cudaVersion := env[envNVCUDAVersion]
-	if len(legacyCudaVersion) > 0 && len(cudaVersion) == 0 {
+	cudaRequire := env[envNVRequireCUDA]
+	if len(legacyCudaVersion) > 0 && len(cudaRequire) == 0 {
 		// Legacy CUDA image detected.
 		return getNvidiaConfigLegacy(env)
 	}
@@ -134,10 +173,16 @@ func getNvidiaConfig(env map[string]string) *nvidiaConfig {
 		capabilities = allCapabilities
 	}
 
+	requirements := getRequirements(env)
+
+	// Don't fail on invalid values.
+	disableRequire, _ := strconv.ParseBool(env[envNVDisableRequire])
+
 	return &nvidiaConfig{
-		Devices:      devices,
-		Capabilities: capabilities,
-		CudaVersion:  cudaVersion,
+		Devices:        devices,
+		Capabilities:   capabilities,
+		Requirements:   requirements,
+		DisableRequire: disableRequire,
 	}
 }
 

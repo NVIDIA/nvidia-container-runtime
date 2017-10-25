@@ -17,20 +17,22 @@ type ConfigureOptions struct {
 }
 
 type CLIConfig struct {
-	Path        string
-	Environment []string
-	LoadKmods   bool `toml:"load-kmods"`
-	Debug       *string
+	Path           string
+	Environment    []string
+	LoadKmods      bool `toml:"load-kmods"`
+	DisableRequire bool `toml:"disable-require"`
+	Debug          *string
 
 	Configure ConfigureOptions
 }
 
 func getDefaultCLIConfig() (config *CLIConfig) {
 	return &CLIConfig{
-		Path:        "",
-		Environment: []string{},
-		LoadKmods:   true,
-		Debug:       nil,
+		Path:           "",
+		Environment:    []string{},
+		LoadKmods:      true,
+		DisableRequire: false,
+		Debug:          nil,
 		Configure: ConfigureOptions{
 			Ldconfig: nil,
 		},
