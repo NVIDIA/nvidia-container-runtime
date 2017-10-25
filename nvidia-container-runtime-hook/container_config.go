@@ -63,7 +63,7 @@ func getEnvMap(e []string) (m map[string]string) {
 	for _, s := range e {
 		p := strings.SplitN(s, "=", 2)
 		if len(p) != 2 {
-			log.Fatalln("environment error")
+			log.Panicln("environment error")
 		}
 		m[p[0]] = p[1]
 	}
@@ -73,18 +73,18 @@ func getEnvMap(e []string) (m map[string]string) {
 func loadSpec(path string) (spec *Spec) {
 	f, err := os.Open(path)
 	if err != nil {
-		log.Fatalln("could not open OCI spec:", err)
+		log.Panicln("could not open OCI spec:", err)
 	}
 	defer f.Close()
 
 	if err = json.NewDecoder(f).Decode(&spec); err != nil {
-		log.Fatalln("could not decode OCI spec:", err)
+		log.Panicln("could not decode OCI spec:", err)
 	}
 	if spec.Process == nil {
-		log.Fatalln("Process is empty in OCI spec")
+		log.Panicln("Process is empty in OCI spec")
 	}
 	if spec.Root == nil {
-		log.Fatalln("Root is empty in OCI spec")
+		log.Panicln("Root is empty in OCI spec")
 	}
 	return
 }
@@ -145,7 +145,7 @@ func getContainerConfig() (config *containerConfig) {
 	var h HookState
 	d := json.NewDecoder(os.Stdin)
 	if err := d.Decode(&h); err != nil {
-		log.Fatalln("could not decode container state:", err)
+		log.Panicln("could not decode container state:", err)
 	}
 
 	b := h.Bundle

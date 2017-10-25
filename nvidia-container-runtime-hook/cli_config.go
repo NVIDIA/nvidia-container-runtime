@@ -41,12 +41,12 @@ func getCLIConfig() (config *CLIConfig) {
 	config = getDefaultCLIConfig()
 	_, err := toml.DecodeFile(configPath, &config)
 	if err != nil && !os.IsNotExist(err) {
-		log.Fatalln("couldn't open configuration file:", err)
+		log.Panicln("couldn't open configuration file:", err)
 	}
 	if len(config.Path) == 0 {
 		config.Path, err = exec.LookPath("nvidia-container-cli")
 		if err != nil {
-			log.Fatalln("couldn't find binary nvidia-container-cli:", err)
+			log.Panicln("couldn't find binary nvidia-container-cli:", err)
 		}
 	}
 
