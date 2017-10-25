@@ -29,7 +29,7 @@ func exit() {
 	os.Exit(0)
 }
 
-func capToCLI(cap string) string {
+func capabilityToCLI(cap string) string {
 	switch cap {
 	case "compute":
 		return "--compute"
@@ -66,9 +66,9 @@ func doPrestart() {
 	log.SetFlags(0)
 
 	cli := getCLIConfig()
-	config := getContainerConfig()
+	container := getContainerConfig()
 
-	nvidia := config.nvidia
+	nvidia := container.Nvidia
 	if nvidia == nil {
 		// Not a GPU container, nothing to do.
 		return
@@ -87,24 +87,24 @@ func doPrestart() {
 		args = append(args, fmt.Sprintf("--ldconfig=%s", *cli.Configure.Ldconfig))
 	}
 
-	if len(nvidia.devices) > 0 {
-		args = append(args, fmt.Sprintf("--device=%s", nvidia.devices))
+	if len(nvidia.Devices) > 0 {
+		args = append(args, fmt.Sprintf("--device=%s", nvidia.Devices))
 	}
 
-	for _, cap := range strings.Split(nvidia.caps, ",") {
+	for _, cap := range strings.Split(nvidia.Capabilities, ",") {
 		if len(cap) == 0 {
 			break
 		}
-		args = append(args, capToCLI(cap))
+		args = append(args, capabilityToCLI(cap))
 	}
 
-	if len(nvidia.cudaVersion) > 0 {
-		vmaj, vmin, _ := parseCudaVersion(nvidia.cudaVersion)
+	if len(nvidia.CudaVersion) > 0 {
+		vmaj, vmin, _ := parseCudaVersion(nvidia.CudaVersion)
 		args = append(args, fmt.Sprintf("--require=cuda>=%d.%d", vmaj, vmin))
 	}
 
-	args = append(args, fmt.Sprintf("--pid=%s", strconv.FormatUint(uint64(config.pid), 10)))
-	args = append(args, config.rootfs)
+	args = append(args, fmt.Sprintf("--pid=%s", strconv.FormatUint(uint64(container.Pid), 10)))
+	args = append(args, container.Rootfs)
 
 	log.Printf("exec command: %v", args)
 	env := append(os.Environ(), cli.Environment...)

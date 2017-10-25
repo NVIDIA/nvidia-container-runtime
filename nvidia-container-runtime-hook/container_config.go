@@ -10,24 +10,24 @@ import (
 
 const (
 	//	envSwarmGPU      = "DOCKER_RESOURCE_GPU"
-	envNVGPU             = "NVIDIA_VISIBLE_DEVICES"
-	envNVDriverCaps      = "NVIDIA_DRIVER_CAPABILITIES"
-	envLegacyCUDAVersion = "CUDA_VERSION"
-	envNVCUDAVersion     = "NVIDIA_CUDA_VERSION"
-	allCaps              = "compute,compat32,graphics,utility,video"
+	envNVGPU                = "NVIDIA_VISIBLE_DEVICES"
+	envNVDriverCapabilities = "NVIDIA_DRIVER_CAPABILITIES"
+	envLegacyCUDAVersion    = "CUDA_VERSION"
+	envNVCUDAVersion        = "NVIDIA_CUDA_VERSION"
+	allCapabilities         = "compute,compat32,graphics,utility,video"
 )
 
 type nvidiaConfig struct {
-	devices     string
-	caps        string
-	cudaVersion string
+	Devices      string
+	Capabilities string
+	CudaVersion  string
 }
 
 type containerConfig struct {
-	pid    int
-	rootfs string
-	env    map[string]string
-	nvidia *nvidiaConfig
+	Pid    int
+	Rootfs string
+	Env    map[string]string
+	Nvidia *nvidiaConfig
 }
 
 // github.com/opencontainers/runtime-spec/blob/v1.0.0/specs-go/config.go#L94-L100
@@ -89,7 +89,7 @@ func loadSpec(path string) (spec *Spec) {
 	return
 }
 
-// Mimic the new CUDA images if no caps or devices are specified.
+// Mimic the new CUDA images if no capabilities or devices are specified.
 func getNvidiaConfigLegacy(env map[string]string) *nvidiaConfig {
 	devices := env[envNVGPU]
 	if len(devices) == 0 {
@@ -99,16 +99,16 @@ func getNvidiaConfigLegacy(env map[string]string) *nvidiaConfig {
 		devices = ""
 	}
 
-	caps := env[envNVDriverCaps]
-	if len(caps) == 0 || caps == "all" {
-		caps = allCaps
+	capabilities := env[envNVDriverCapabilities]
+	if len(capabilities) == 0 || capabilities == "all" {
+		capabilities = allCapabilities
 	}
 
 	cudaVersion := env[envLegacyCUDAVersion]
 	return &nvidiaConfig{
-		devices:     devices,
-		caps:        caps,
-		cudaVersion: cudaVersion,
+		Devices:      devices,
+		Capabilities: capabilities,
+		CudaVersion:  cudaVersion,
 	}
 }
 
@@ -129,15 +129,15 @@ func getNvidiaConfig(env map[string]string) *nvidiaConfig {
 		devices = ""
 	}
 
-	caps := env[envNVDriverCaps]
-	if caps == "all" {
-		caps = allCaps
+	capabilities := env[envNVDriverCapabilities]
+	if capabilities == "all" {
+		capabilities = allCapabilities
 	}
 
 	return &nvidiaConfig{
-		devices:     devices,
-		caps:        caps,
-		cudaVersion: cudaVersion,
+		Devices:      devices,
+		Capabilities: capabilities,
+		CudaVersion:  cudaVersion,
 	}
 }
 
@@ -157,9 +157,9 @@ func getContainerConfig() (config *containerConfig) {
 
 	env := getEnvMap(s.Process.Env)
 	return &containerConfig{
-		pid:    h.Pid,
-		rootfs: s.Root.Path,
-		env:    env,
-		nvidia: getNvidiaConfig(env),
+		Pid:    h.Pid,
+		Rootfs: s.Root.Path,
+		Env:    env,
+		Nvidia: getNvidiaConfig(env),
 	}
 }
