@@ -48,7 +48,7 @@ struct context {
         pid_t pid;
         char *rootfs;
         char *devices;
-        char *reqs[16];
+        char *reqs[32];
         size_t nreqs;
         char *ldconfig;
         bool load_kmods;

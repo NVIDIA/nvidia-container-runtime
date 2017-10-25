@@ -12,7 +12,7 @@
 #include "dsl.h"
 #include "utils.h"
 
-#define EXPR_MAX 64
+#define EXPR_MAX 128
 
 static int evaluate_rule(char *, char *, void *, const struct dsl_rule [], size_t);
 
@@ -103,7 +103,7 @@ evaluate_rule(char *buf, char *expr, void *ctx, const struct dsl_rule rules[], s
 
         /* Lookup the rule and evaluate it. */
         for (i = 0; i < size; ++i) {
-                if (!strcmp(expr, rules[i].name)) {
+                if (!strcasecmp(expr, rules[i].name)) {
                         if ((ret = rules[i].func(ctx, op->cmp, val)) == false) {
                                 /* Save the expression formatted for error reporting. */
                                 if (snprintf(buf, EXPR_MAX, "%s %s %s", expr, op->str, val) >= EXPR_MAX)
