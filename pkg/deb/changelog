@@ -1,3 +1,15 @@
+libnvidia-container (1.0.0~alpha.2-1) UNRELEASED; urgency=medium
+
+  * b80e4b6 Relax some requirement constraints
+  * 3cd1bb6 Handle 32-bit PCI domains
+  * 6c67a19 Add support for device architecture requirement
+  * 7584e96 Filter NVRM proc filesystem based on visible devices
+  * 93c46e1 Prevent the driver process from triggering MPS
+  * fe4925e Reject invalid device identifier "GPU-"
+  * dabef1c Do not change bind mount attributes on top-level directories
+
+ -- NVIDIA CORPORATION <cudatools@nvidia.com>  Mon, 30 Oct 2017 14:03:39 -0700
+
 libnvidia-container (1.0.0~alpha.1-1) UNRELEASED; urgency=medium
 
   * Initial release

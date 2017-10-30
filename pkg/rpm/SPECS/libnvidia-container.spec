@@ -87,5 +87,14 @@ This package contains command-line tools that facilitate using the library.
 %{_bindir}/*
 
 %changelog
+* Mon Oct 30 2017 NVIDIA CORPORATION <cudatools@nvidia.com> 1.0.0-0.1.alpha.2
+- b80e4b6 Relax some requirement constraints
+- 3cd1bb6 Handle 32-bit PCI domains
+- 6c67a19 Add support for device architecture requirement
+- 7584e96 Filter NVRM proc filesystem based on visible devices
+- 93c46e1 Prevent the driver process from triggering MPS
+- fe4925e Reject invalid device identifier "GPU-"
+- dabef1c Do not change bind mount attributes on top-level directories
+
 * Tue Sep 05 2017 NVIDIA CORPORATION <cudatools@nvidia.com> 1.0.0-0.1.alpha.1
 - Initial release
