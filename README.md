@@ -2,7 +2,7 @@
 [![GitHub license](https://img.shields.io/badge/license-New%20BSD-blue.svg?style=flat-square)](https://raw.githubusercontent.com/NVIDIA/nvidia-container-runtime/master/LICENSE)
 [![Package repository](https://img.shields.io/badge/packages-repository-b956e8.svg?style=flat-square)](https://nvidia.github.io/nvidia-container-runtime)
 
-**Warning: This project is an alpha release, it is not intended to be used in production systems.**
+**Warning: This project is based on an alpha release (libnvidia-container), it is not intended to be used in production systems.**
 
 A modified version of [runc](https://github.com/opencontainers/runc) adding a custom [pre-start hook](https://github.com/opencontainers/runtime-spec/blob/master/config.md#prestart) to all containers.  
 If environment variable `NVIDIA_VISIBLE_DEVICES` is set in the OCI spec, the hook will configure GPU access for the container by leveraging `nvidia-container-cli` from project [libnvidia-container](https://github.com/NVIDIA/libnvidia-container).
@@ -52,16 +52,32 @@ This option controls which driver libraries/binaries will be mounted inside the 
 * `utility`: required for using `nvidia-smi` and NVML,
 * `video`: required for using the Video Codec SDK.
 
-### `NVIDIA_CUDA_VERSION`
-The version of the CUDA toolkit used by the container.  
+### `NVIDIA_REQUIRE_*`
+A logical expression to define constraints on the configurations supported by the container.  
+
+#### Supported constraints
+* `cuda`: constraint on the CUDA driver version,
+* `driver`: constraint on the driver version,
+* `arch`: constraint on the compute architectures of the selected GPUs.
+
+#### Expressions
+Multiple constraints can be expressed in a single environment variable: space-separated constraints are ORed, comma-separated constraints are ANDed.  
+Multiple environment variables of the form `NVIDIA_REQUIRE_*` are ANDed together.
+
+### `NVIDIA_DISABLE_REQUIRE`
+Single switch to disable all the constraints of the form `NVIDIA_REQUIRE_*`.
+
+### `NVIDIA_REQUIRE_CUDA`
+
+The version of the CUDA toolkit used by the container. It is an instance of the generic `NVIDIA_REQUIRE_*` case and it is set by official CUDA images.
 If the version of the NVIDIA driver is insufficient to run this version of CUDA, the container will not be started.
 
 #### Possible values
-* `7.5`, `8.0`, `9.0` …: any valid CUDA version in the form `major.minor`.
+* `cuda>=7.5`, `cuda>=8.0`, `cuda>=9.0` …: any valid CUDA version in the form `major.minor`.
 
 ### `CUDA_VERSION`
-Similar to `NVIDIA_CUDA_VERSION`, for legacy CUDA images.  
-In addition, if `NVIDIA_CUDA_VERSION` is not set, `NVIDIA_VISIBLE_DEVICES` and `NVIDIA_DRIVER_CAPABILITIES` will default to `all`.
+Similar to `NVIDIA_REQUIRE_CUDA`, for legacy CUDA images.  
+In addition, if `NVIDIA_REQUIRE_CUDA` is not set, `NVIDIA_VISIBLE_DEVICES` and `NVIDIA_DRIVER_CAPABILITIES` will default to `all`.
 
 ## Copyright and License
 
