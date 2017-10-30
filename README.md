@@ -16,6 +16,13 @@ The implementation relies on kernel primitives and is designed to be agnostic of
 Refer to the [repository configuration](https://nvidia.github.io/libnvidia-container/) for your Linux distribution.
 
 ### From sources
+With Docker:
+```bash
+docker build --build-arg USERSPEC=$(id -u):$(id -g) -t libnvidia-container:ubuntu -f Dockerfile.ubuntu .
+docker run --rm -v /my/output/directory:/mnt libnvidia-container:ubuntu
+````
+
+Without Docker:
 ```bash
 make install
 

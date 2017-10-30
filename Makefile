@@ -28,6 +28,10 @@ export DIST_DIR    ?= $(CURDIR)/dist
 export MAKE_DIR    ?= $(CURDIR)/mk
 export DEBUG_DIR   ?= $(CURDIR)/.debug
 
+#export TAG        ?=
+#export DISTRIB    ?=
+#export SECTION    ?=
+
 include $(MAKE_DIR)/common.mk
 
 DATE     := $(shell date -u --iso-8601=minutes)
