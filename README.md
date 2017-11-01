@@ -23,6 +23,59 @@ sed -i 's;\("TERM=xterm"\);\1, "NVIDIA_VISIBLE_DEVICES=0";' config.json
 sudo nvidia-container-runtime run nvidia_smi
 ```
 
+## Installation
+#### Ubuntu distributions
+
+1. Install the repository for your distribution by following the instructions [here](http://nvidia.github.io/nvidia-container-runtime/).
+2. Install the `nvidia-container-runtime` package:
+```
+sudo apt-get install nvidia-container-runtime
+```
+
+#### CentOS distributions
+1. Install the repository for your distribution by following the instructions [here](http://nvidia.github.io/nvidia-container-runtime/).
+2. Install the `nvidia-container-runtime` package:
+```
+sudo yum install nvidia-container-runtime
+```
+
+## Docker Engine setup
+
+To register the `nvidia` runtime, use the method below that is best suited to your environment.  
+You might need to merge the new argument with your existing configuration.
+
+#### Systemd drop-in file
+```bash
+sudo mkdir -p /etc/systemd/system/docker.service.d
+sudo tee /etc/systemd/system/docker.service.d/override.conf <<EOF
+[Service]
+ExecStart=
+ExecStart=/usr/bin/dockerd --host=fd:// --add-runtime=nvidia=/usr/bin/nvidia-container-runtime
+EOF
+sudo systemctl daemon-reload
+sudo systemctl restart docker
+```
+
+#### Daemon configuration file
+```bash
+sudo tee /etc/docker/daemon.json <<EOF
+{
+    "runtimes": {
+        "nvidia": {
+            "path": "/usr/bin/nvidia-container-runtime",
+            "runtimeArgs": []
+        }
+    }
+}
+EOF
+sudo pkill -SIGHUP dockerd
+```
+
+#### Command line
+```bash
+sudo dockerd --add-runtime=nvidia=/usr/bin/nvidia-container-runtime [...]
+```
+
 ## Environment variables (OCI spec)
 
 Each environment variable maps to an command-line argument for `nvidia-container-cli` from [libnvidia-container](https://github.com/NVIDIA/libnvidia-container).  
