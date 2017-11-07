@@ -168,7 +168,8 @@ mount_procfs(struct error *err, const struct nvc_container *cnt)
                 free(buf);
                 buf = NULL;
         }
-        if (xmount(err, NULL, path, NULL, MS_REMOUNT | MS_NODEV|MS_NOSUID|MS_NOEXEC, NULL) < 0)
+        /* XXX Some kernels require MS_BIND in order to remount within a userns */
+        if (xmount(err, NULL, path, NULL, MS_BIND|MS_REMOUNT | MS_NODEV|MS_NOSUID|MS_NOEXEC, NULL) < 0)
                 goto fail;
         if ((mnt = xstrdup(err, path)) == NULL)
                 goto fail;
