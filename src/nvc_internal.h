@@ -32,6 +32,7 @@
 #define NV_MPS_PIPE_DIR          _PATH_TMP "nvidia-mps"
 #define NV_PROC_DRIVER           "/proc/driver/nvidia"
 #define NV_UVM_PROC_DRIVER       "/proc/driver/nvidia-uvm"
+#define NV_APP_PROFILE_DIR       "/etc/nvidia/nvidia-application-profiles-rc.d"
 
 struct nvc_context {
         bool initialized;

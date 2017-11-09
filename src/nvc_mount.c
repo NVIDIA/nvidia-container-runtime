@@ -2,6 +2,7 @@
  * Copyright (c) 2017, NVIDIA CORPORATION. All rights reserved.
  */
 
+#include <sys/sysmacros.h>
 #include <sys/mount.h>
 #include <sys/types.h>
 
@@ -24,6 +25,8 @@ static char *mount_device(struct error *, const struct nvc_container *, const ch
 static char *mount_ipc(struct error *, const struct nvc_container *, const char *);
 static char *mount_procfs(struct error *, const struct nvc_container *);
 static char *mount_procfs_gpu(struct error *, const struct nvc_container *, const char *);
+static char *mount_app_profile(struct error *, const struct nvc_container *);
+static int  update_app_profile(struct error *, const struct nvc_container *, dev_t);
 static void unmount(const char *);
 static int  setup_cgroup(struct error *, const char *, dev_t);
 static int  symlink_library(struct error *, const char *, const char *, const char *, const char *, uid_t, gid_t);
@@ -126,6 +129,76 @@ mount_ipc(struct error *err, const struct nvc_container *cnt, const char *ipc)
  fail:
         unmount(path);
         return (NULL);
+}
+
+static char *
+mount_app_profile(struct error *err, const struct nvc_container *cnt)
+{
+        char path[PATH_MAX];
+        char *mnt;
+
+        if (path_resolve(err, path, cnt->cfg.rootfs, NV_APP_PROFILE_DIR) < 0)
+                return (NULL);
+        if (file_create(err, path, NULL, cnt->uid, cnt->gid, MODE_DIR(0555)) < 0)
+                goto fail;
+
+        log_infof("mounting tmpfs at %s", path);
+        if (xmount(err, "tmpfs", path, "tmpfs", 0, "mode=0555") < 0)
+                goto fail;
+        /* XXX Some kernels require MS_BIND in order to remount within a userns */
+        if (xmount(err, NULL, path, NULL, MS_BIND|MS_REMOUNT | MS_NODEV|MS_NOSUID|MS_NOEXEC, NULL) < 0)
+                goto fail;
+        if ((mnt = xstrdup(err, path)) == NULL)
+                goto fail;
+        return (mnt);
+
+ fail:
+        unmount(path);
+        return (NULL);
+}
+
+static int
+update_app_profile(struct error *err, const struct nvc_container *cnt, dev_t id)
+{
+        char path[PATH_MAX];
+        char *buf = NULL;
+        char *ptr;
+        uintmax_t n;
+        uint64_t dev;
+        int rv = -1;
+
+#define profile quote_str({\
+        "profiles": [{"name": "_container_", "settings": ["EGLVisibleDGPUDevices", 0x%lx]}],\
+        "rules": [{"pattern": [], "profile": "_container_"}]\
+})
+
+        dev = 1ull << minor(id);
+        if (path_resolve(err, path, cnt->cfg.rootfs, NV_APP_PROFILE_DIR "/10-container.conf") < 0)
+                return (-1);
+        if (file_read_text(err, path, &buf) < 0) {
+                if (err->code != ENOENT)
+                        goto fail;
+                if (xasprintf(err, &buf, profile, dev) < 0)
+                        goto fail;
+        } else {
+                if ((ptr = strstr(buf, "0x")) == NULL ||
+                    (n = strtoumax(ptr, NULL, 16)) == UINTMAX_MAX) {
+                        error_setx(err, "invalid application profile: %s", path);
+                        goto fail;
+                }
+                free(buf), buf = NULL;
+                if (xasprintf(err, &buf, profile, (uint64_t)n|dev) < 0)
+                        goto fail;
+        }
+        if (file_create(err, path, buf, cnt->uid, cnt->gid, MODE_REG(0555)) < 0)
+                goto fail;
+        rv = 0;
+
+#undef profile
+
+ fail:
+        free(buf);
+        return (rv);
 }
 
 static char *
@@ -294,6 +367,7 @@ symlink_libraries(struct error *err, const struct nvc_container *cnt, const char
 int
 nvc_driver_mount(struct nvc_context *ctx, const struct nvc_container *cnt, const struct nvc_driver_info *info)
 {
+        char *approf_mnt = NULL;
         char *procfs_mnt = NULL;
         char **files_mnt = NULL;
         char **ipcs_mnt = NULL;
@@ -314,6 +388,10 @@ nvc_driver_mount(struct nvc_context *ctx, const struct nvc_container *cnt, const
 
         /* Procfs mount */
         if ((procfs_mnt = mount_procfs(&ctx->err, cnt)) == NULL)
+                goto fail;
+
+        /* Application profile mount */
+        if ((approf_mnt = mount_app_profile(&ctx->err, cnt)) == NULL)
                 goto fail;
 
         /* File mounts */
@@ -371,6 +449,7 @@ nvc_driver_mount(struct nvc_context *ctx, const struct nvc_container *cnt, const
  fail:
         if (rv < 0) {
                 unmount(procfs_mnt);
+                unmount(approf_mnt);
                 for (size_t i = 0; files_mnt != NULL && i < nfiles_mnt; ++i)
                         unmount(files_mnt[i]);
                 for (size_t i = 0; ipcs_mnt != NULL && i < nipcs_mnt; ++i)
@@ -383,6 +462,7 @@ nvc_driver_mount(struct nvc_context *ctx, const struct nvc_container *cnt, const
         }
 
         free(procfs_mnt);
+        free(approf_mnt);
         array_free(files_mnt, nfiles_mnt);
         array_free(ipcs_mnt, nipcs_mnt);
         array_free(devs_mnt, ndevs_mnt);
@@ -416,6 +496,8 @@ nvc_device_mount(struct nvc_context *ctx, const struct nvc_container *cnt, const
                         goto fail;
         }
         if ((proc_mnt = mount_procfs_gpu(&ctx->err, cnt, dev->busid)) == NULL)
+                goto fail;
+        if (update_app_profile(&ctx->err, cnt, dev->node.id) < 0)
                 goto fail;
         if (!(cnt->flags & OPT_NO_CGROUPS)) {
                 if (setup_cgroup(&ctx->err, cnt->dev_cg, dev->node.id) < 0)

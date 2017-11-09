@@ -17,6 +17,7 @@
 
 #define CAP_AMBIENT (cap_flag_t)-1
 
+#define quote_str(...) #__VA_ARGS__
 #define nitems(x) (sizeof(x) / sizeof(*x))
 #define maybe_unused __attribute__((unused))
 #define assert_func(fn) do {      \

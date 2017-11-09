@@ -470,7 +470,7 @@ file_create(struct error *err, const char *path, const char *data, uid_t uid, gi
         } else {
                 if (data != NULL) {
                         size = strlen(data);
-                        flags |= O_WRONLY;
+                        flags |= O_WRONLY|O_TRUNC;
                 }
                 if ((fd = open(path, flags, perm)) < 0)
                         goto fail;
