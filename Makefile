@@ -284,6 +284,7 @@ deb: install
 
 rpm: DESTDIR:=$(DIST_DIR)/$(LIB_NAME)_$(VERSION)_$(ARCH)
 rpm: all
+	$(MKDIR) -p $(DIST_DIR)
 	$(CP) -T $(PKG_DIR)/rpm $(DESTDIR)
 	$(LN) -nsf $(CURDIR) $(DESTDIR)/BUILD
 	$(MKDIR) -p $(DESTDIR)/RPMS && $(LN) -nsf $(DIST_DIR) $(DESTDIR)/RPMS/$(ARCH)
