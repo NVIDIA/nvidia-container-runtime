@@ -1,0 +1,37 @@
+FROM debian:9.2
+
+# XXX: CUDA doesn't officially support debian, we just need the driver headers though
+RUN apt-get update && apt-get install -y --no-install-recommends curl ca-certificates gnupg2 && \
+    curl -fsSL https://developer.download.nvidia.com/compute/cuda/repos/ubuntu1604/x86_64/7fa2af80.pub | apt-key add - && \
+    echo "deb http://developer.download.nvidia.com/compute/cuda/repos/ubuntu1604/x86_64 /" > /etc/apt/sources.list.d/cuda.list && \
+    rm -rf /var/lib/apt/lists/*
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        bmake \
+        build-essential \
+        bzip2 \
+        cuda-misc-headers-8-0=8.0.61-1 \
+        cuda-nvml-dev-8-0=8.0.61-1 \
+        devscripts \
+        dh-make \
+        fakeroot \
+        git \
+        libcap-dev \
+        libseccomp-dev \
+        lintian \
+        lsb-release \
+        m4 && \
+    rm -rf /var/lib/apt/lists/*
+
+ARG USERSPEC=0:0
+
+WORKDIR /tmp/libnvidia-container
+COPY . .
+RUN chown -R $USERSPEC $PWD
+USER $USERSPEC
+
+RUN make distclean && make -j"$(nproc)"
+
+ENV DIST_DIR /mnt
+VOLUME $DIST_DIR
+CMD make dist && make deb
