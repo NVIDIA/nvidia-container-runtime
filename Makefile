@@ -254,7 +254,7 @@ uninstall:
 
 dist: DESTDIR:=$(DIST_DIR)/$(LIB_NAME)_$(VERSION)$(addprefix -,$(TAG))
 dist: install
-	$(TAR) -C $(dir $(DESTDIR)) -caf $(DESTDIR)_$(ARCH).tar.xz $(notdir $(DESTDIR))
+	$(TAR) --numeric-owner --owner=0 --group=0 -C $(dir $(DESTDIR)) -caf $(DESTDIR)_$(ARCH).tar.xz $(notdir $(DESTDIR))
 	$(RM) -r $(DESTDIR)
 
 depsclean:
