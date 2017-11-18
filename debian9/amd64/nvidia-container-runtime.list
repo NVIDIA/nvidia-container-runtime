@@ -1,0 +1,2 @@
+deb https://nvidia.github.io/libnvidia-container/debian9/amd64 /
+deb https://nvidia.github.io/nvidia-container-runtime/debian9/amd64 /
