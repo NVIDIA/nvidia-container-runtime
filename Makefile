@@ -12,11 +12,18 @@ DIST_DIR  := $(CURDIR)/dist
 
 all: xenial centos7 stretch
 
-xenial: 17.09.0-xenial 17.06.2-xenial 17.03.2-xenial 1.13.1-xenial 1.12.6-xenial
+xenial: 17.09.1-xenial 17.09.0-xenial 17.06.2-xenial 17.03.2-xenial 1.13.1-xenial 1.12.6-xenial
 
-centos7: 17.09.0-centos7 17.06.2-centos7 17.03.2-centos7 1.13.1-centos7 1.12.6-centos7
+centos7: 17.09.1-centos7 17.09.0-centos7 17.06.2-centos7 17.03.2-centos7 1.13.1-centos7 1.12.6-centos7
 
-stretch: 17.09.0-stretch 17.06.2-stretch 17.03.2-stretch
+stretch: 17.09.1-stretch 17.09.0-stretch 17.06.2-stretch 17.03.2-stretch
+
+17.09.1-xenial:
+	$(DOCKER) build --build-arg RUNC_COMMIT="3f2f8b84a77f73d38244dd690525642a72156c64" \
+                        --build-arg PKG_VERS="$(VERSION)+docker17.09.1" \
+                        --build-arg PKG_REV="$(PKG_REV)" \
+                        -t nvidia-container-runtime:$@ -f Dockerfile.xenial .
+	$(DOCKER) run --rm -v $(DIST_DIR)/xenial:/dist:Z nvidia-container-runtime:$@
 
 17.09.0-xenial:
 	$(DOCKER) build --build-arg RUNC_COMMIT="3f2f8b84a77f73d38244dd690525642a72156c64" \
@@ -52,6 +59,14 @@ stretch: 17.09.0-stretch 17.06.2-stretch 17.03.2-stretch
                         --build-arg PKG_REV="$(PKG_REV)" \
                         -t nvidia-container-runtime:$@ -f Dockerfile.xenial .
 	$(DOCKER) run --rm -v $(DIST_DIR)/xenial:/dist:Z nvidia-container-runtime:$@
+
+17.09.1-centos7:
+	$(DOCKER) build --build-arg PKG_ARCH="x86_64" \
+                        --build-arg RUNC_COMMIT="3f2f8b84a77f73d38244dd690525642a72156c64" \
+                        --build-arg PKG_VERS="$(VERSION)" \
+                        --build-arg PKG_REV="$(PKG_REV).docker17.09.1" \
+                        -t nvidia-container-runtime:$@ -f Dockerfile.centos7 .
+	$(DOCKER) run --rm -v $(DIST_DIR)/centos7:/dist:Z nvidia-container-runtime:$@
 
 17.09.0-centos7:
 	$(DOCKER) build --build-arg PKG_ARCH="x86_64" \
@@ -92,6 +107,13 @@ stretch: 17.09.0-stretch 17.06.2-stretch 17.03.2-stretch
                         --build-arg PKG_REV="$(PKG_REV).docker1.12.6" \
                         -t nvidia-container-runtime:$@ -f Dockerfile.centos7 .
 	$(DOCKER) run --rm -v $(DIST_DIR)/centos7:/dist:Z nvidia-container-runtime:$@
+
+17.09.1-stretch:
+	$(DOCKER) build --build-arg RUNC_COMMIT="3f2f8b84a77f73d38244dd690525642a72156c64" \
+                        --build-arg PKG_VERS="$(VERSION)+docker17.09.1" \
+                        --build-arg PKG_REV="$(PKG_REV)" \
+                        -t nvidia-container-runtime:$@ -f Dockerfile.stretch .
+	$(DOCKER) run --rm -v $(DIST_DIR)/stretch:/dist:Z nvidia-container-runtime:$@
 
 17.09.0-stretch:
 	$(DOCKER) build --build-arg RUNC_COMMIT="3f2f8b84a77f73d38244dd690525642a72156c64" \
