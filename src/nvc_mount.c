@@ -37,7 +37,7 @@ mount_files(struct error *err, const struct nvc_container *cnt, const char *dir,
 {
         char path[PATH_MAX];
         mode_t mode;
-        char *ptr, *mnt;
+        char *ptr, *mnt, *p;
 
         /* Create the top directory under the rootfs. */
         if (path_resolve(err, path, cnt->cfg.rootfs, dir) < 0)
@@ -51,7 +51,10 @@ mount_files(struct error *err, const struct nvc_container *cnt, const char *dir,
         if (xmount(err, path, path, NULL, MS_BIND, NULL) < 0)
                 goto fail;
         for (size_t i = 0; i < size; ++i) {
-                if (path_append(err, path, basename(paths[i])) < 0)
+                p = basename(paths[i]);
+                if (!match_binary_flags(p, cnt->flags) && !match_library_flags(p, cnt->flags))
+                        continue;
+                if (path_append(err, path, p) < 0)
                         goto fail;
                 if (file_mode(err, paths[i], &mode) < 0)
                         goto fail;
@@ -351,11 +354,11 @@ symlink_libraries(struct error *err, const struct nvc_container *cnt, const char
 
         for (size_t i = 0; i < size; ++i) {
                 p = basename(paths[i]);
-                if (!strpcmp(p, "libcuda.so")) {
+                if ((cnt->flags & OPT_COMPUTE_LIBS) && !strpcmp(p, "libcuda.so")) {
                         /* XXX Many applications wrongly assume that libcuda.so exists (e.g. with dlopen). */
                         if (symlink_library(err, dir, "libcuda.so", version, "libcuda.so", cnt->uid, cnt->gid) < 0)
                                 return (-1);
-                } else if (!strpcmp(p, "libGLX_nvidia.so")) {
+                } else if ((cnt->flags & OPT_GRAPHICS_LIBS) && !strpcmp(p, "libGLX_nvidia.so")) {
                         /* XXX GLVND requires this symlink for indirect GLX support. */
                         if (symlink_library(err, dir, "libGLX_nvidia.so", version, "libGLX_indirect.so.0", cnt->uid, cnt->gid) < 0)
                                 return (-1);
@@ -367,15 +370,8 @@ symlink_libraries(struct error *err, const struct nvc_container *cnt, const char
 int
 nvc_driver_mount(struct nvc_context *ctx, const struct nvc_container *cnt, const struct nvc_driver_info *info)
 {
-        char *approf_mnt = NULL;
-        char *procfs_mnt = NULL;
-        char **files_mnt = NULL;
-        char **ipcs_mnt = NULL;
-        char **devs_mnt = NULL;
-        size_t nfiles_mnt = 0;
-        size_t nipcs_mnt = 0;
-        size_t ndevs_mnt = 0;
-        char **mnt;
+        char **mnt, **ptr;
+        size_t nmnt;
         int rv = -1;
 
         if (validate_context(ctx) < 0)
@@ -386,57 +382,56 @@ nvc_driver_mount(struct nvc_context *ctx, const struct nvc_container *cnt, const
         if (nsenter(&ctx->err, cnt->mnt_ns, CLONE_NEWNS) < 0)
                 return (-1);
 
+        nmnt = 5 + info->nipcs + info->ndevs;
+        mnt = ptr = array_new(&ctx->err, nmnt);
+        if (mnt == NULL)
+                goto fail;
+
         /* Procfs mount */
-        if ((procfs_mnt = mount_procfs(&ctx->err, cnt)) == NULL)
+        if ((*ptr++ = mount_procfs(&ctx->err, cnt)) == NULL)
                 goto fail;
-
         /* Application profile mount */
-        if ((approf_mnt = mount_app_profile(&ctx->err, cnt)) == NULL)
-                goto fail;
-
-        /* File mounts */
-        nfiles_mnt = 3;
-        files_mnt = mnt = array_new(&ctx->err, nfiles_mnt);
-        if (files_mnt == NULL)
-                goto fail;
-        if (info->bins != NULL && info->nbins > 0) {
-                if ((*mnt = mount_files(&ctx->err, cnt, cnt->cfg.bins_dir, info->bins, info->nbins)) == NULL)
+        if (cnt->flags & OPT_GRAPHICS_LIBS) {
+                if ((*ptr++ = mount_app_profile(&ctx->err, cnt)) == NULL)
                         goto fail;
-                ++mnt;
+        }
+        /* Binary and library file mounts */
+        if (info->bins != NULL && info->nbins > 0) {
+                if ((*ptr++ = mount_files(&ctx->err, cnt, cnt->cfg.bins_dir, info->bins, info->nbins)) == NULL)
+                        goto fail;
         }
         if (info->libs != NULL && info->nlibs > 0) {
-                if ((*mnt = mount_files(&ctx->err, cnt, cnt->cfg.libs_dir, info->libs, info->nlibs)) == NULL)
+                if ((*ptr = mount_files(&ctx->err, cnt, cnt->cfg.libs_dir, info->libs, info->nlibs)) == NULL)
                         goto fail;
-                if (symlink_libraries(&ctx->err, cnt, *mnt, info->libs, info->nlibs, info->nvrm_version) < 0)
+                if (symlink_libraries(&ctx->err, cnt, *ptr, info->libs, info->nlibs, info->nvrm_version) < 0)
                         goto fail;
-                ++mnt;
+                ++ptr;
         }
-        if (info->libs32 != NULL && info->nlibs32 > 0) {
-                if ((*mnt = mount_files(&ctx->err, cnt, cnt->cfg.libs32_dir, info->libs32, info->nlibs32)) == NULL)
+        if ((cnt->flags & OPT_COMPAT32) && info->libs32 != NULL && info->nlibs32 > 0) {
+                if ((*ptr = mount_files(&ctx->err, cnt, cnt->cfg.libs32_dir, info->libs32, info->nlibs32)) == NULL)
                         goto fail;
-                if (symlink_libraries(&ctx->err, cnt, *mnt, info->libs32, info->nlibs32, info->nvrm_version) < 0)
+                if (symlink_libraries(&ctx->err, cnt, *ptr, info->libs32, info->nlibs32, info->nvrm_version) < 0)
                         goto fail;
-                ++mnt;
+                ++ptr;
         }
-
         /* IPC mounts */
-        nipcs_mnt = info->nipcs;
-        ipcs_mnt = mnt = array_new(&ctx->err, nipcs_mnt);
-        if (ipcs_mnt == NULL)
-                goto fail;
-        for (size_t i = 0; i < nipcs_mnt; ++i, ++mnt) {
-                if ((*mnt = mount_ipc(&ctx->err, cnt, info->ipcs[i])) == NULL)
+        for (size_t i = 0; i < info->nipcs; ++i) {
+                /* XXX Only utility libraries require persistenced IPC, everything else is compute only. */
+                if (!strrcmp(NV_PERSISTENCED_SOCKET, info->ipcs[i])) {
+                        if (!(cnt->flags & OPT_UTILITY_LIBS))
+                                continue;
+                } else if (!(cnt->flags & OPT_COMPUTE_LIBS))
+                        continue;
+                if ((*ptr++ = mount_ipc(&ctx->err, cnt, info->ipcs[i])) == NULL)
                         goto fail;
         }
-
         /* Device mounts */
-        ndevs_mnt = info->ndevs;
-        devs_mnt = mnt = array_new(&ctx->err, ndevs_mnt);
-        if (devs_mnt == NULL)
-                goto fail;
-        for (size_t i = 0; i < ndevs_mnt; ++i, ++mnt) {
+        for (size_t i = 0; i < info->ndevs; ++i) {
+                /* XXX Only compute libraries require specific devices (e.g. UVM). */
+                if (!(cnt->flags & OPT_COMPUTE_LIBS) && major(info->devs[i].id) != NV_DEVICE_MAJOR)
+                        continue;
                 if (!(cnt->flags & OPT_NO_DEVBIND)) {
-                        if ((*mnt = mount_device(&ctx->err, cnt, info->devs[i].path)) == NULL)
+                        if ((*ptr++ = mount_device(&ctx->err, cnt, info->devs[i].path)) == NULL)
                                 goto fail;
                 }
                 if (!(cnt->flags & OPT_NO_CGROUPS)) {
@@ -448,24 +443,14 @@ nvc_driver_mount(struct nvc_context *ctx, const struct nvc_container *cnt, const
 
  fail:
         if (rv < 0) {
-                unmount(procfs_mnt);
-                unmount(approf_mnt);
-                for (size_t i = 0; files_mnt != NULL && i < nfiles_mnt; ++i)
-                        unmount(files_mnt[i]);
-                for (size_t i = 0; ipcs_mnt != NULL && i < nipcs_mnt; ++i)
-                        unmount(ipcs_mnt[i]);
-                for (size_t i = 0; devs_mnt != NULL && i < ndevs_mnt; ++i)
-                        unmount(devs_mnt[i]);
+                for (size_t i = 0; i < nmnt; ++i)
+                        unmount(mnt[i]);
                 assert_func(nsenterat(NULL, ctx->mnt_ns, CLONE_NEWNS));
         } else {
                 rv = nsenterat(&ctx->err, ctx->mnt_ns, CLONE_NEWNS);
         }
 
-        free(procfs_mnt);
-        free(approf_mnt);
-        array_free(files_mnt, nfiles_mnt);
-        array_free(ipcs_mnt, nipcs_mnt);
-        array_free(devs_mnt, ndevs_mnt);
+        array_free(mnt, nmnt);
         return (rv);
 }
 
@@ -497,8 +482,10 @@ nvc_device_mount(struct nvc_context *ctx, const struct nvc_container *cnt, const
         }
         if ((proc_mnt = mount_procfs_gpu(&ctx->err, cnt, dev->busid)) == NULL)
                 goto fail;
-        if (update_app_profile(&ctx->err, cnt, dev->node.id) < 0)
-                goto fail;
+        if (cnt->flags & OPT_GRAPHICS_LIBS) {
+                if (update_app_profile(&ctx->err, cnt, dev->node.id) < 0)
+                        goto fail;
+        }
         if (!(cnt->flags & OPT_NO_CGROUPS)) {
                 if (setup_cgroup(&ctx->err, cnt->dev_cg, dev->node.id) < 0)
                         goto fail;

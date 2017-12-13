@@ -245,27 +245,23 @@ list_parser(int key, char *arg, struct argp_state *state)
                         goto fatal;
                 break;
         case 'c':
-                if (strjoin(&err, &ctx->driver_flags, "compute", " ") < 0 ||
-                    strjoin(&err, &ctx->device_flags, "compute", " ") < 0)
+                if (strjoin(&err, &ctx->container_flags, "compute", " ") < 0)
                         goto fatal;
                 break;
         case 'u':
-                if (strjoin(&err, &ctx->driver_flags, "utility", " ") < 0 ||
-                    strjoin(&err, &ctx->device_flags, "utility", " ") < 0)
+                if (strjoin(&err, &ctx->container_flags, "utility", " ") < 0)
                         goto fatal;
                 break;
         case 'v':
-                if (strjoin(&err, &ctx->driver_flags, "video", " ") < 0 ||
-                    strjoin(&err, &ctx->device_flags, "video", " ") < 0)
+                if (strjoin(&err, &ctx->container_flags, "video", " ") < 0)
                         goto fatal;
                 break;
         case 'g':
-                if (strjoin(&err, &ctx->driver_flags, "graphics", " ") < 0 ||
-                    strjoin(&err, &ctx->device_flags, "graphics", " ") < 0)
+                if (strjoin(&err, &ctx->container_flags, "graphics", " ") < 0)
                         goto fatal;
                 break;
         case 0x80:
-                if (strjoin(&err, &ctx->driver_flags, "compat32", " ") < 0)
+                if (strjoin(&err, &ctx->container_flags, "compat32", " ") < 0)
                         goto fatal;
                 break;
         default:
@@ -304,27 +300,23 @@ configure_parser(int key, char *arg, struct argp_state *state)
                 ctx->ldconfig = arg;
                 break;
         case 'c':
-                if (strjoin(&err, &ctx->driver_flags, "compute", " ") < 0 ||
-                    strjoin(&err, &ctx->device_flags, "compute", " ") < 0)
+                if (strjoin(&err, &ctx->container_flags, "compute", " ") < 0)
                         goto fatal;
                 break;
         case 'u':
-                if (strjoin(&err, &ctx->driver_flags, "utility", " ") < 0 ||
-                    strjoin(&err, &ctx->device_flags, "utility", " ") < 0)
+                if (strjoin(&err, &ctx->container_flags, "utility", " ") < 0)
                         goto fatal;
                 break;
         case 'v':
-                if (strjoin(&err, &ctx->driver_flags, "video", " ") < 0 ||
-                    strjoin(&err, &ctx->device_flags, "video", " ") < 0)
+                if (strjoin(&err, &ctx->container_flags, "video", " ") < 0)
                         goto fatal;
                 break;
         case 'g':
-                if (strjoin(&err, &ctx->driver_flags, "graphics", " ") < 0 ||
-                    strjoin(&err, &ctx->device_flags, "graphics", " ") < 0)
+                if (strjoin(&err, &ctx->container_flags, "graphics", " ") < 0)
                         goto fatal;
                 break;
         case 0x80:
-                if (strjoin(&err, &ctx->driver_flags, "compat32", " ") < 0)
+                if (strjoin(&err, &ctx->container_flags, "compat32", " ") < 0)
                         goto fatal;
                 break;
         case 0x81:
@@ -486,8 +478,8 @@ list_command(const struct context *ctx)
                 warnx("permission error: %s", err.msg);
                 goto fail;
         }
-        if ((drv = nvc_driver_info_new(nvc, (ctx->driver_flags != NULL) ? ctx->driver_flags : "")) == NULL ||
-            (dev = nvc_device_info_new(nvc, (ctx->device_flags != NULL) ? ctx->device_flags : "")) == NULL) {
+        if ((drv = nvc_driver_info_new(nvc, ctx->driver_flags)) == NULL ||
+            (dev = nvc_device_info_new(nvc, ctx->device_flags)) == NULL) {
                 warnx("detection error: %s", nvc_error(nvc));
                 goto fail;
         }

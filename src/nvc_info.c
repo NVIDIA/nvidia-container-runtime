@@ -29,7 +29,7 @@
                   nitems(graphics_libs_compat))
 
 static int select_libraries(struct error *, void *, const char *, const char *);
-static int find_library_paths(struct error *, struct nvc_driver_info *, int32_t, const char *, const char * const [], size_t);
+static int find_library_paths(struct error *, struct nvc_driver_info *, const char *, const char * const [], size_t);
 static int find_binary_paths(struct error *, struct nvc_driver_info *, const char * const [], size_t);
 static int find_device_node(struct error *, const char *, struct nvc_device_node *);
 static int find_ipc_path(struct error *, const char *, char **);
@@ -148,7 +148,7 @@ select_libraries(struct error *err, void *ptr, const char *orig_path, const char
 }
 
 static int
-find_library_paths(struct error *err, struct nvc_driver_info *info, int32_t flags,
+find_library_paths(struct error *err, struct nvc_driver_info *info,
     const char *ldcache, const char * const libs[], size_t size)
 {
         struct ldcache ld;
@@ -166,15 +166,13 @@ find_library_paths(struct error *err, struct nvc_driver_info *info, int32_t flag
             info->libs, info->nlibs, select_libraries, info) < 0)
                 goto fail;
 
-        if (flags & OPT_COMPAT32) {
-                info->nlibs32 = size;
-                info->libs32 = array_new(err, size);
-                if (info->libs32 == NULL)
-                        goto fail;
-                if (ldcache_resolve(&ld, LIB32_ARCH, libs,
-                    info->libs32, info->nlibs32, select_libraries, info) < 0)
-                        goto fail;
-        }
+        info->nlibs32 = size;
+        info->libs32 = array_new(err, size);
+        if (info->libs32 == NULL)
+                goto fail;
+        if (ldcache_resolve(&ld, LIB32_ARCH, libs,
+            info->libs32, info->nlibs32, select_libraries, info) < 0)
+                goto fail;
         rv = 0;
 
  fail:
@@ -267,24 +265,17 @@ lookup_libraries(struct error *err, struct nvc_driver_info *info, int32_t flags,
         const char *libs[MAX_LIBS];
         const char **ptr = libs;
 
-        if (flags & OPT_UTILITY_LIBS)
-                ptr = array_append(ptr, utility_libs, nitems(utility_libs));
-        if (flags & OPT_COMPUTE_LIBS)
-                ptr = array_append(ptr, compute_libs, nitems(compute_libs));
-        if (flags & OPT_VIDEO_LIBS)
-                ptr = array_append(ptr, video_libs, nitems(video_libs));
-        if (flags & OPT_GRAPHICS_LIBS) {
-                ptr = array_append(ptr, graphics_libs, nitems(graphics_libs));
-                if (flags & OPT_NO_GLVND)
-                        ptr = array_append(ptr, graphics_libs_compat, nitems(graphics_libs_compat));
-                else
-                        ptr = array_append(ptr, graphics_libs_glvnd, nitems(graphics_libs_glvnd));
-        }
+        ptr = array_append(ptr, utility_libs, nitems(utility_libs));
+        ptr = array_append(ptr, compute_libs, nitems(compute_libs));
+        ptr = array_append(ptr, video_libs, nitems(video_libs));
+        ptr = array_append(ptr, graphics_libs, nitems(graphics_libs));
+        if (flags & OPT_NO_GLVND)
+                ptr = array_append(ptr, graphics_libs_compat, nitems(graphics_libs_compat));
+        else
+                ptr = array_append(ptr, graphics_libs_glvnd, nitems(graphics_libs_glvnd));
 
-        if (flags & (OPT_UTILITY_LIBS|OPT_COMPUTE_LIBS|OPT_VIDEO_LIBS|OPT_GRAPHICS_LIBS)) {
-                if (find_library_paths(err, info, flags, ldcache, libs, (size_t)(ptr - libs)) < 0)
-                        return (-1);
-        }
+        if (find_library_paths(err, info, ldcache, libs, (size_t)(ptr - libs)) < 0)
+                return (-1);
 
         for (size_t i = 0; info->libs != NULL && i < info->nlibs; ++i) {
                 if (info->libs[i] == NULL)
@@ -305,15 +296,12 @@ lookup_binaries(struct error *err, struct nvc_driver_info *info, int32_t flags)
         const char *bins[MAX_BINS];
         const char **ptr = bins;
 
-        if (flags & OPT_UTILITY_BINS)
-                ptr = array_append(ptr, utility_bins, nitems(utility_bins));
-        if ((flags & OPT_COMPUTE_BINS) && !(flags & OPT_NO_MPS))
+        ptr = array_append(ptr, utility_bins, nitems(utility_bins));
+        if (!(flags & OPT_NO_MPS))
                 ptr = array_append(ptr, compute_bins, nitems(compute_bins));
 
-        if (flags & (OPT_UTILITY_BINS|OPT_COMPUTE_BINS)) {
-                if (find_binary_paths(err, info, bins, (size_t)(ptr - bins)) < 0)
-                        return (-1);
-        }
+        if (find_binary_paths(err, info, bins, (size_t)(ptr - bins)) < 0)
+                return (-1);
 
         for (size_t i = 0; info->bins != NULL && i < info->nbins; ++i) {
                 if (info->bins[i] == NULL)
@@ -365,11 +353,11 @@ lookup_ipcs(struct error *err, struct nvc_driver_info *info, int32_t flags)
         if (info->ipcs == NULL)
                 return (-1);
 
-        if ((flags & OPT_UTILITY_LIBS) && !(flags & OPT_NO_PERSISTENCED)) {
+        if (!(flags & OPT_NO_PERSISTENCED)) {
                 if (find_ipc_path(err, NV_PERSISTENCED_SOCKET, ptr++) < 0)
                         return (-1);
         }
-        if ((flags & OPT_COMPUTE_LIBS) && !(flags & OPT_NO_MPS)) {
+        if (!(flags & OPT_NO_MPS)) {
                 if ((mps = secure_getenv("CUDA_MPS_PIPE_DIRECTORY")) == NULL)
                         mps = NV_MPS_PIPE_DIR;
                 if (find_ipc_path(err, mps, ptr++) < 0)
@@ -377,6 +365,32 @@ lookup_ipcs(struct error *err, struct nvc_driver_info *info, int32_t flags)
         }
         array_pack(info->ipcs, &info->nipcs);
         return (0);
+}
+
+bool
+match_binary_flags(const char *bin, int32_t flags)
+{
+        if ((flags & OPT_UTILITY_BINS) && strmatch(bin, utility_bins, nitems(utility_bins)))
+                return (true);
+        if ((flags & OPT_COMPUTE_BINS) && strmatch(bin, compute_bins, nitems(compute_bins)))
+                return (true);
+        return (false);
+}
+
+bool
+match_library_flags(const char *lib, int32_t flags)
+{
+        if ((flags & OPT_UTILITY_LIBS) && strmatch(lib, utility_libs, nitems(utility_libs)))
+                return (true);
+        if ((flags & OPT_COMPUTE_LIBS) && strmatch(lib, compute_libs, nitems(compute_libs)))
+                return (true);
+        if ((flags & OPT_VIDEO_LIBS) && strmatch(lib, video_libs, nitems(video_libs)))
+                return (true);
+        if ((flags & OPT_GRAPHICS_LIBS) && (strmatch(lib, graphics_libs, nitems(graphics_libs)) ||
+            strmatch(lib, graphics_libs_glvnd, nitems(graphics_libs_glvnd)) ||
+            strmatch(lib, graphics_libs_compat, nitems(graphics_libs_compat))))
+                return (true);
+        return (false);
 }
 
 struct nvc_driver_info *

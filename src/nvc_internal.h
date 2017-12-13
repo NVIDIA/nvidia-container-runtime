@@ -127,6 +127,11 @@ validate_args(struct nvc_context *ctx, bool predicate)
         return (0);
 }
 
+/* Prototypes from nvc.c */
 void nvc_entrypoint(void);
+
+/* Prototypes from nvc_info.c */
+bool match_binary_flags(const char *, int32_t);
+bool match_library_flags(const char *, int32_t);
 
 #endif /* HEADER_NVC_INTERNAL_H */
