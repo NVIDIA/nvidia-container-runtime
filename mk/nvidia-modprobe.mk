@@ -6,7 +6,7 @@ include $(MAKE_DIR)/common.mk
 
 ##### Source definitions #####
 
-VERSION        := 384.59
+VERSION        := 387.34
 PREFIX         := nvidia-modprobe-$(VERSION)
 URL            := https://github.com/NVIDIA/nvidia-modprobe/archive/$(VERSION).tar.gz
 
