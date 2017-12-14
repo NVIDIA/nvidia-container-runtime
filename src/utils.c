@@ -20,6 +20,7 @@
 #include <libgen.h>
 #undef basename /* Use the GNU version of basename. */
 #include <limits.h>
+#include <pwd.h>
 #include <sched.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -213,33 +214,71 @@ strtopid(struct error *err, const char *str, pid_t *pid)
 }
 
 int
-strtougid(struct error *err, const char *str, uid_t *uid, gid_t *gid)
+strtougid(struct error *err, char *str, uid_t *uid, gid_t *gid)
 {
         char *ptr;
-        uintmax_t n1, n2;
+        uintmax_t n;
+        struct passwd *passwd = NULL;
+        struct group *group = NULL;
 
-        n1 = strtoumax(str, &ptr, 10);
-        if (ptr == str || *ptr != ':') {
-                errno = EINVAL;
-                goto fail;
+        n = strtoumax(str, &ptr, 10);
+        if (ptr != str) {
+                if (*ptr != '\0' && *ptr != ':') {
+                        errno = EINVAL;
+                        goto fail;
+                }
+                if (n == UINTMAX_MAX || n != (uid_t)n) {
+                        errno = ERANGE;
+                        goto fail;
+                }
+                if (*ptr == ':')
+                        ++ptr;
+                *uid = (uid_t)n;
+        } else {
+                /* Not a numeric UID, check for a username. */
+                if ((ptr = strchr(str, ':')) != NULL)
+                        *ptr++ = '\0';
+                if ((passwd = getpwnam(str)) == NULL) {
+                        errno = ENOENT;
+                        goto fail;
+                }
+                *uid = passwd->pw_uid;
         }
-        str = ptr + 1;
-        n2 = strtoumax(str, &ptr, 10);
-        if (ptr == str || *ptr != '\0') {
-                errno = EINVAL;
-                goto fail;
+
+        str = ptr;
+        if (str == NULL || *str == '\0') {
+                /* No group specified, infer it from the UID */
+                if (passwd == NULL && (passwd = getpwuid(*uid)) == NULL) {
+                        errno = ENOENT;
+                        goto fail;
+                }
+                *gid = passwd->pw_gid;
+                return (0);
         }
-        if (n1 == UINTMAX_MAX || n1 != (uid_t)n1 ||
-            n2 == UINTMAX_MAX || n2 != (gid_t)n2) {
-                errno = ERANGE;
-                goto fail;
+
+        n = strtoumax(str, &ptr, 10);
+        if (ptr != str) {
+                if (*ptr != '\0') {
+                        errno = EINVAL;
+                        goto fail;
+                }
+                if (n == UINTMAX_MAX || n != (gid_t)n) {
+                        errno = ERANGE;
+                        goto fail;
+                }
+                *gid = (gid_t)n;
+        } else {
+                /* Not a numeric GID, check for a groupname. */
+                if ((group = getgrnam(str)) == NULL) {
+                        errno = ENOENT;
+                        goto fail;
+                }
+                *gid = group->gr_gid;
         }
-        *uid = (uid_t)n1;
-        *gid = (gid_t)n2;
         return (0);
 
  fail:
-        error_set(err, "parse userspec failed");
+        error_set(err, "parse user/group failed");
         return (-1);
 }
 

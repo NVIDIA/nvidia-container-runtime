@@ -28,7 +28,7 @@ static struct argp usage = {
                 {NULL, 0, NULL, 0, "Options:", -1},
                 {"debug", 'd', "FILE", 0, "Log debug information", -1},
                 {"load-kmods", 'k', NULL, 0, "Load kernel modules", -1},
-                {"userspec", 'u', "UID:GID", OPTION_ARG_OPTIONAL, "User and group to use for privilege separation", -1},
+                {"user", 'u', "UID[:GID]", OPTION_ARG_OPTIONAL, "User and group to use for privilege separation", -1},
                 {NULL, 0, NULL, 0, "Commands:", 0},
                 {"list", 0, NULL, OPTION_DOC|OPTION_NO_USAGE, "List host driver components", 0},
                 {"configure", 0, NULL, OPTION_DOC|OPTION_NO_USAGE, "Configure a container with GPU support", 0},
