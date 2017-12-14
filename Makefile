@@ -73,13 +73,16 @@ LIB_RPC_SRCS := $(SRCS_DIR)/driver_rpc.h \
                 $(SRCS_DIR)/driver_svc.c \
                 $(SRCS_DIR)/driver_clt.c
 
-BIN_SRCS     := $(SRCS_DIR)/nvc_cli.c \
+BIN_SRCS     := $(SRCS_DIR)/cli/common.c    \
+                $(SRCS_DIR)/cli/configure.c \
+                $(SRCS_DIR)/cli/dsl.c       \
+                $(SRCS_DIR)/cli/list.c      \
+                $(SRCS_DIR)/cli/main.c      \
                 $(SRCS_DIR)/error_generic.c \
-                $(SRCS_DIR)/dsl.c \
                 $(SRCS_DIR)/utils.c
 
 LIB_SCRIPT   = $(SRCS_DIR)/$(LIB_NAME).lds
-BIN_SCRIPT   = $(SRCS_DIR)/$(BIN_NAME).lds
+BIN_SCRIPT   = $(SRCS_DIR)/cli/$(BIN_NAME).lds
 
 ##### Target definitions #####
 
@@ -147,7 +150,7 @@ LIB_LDLIBS         = $(LIB_LDLIBS_STATIC) $(LIB_LDLIBS_SHARED)
 
 # Binary flags (recursively expanded to handle target-specific flags)
 BIN_CPPFLAGS       = -include $(BUILD_DEFS) $(CPPFLAGS)
-BIN_CFLAGS         = -fPIE -flto $(CFLAGS)
+BIN_CFLAGS         = -I$(SRCS_DIR) -fPIE -flto $(CFLAGS)
 BIN_LDFLAGS        = -L. -pie $(LDFLAGS)
 BIN_LDLIBS         = -l:$(LIB_SHARED) -lcap $(LDLIBS)
 
