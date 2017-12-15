@@ -76,6 +76,7 @@ LIB_RPC_SRCS := $(SRCS_DIR)/driver_rpc.h \
 BIN_SRCS     := $(SRCS_DIR)/cli/common.c    \
                 $(SRCS_DIR)/cli/configure.c \
                 $(SRCS_DIR)/cli/dsl.c       \
+                $(SRCS_DIR)/cli/info.c      \
                 $(SRCS_DIR)/cli/list.c      \
                 $(SRCS_DIR)/cli/main.c      \
                 $(SRCS_DIR)/error_generic.c \

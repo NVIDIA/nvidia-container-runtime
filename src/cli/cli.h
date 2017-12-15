@@ -29,6 +29,9 @@ struct context {
         char *init_flags;
         const struct command *command;
 
+        /* info */
+        bool csv_output;
+
         /* configure */
         pid_t pid;
         char *rootfs;
@@ -49,9 +52,11 @@ struct context {
 int select_devices(struct error *, char *, const struct nvc_device *[],
     const struct nvc_device [], size_t);
 
+extern const struct argp info_usage;
 extern const struct argp list_usage;
 extern const struct argp configure_usage;
 
+int info_command(const struct context *);
 int list_command(const struct context *);
 int configure_command(const struct context *);
 

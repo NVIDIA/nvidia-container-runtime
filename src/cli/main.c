@@ -30,6 +30,7 @@ static struct argp usage = {
                 {"load-kmods", 'k', NULL, 0, "Load kernel modules", -1},
                 {"user", 'u', "UID[:GID]", OPTION_ARG_OPTIONAL, "User and group to use for privilege separation", -1},
                 {NULL, 0, NULL, 0, "Commands:", 0},
+                {"info", 0, NULL, OPTION_DOC|OPTION_NO_USAGE, "Report information about the driver and devices", 0},
                 {"list", 0, NULL, OPTION_DOC|OPTION_NO_USAGE, "List driver components", 0},
                 {"configure", 0, NULL, OPTION_DOC|OPTION_NO_USAGE, "Configure a container with GPU support", 0},
                 {0},
@@ -43,6 +44,7 @@ static struct argp usage = {
 };
 
 static const struct command commands[] = {
+        {"info", &info_usage, &info_command},
         {"list", &list_usage, &list_command},
         {"configure", &configure_usage, &configure_command},
 };
