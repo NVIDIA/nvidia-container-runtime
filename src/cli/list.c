@@ -13,18 +13,16 @@ static error_t list_parser(int, char *, struct argp_state *);
 const struct argp list_usage = {
         (const struct argp_option[]){
                 {NULL, 0, NULL, 0, "Options:", -1},
-                {"info", 'i', NULL, 0, "List driver version information", -1},
                 {"device", 'd', "ID", 0, "Device UUID(s) or index(es) to list", -1},
-                {"compute", 'c', NULL, 0, "List compute components", -1},
-                {"utility", 'u', NULL, 0, "List utility components", -1},
-                {"video", 'v', NULL, 0, "List video components", -1},
-                {"graphics", 'g', NULL, 0, "List graphics components", -1},
-                {"compat32", 0x80, NULL, 0, "List 32bits components", -1},
+                {"libraries", 'l', NULL, 0, "List driver libraries", -1},
+                {"binaries", 'b', NULL, 0, "List driver binaries", -1},
+                {"ipcs", 'i', NULL, 0, "List driver ipcs", -1},
+                {"compat32", 0x80, NULL, 0, "Enable 32bits compatibility", -1},
                 {0},
         },
         list_parser,
         NULL,
-        "Query the host driver and list the components required in order to configure a container with GPU support.",
+        "Query the driver and list the components required in order to configure a container with GPU support.",
         NULL,
         NULL,
         NULL,
@@ -37,32 +35,31 @@ list_parser(int key, char *arg, struct argp_state *state)
         struct error err = {0};
 
         switch (key) {
-        case 'i':
-                ctx->list_info = true;
-                break;
         case 'd':
                 if (strjoin(&err, &ctx->devices, arg, ",") < 0)
                         goto fatal;
                 break;
-        case 'c':
-                if (strjoin(&err, &ctx->container_flags, "compute", " ") < 0)
-                        goto fatal;
+        case 'l':
+                ctx->list_libs = true;
                 break;
-        case 'u':
-                if (strjoin(&err, &ctx->container_flags, "utility", " ") < 0)
-                        goto fatal;
+        case 'b':
+                ctx->list_bins = true;
                 break;
-        case 'v':
-                if (strjoin(&err, &ctx->container_flags, "video", " ") < 0)
-                        goto fatal;
-                break;
-        case 'g':
-                if (strjoin(&err, &ctx->container_flags, "graphics", " ") < 0)
-                        goto fatal;
+        case 'i':
+                ctx->list_ipcs = true;
                 break;
         case 0x80:
-                if (strjoin(&err, &ctx->container_flags, "compat32", " ") < 0)
-                        goto fatal;
+                ctx->compat32 = true;
+                break;
+        case ARGP_KEY_END:
+                if (state->argc == 1) {
+                        if ((ctx->devices = xstrdup(&err, "all")) == NULL)
+                                goto fatal;
+                        ctx->compat32 = true;
+                        ctx->list_libs = true;
+                        ctx->list_bins = true;
+                        ctx->list_ipcs = true;
+                }
                 break;
         default:
                 return (ARGP_ERR_UNKNOWN);
@@ -128,16 +125,10 @@ list_command(const struct context *ctx)
                 warnx("permission error: %s", err.msg);
                 goto fail;
         }
-        if ((drv = nvc_driver_info_new(nvc, ctx->driver_flags)) == NULL ||
-            (dev = nvc_device_info_new(nvc, ctx->device_flags)) == NULL) {
+        if ((drv = nvc_driver_info_new(nvc, NULL)) == NULL ||
+            (dev = nvc_device_info_new(nvc, NULL)) == NULL) {
                 warnx("detection error: %s", nvc_error(nvc));
                 goto fail;
-        }
-
-        /* List the driver information. */
-        if (ctx->list_info) {
-                printf("NVRM version: %s\n", drv->nvrm_version);
-                printf("CUDA version: %s\n", drv->cuda_version);
         }
 
         /* List the visible GPU devices. */
@@ -159,14 +150,22 @@ list_command(const struct context *ctx)
         }
 
         /* List the driver components */
-        for (size_t i = 0; i < drv->nbins; ++i)
-                printf("%s\n", drv->bins[i]);
-        for (size_t i = 0; i < drv->nlibs; ++i)
-                printf("%s\n", drv->libs[i]);
-        for (size_t i = 0; i < drv->nlibs32; ++i)
-                printf("%s\n", drv->libs32[i]);
-        for (size_t i = 0; i < drv->nipcs; ++i)
-                printf("%s\n", drv->ipcs[i]);
+        if (ctx->list_bins) {
+                for (size_t i = 0; i < drv->nbins; ++i)
+                        printf("%s\n", drv->bins[i]);
+        }
+        if (ctx->list_libs) {
+                for (size_t i = 0; i < drv->nlibs; ++i)
+                        printf("%s\n", drv->libs[i]);
+                if (ctx->compat32) {
+                        for (size_t i = 0; i < drv->nlibs32; ++i)
+                                printf("%s\n", drv->libs32[i]);
+                }
+        }
+        if (ctx->list_ipcs) {
+                for (size_t i = 0; i < drv->nipcs; ++i)
+                        printf("%s\n", drv->ipcs[i]);
+        }
 
         if (run_as_root && perm_set_capabilities(&err, CAP_EFFECTIVE, effective_caps[CAPS_SHUTDOWN], effective_caps_size(CAPS_SHUTDOWN)) < 0) {
                 warnx("permission error: %s", err.msg);

@@ -226,8 +226,8 @@ configure_command(const struct context *ctx)
                 warnx("permission error: %s", err.msg);
                 goto fail;
         }
-        if ((drv = nvc_driver_info_new(nvc, ctx->driver_flags)) == NULL ||
-            (dev = nvc_device_info_new(nvc, ctx->device_flags)) == NULL) {
+        if ((drv = nvc_driver_info_new(nvc, NULL)) == NULL ||
+            (dev = nvc_device_info_new(nvc, NULL)) == NULL) {
                 warnx("detection error: %s", nvc_error(nvc));
                 goto fail;
         }

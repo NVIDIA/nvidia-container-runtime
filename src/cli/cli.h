@@ -22,22 +22,28 @@ struct command {
 };
 
 struct context {
+        /* main */
         uid_t uid;
         gid_t gid;
+        bool load_kmods;
+        char *init_flags;
+        const struct command *command;
+
+        /* configure */
         pid_t pid;
         char *rootfs;
-        char *devices;
         char *reqs[32];
         size_t nreqs;
         char *ldconfig;
-        bool load_kmods;
-        bool list_info;
-        char *init_flags;
-        char *driver_flags;
-        char *device_flags;
         char *container_flags;
 
-        const struct command *command;
+        /* list */
+        bool compat32;
+        bool list_bins;
+        bool list_libs;
+        bool list_ipcs;
+
+        char *devices;
 };
 
 int select_devices(struct error *, char *, const struct nvc_device *[],

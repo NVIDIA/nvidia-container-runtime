@@ -19,13 +19,13 @@ enum dsl_comparator {
 };
 
 struct dsl_data {
-    struct nvc_driver_info *drv;
-    const struct nvc_device *dev;
+        struct nvc_driver_info *drv;
+        const struct nvc_device *dev;
 };
 
 struct dsl_rule {
-    const char *name;
-    int (*func)(const struct dsl_data *, enum dsl_comparator, const char *);
+        const char *name;
+        int (*func)(const struct dsl_data *, enum dsl_comparator, const char *);
 };
 
 int dsl_compare_version(const char *, enum dsl_comparator, const char *);
