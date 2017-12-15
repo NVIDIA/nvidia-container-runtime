@@ -45,5 +45,6 @@ int driver_get_device_minor(struct driver *, struct driver_device *, unsigned in
 int driver_get_device_busid(struct driver *, struct driver_device *, char **);
 int driver_get_device_uuid(struct driver *, struct driver_device *, char **);
 int driver_get_device_arch(struct driver *, struct driver_device *, char **);
+int driver_get_device_model(struct driver *, struct driver_device *, char **);
 
 #endif /* HEADER_DRIVER_H */

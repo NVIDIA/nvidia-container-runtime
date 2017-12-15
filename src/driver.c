@@ -582,6 +582,42 @@ driver_get_device_uuid_1_svc(ptr_t ctxptr, ptr_t dev, driver_get_device_uuid_res
 }
 
 int
+driver_get_device_model(struct driver *ctx, struct driver_device *dev, char **model)
+{
+        struct driver_get_device_model_res res = {0};
+        int rv = -1;
+
+        if (call_rpc(ctx, &res, driver_get_device_model_1, (ptr_t)dev) < 0)
+                goto fail;
+        if ((*model = xstrdup(ctx->err, res.driver_get_device_model_res_u.model)) == NULL)
+                goto fail;
+        rv = 0;
+
+ fail:
+        xdr_free((xdrproc_t)xdr_driver_get_device_model_res, (caddr_t)&res);
+        return (rv);
+}
+
+bool_t
+driver_get_device_model_1_svc(ptr_t ctxptr, ptr_t dev, driver_get_device_model_res *res, maybe_unused struct svc_req *req)
+{
+        struct driver *ctx = (struct driver *)ctxptr;
+        struct driver_device *handle = (struct driver_device *)dev;
+        char buf[NVML_DEVICE_NAME_BUFFER_SIZE];
+
+        memset(res, 0, sizeof(*res));
+        if (call_nvml(ctx, nvmlDeviceGetName, handle->nvml, buf, sizeof(buf)) < 0)
+                goto fail;
+        if ((res->driver_get_device_model_res_u.model = xstrdup(ctx->err, buf)) == NULL)
+                goto fail;
+        return (true);
+
+ fail:
+        error_to_xdr(ctx->err, res);
+        return (true);
+}
+
+int
 driver_get_device_arch(struct driver *ctx, struct driver_device *dev, char **arch)
 {
         struct driver_get_device_arch_res res = {0};
