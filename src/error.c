@@ -72,11 +72,15 @@ error_set_cuda(struct error *err, void *handle, int errcode, const char *fmt, ..
 int
 error_set_rpc(struct error *err, int errcode, const char *fmt, ...)
 {
+        const char *errmsg;
         va_list ap;
         int rv;
 
+        errmsg = clnt_sperrno((enum clnt_stat)errcode);
+        if (!strncmp(errmsg, "RPC: ", 5))
+                errmsg += 5;
         va_start(ap, fmt);
-        rv = error_vset(err, errcode, clnt_sperrno((enum clnt_stat)errcode), fmt, ap);
+        rv = error_vset(err, errcode, errmsg, fmt, ap);
         va_end(ap);
         return (rv);
 }
