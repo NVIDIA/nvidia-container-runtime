@@ -50,7 +50,7 @@ mount_files(struct error *err, const struct nvc_container *cnt, const char *dir,
         end = path + strlen(path);
         mnt = ptr = array_new(err, size + 1); /* NULL terminated. */
         if (mnt == NULL)
-                goto fail;
+                return (NULL);
 
         for (size_t i = 0; i < size; ++i) {
                 file = basename(paths[i]);
