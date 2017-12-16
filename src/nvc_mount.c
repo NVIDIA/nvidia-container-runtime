@@ -382,13 +382,13 @@ nvc_driver_mount(struct nvc_context *ctx, const struct nvc_container *cnt, const
         if (validate_args(ctx, cnt != NULL && info != NULL) < 0)
                 return (-1);
 
-        if (nsenter(&ctx->err, cnt->mnt_ns, CLONE_NEWNS) < 0)
-                return (-1);
-
         nmnt = 2 + info->nbins + info->nlibs + info->nlibs32 + info->nipcs + info->ndevs;
         mnt = ptr = (const char **)array_new(&ctx->err, nmnt);
         if (mnt == NULL)
-                goto fail;
+                return (-1);
+
+        if (nsenter(&ctx->err, cnt->mnt_ns, CLONE_NEWNS) < 0)
+                return (-1);
 
         /* Procfs mount */
         if ((*ptr++ = mount_procfs(&ctx->err, cnt)) == NULL)
