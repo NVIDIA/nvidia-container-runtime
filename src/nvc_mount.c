@@ -7,6 +7,8 @@
 #include <sys/types.h>
 
 #include <errno.h>
+#include <libgen.h>
+#undef basename /* Use the GNU version of basename. */
 #include <limits.h>
 #include <stdio.h>
 #include <string.h>
@@ -20,7 +22,7 @@
 #include "utils.h"
 #include "xfuncs.h"
 
-static char *mount_files(struct error *, const struct nvc_container *, const char *, char *[], size_t);
+static char **mount_files(struct error *, const struct nvc_container *, const char *, char *[], size_t);
 static char *mount_device(struct error *, const struct nvc_container *, const char *);
 static char *mount_ipc(struct error *, const struct nvc_container *, const char *);
 static char *mount_procfs(struct error *, const struct nvc_container *);
@@ -29,32 +31,32 @@ static char *mount_app_profile(struct error *, const struct nvc_container *);
 static int  update_app_profile(struct error *, const struct nvc_container *, dev_t);
 static void unmount(const char *);
 static int  setup_cgroup(struct error *, const char *, dev_t);
-static int  symlink_library(struct error *, const char *, const char *, const char *, const char *, uid_t, gid_t);
-static int  symlink_libraries(struct error *, const struct nvc_container *, const char *, char *[], size_t, const char *);
+static int  symlink_library(struct error *, const char *, const char *, const char *, uid_t, gid_t);
+static int  symlink_libraries(struct error *, const struct nvc_container *, const char * const [], size_t);
 
-static char *
+static char **
 mount_files(struct error *err, const struct nvc_container *cnt, const char *dir, char *paths[], size_t size)
 {
         char path[PATH_MAX];
         mode_t mode;
-        char *ptr, *mnt, *p;
+        char *end, *file;
+        char **mnt, **ptr;
 
-        /* Create the top directory under the rootfs. */
         if (path_resolve(err, path, cnt->cfg.rootfs, dir) < 0)
                 return (NULL);
         if (file_create(err, path, NULL, cnt->uid, cnt->gid, MODE_DIR(0755)) < 0)
                 return (NULL);
 
-        ptr = path + strlen(path);
-
-        /* Bind mount the top directory and every files under it with read-only permissions. */
-        if (xmount(err, path, path, NULL, MS_BIND, NULL) < 0)
+        end = path + strlen(path);
+        mnt = ptr = array_new(err, size + 1); /* NULL terminated. */
+        if (mnt == NULL)
                 goto fail;
+
         for (size_t i = 0; i < size; ++i) {
-                p = basename(paths[i]);
-                if (!match_binary_flags(p, cnt->flags) && !match_library_flags(p, cnt->flags))
+                file = basename(paths[i]);
+                if (!match_binary_flags(file, cnt->flags) && !match_library_flags(file, cnt->flags))
                         continue;
-                if (path_append(err, path, p) < 0)
+                if (path_append(err, path, file) < 0)
                         goto fail;
                 if (file_mode(err, paths[i], &mode) < 0)
                         goto fail;
@@ -66,15 +68,16 @@ mount_files(struct error *err, const struct nvc_container *cnt, const char *dir,
                         goto fail;
                 if (xmount(err, NULL, path, NULL, MS_BIND|MS_REMOUNT | MS_RDONLY|MS_NODEV|MS_NOSUID, NULL) < 0)
                         goto fail;
-                *ptr = '\0';
+                if ((*ptr++ = xstrdup(err, path)) == NULL)
+                        goto fail;
+                *end = '\0';
         }
-        if ((mnt = xstrdup(err, path)) == NULL)
-                goto fail;
         return (mnt);
 
  fail:
-        *ptr = '\0';
-        unmount(path);
+        for (size_t i = 0; i < size; ++i)
+                unmount(mnt[i]);
+        array_free(mnt, size);
         return (NULL);
 }
 
@@ -326,16 +329,16 @@ setup_cgroup(struct error *err, const char *cgroup, dev_t id)
 }
 
 static int
-symlink_library(struct error *err, const char *dir, const char *lib, const char *version, const char *linkname, uid_t uid, gid_t gid)
+symlink_library(struct error *err, const char *src, const char *target, const char *linkname, uid_t uid, gid_t gid)
 {
         char path[PATH_MAX];
-        char *target;
+        char *tmp;
         int rv = -1;
 
-        if (path_join(err, path, dir, linkname) < 0)
+        if ((tmp = xstrdup(err, src)) == NULL)
                 return (-1);
-        if (xasprintf(err, &target, "%s.%s", lib, version) < 0)
-                return (-1);
+        if (path_join(err, path, dirname(tmp), linkname) < 0)
+                goto fail;
 
         log_infof("creating symlink %s -> %s", path, target);
         if (file_create(err, path, target, uid, gid, MODE_LNK(0777)) < 0)
@@ -343,24 +346,24 @@ symlink_library(struct error *err, const char *dir, const char *lib, const char 
         rv = 0;
 
  fail:
-        free(target);
+        free(tmp);
         return (rv);
 }
 
 static int
-symlink_libraries(struct error *err, const struct nvc_container *cnt, const char *dir, char *paths[], size_t size, const char *version)
+symlink_libraries(struct error *err, const struct nvc_container *cnt, const char * const paths[], size_t size)
 {
-        char *p;
+        char *lib;
 
         for (size_t i = 0; i < size; ++i) {
-                p = basename(paths[i]);
-                if ((cnt->flags & OPT_COMPUTE_LIBS) && !strpcmp(p, "libcuda.so")) {
+                lib = basename(paths[i]);
+                if (!strpcmp(lib, "libcuda.so")) {
                         /* XXX Many applications wrongly assume that libcuda.so exists (e.g. with dlopen). */
-                        if (symlink_library(err, dir, "libcuda.so", version, "libcuda.so", cnt->uid, cnt->gid) < 0)
+                        if (symlink_library(err, paths[i], lib, "libcuda.so", cnt->uid, cnt->gid) < 0)
                                 return (-1);
-                } else if ((cnt->flags & OPT_GRAPHICS_LIBS) && !strpcmp(p, "libGLX_nvidia.so")) {
+                } else if (!strpcmp(lib, "libGLX_nvidia.so")) {
                         /* XXX GLVND requires this symlink for indirect GLX support. */
-                        if (symlink_library(err, dir, "libGLX_nvidia.so", version, "libGLX_indirect.so.0", cnt->uid, cnt->gid) < 0)
+                        if (symlink_library(err, paths[i], lib, "libGLX_indirect.so.0", cnt->uid, cnt->gid) < 0)
                                 return (-1);
                 }
         }
@@ -370,7 +373,7 @@ symlink_libraries(struct error *err, const struct nvc_container *cnt, const char
 int
 nvc_driver_mount(struct nvc_context *ctx, const struct nvc_container *cnt, const struct nvc_driver_info *info)
 {
-        char **mnt, **ptr;
+        const char **mnt, **ptr, **tmp;
         size_t nmnt;
         int rv = -1;
 
@@ -382,8 +385,8 @@ nvc_driver_mount(struct nvc_context *ctx, const struct nvc_container *cnt, const
         if (nsenter(&ctx->err, cnt->mnt_ns, CLONE_NEWNS) < 0)
                 return (-1);
 
-        nmnt = 5 + info->nipcs + info->ndevs;
-        mnt = ptr = array_new(&ctx->err, nmnt);
+        nmnt = 2 + info->nbins + info->nlibs + info->nlibs32 + info->nipcs + info->ndevs;
+        mnt = ptr = (const char **)array_new(&ctx->err, nmnt);
         if (mnt == NULL)
                 goto fail;
 
@@ -395,25 +398,27 @@ nvc_driver_mount(struct nvc_context *ctx, const struct nvc_container *cnt, const
                 if ((*ptr++ = mount_app_profile(&ctx->err, cnt)) == NULL)
                         goto fail;
         }
-        /* Binary and library file mounts */
+        /* Binary and library mounts */
         if (info->bins != NULL && info->nbins > 0) {
-                if ((*ptr++ = mount_files(&ctx->err, cnt, cnt->cfg.bins_dir, info->bins, info->nbins)) == NULL)
+                if ((tmp = (const char **)mount_files(&ctx->err, cnt, cnt->cfg.bins_dir, info->bins, info->nbins)) == NULL)
                         goto fail;
+                ptr = array_append(ptr, tmp, array_size(tmp));
+                free(tmp);
         }
         if (info->libs != NULL && info->nlibs > 0) {
-                if ((*ptr = mount_files(&ctx->err, cnt, cnt->cfg.libs_dir, info->libs, info->nlibs)) == NULL)
+                if ((tmp = (const char **)mount_files(&ctx->err, cnt, cnt->cfg.libs_dir, info->libs, info->nlibs)) == NULL)
                         goto fail;
-                if (symlink_libraries(&ctx->err, cnt, *ptr, info->libs, info->nlibs, info->nvrm_version) < 0)
-                        goto fail;
-                ++ptr;
+                ptr = array_append(ptr, tmp, array_size(tmp));
+                free(tmp);
         }
         if ((cnt->flags & OPT_COMPAT32) && info->libs32 != NULL && info->nlibs32 > 0) {
-                if ((*ptr = mount_files(&ctx->err, cnt, cnt->cfg.libs32_dir, info->libs32, info->nlibs32)) == NULL)
+                if ((tmp = (const char **)mount_files(&ctx->err, cnt, cnt->cfg.libs32_dir, info->libs32, info->nlibs32)) == NULL)
                         goto fail;
-                if (symlink_libraries(&ctx->err, cnt, *ptr, info->libs32, info->nlibs32, info->nvrm_version) < 0)
-                        goto fail;
-                ++ptr;
+                ptr = array_append(ptr, tmp, array_size(tmp));
+                free(tmp);
         }
+        if (symlink_libraries(&ctx->err, cnt, mnt, (size_t)(ptr - mnt)) < 0)
+                goto fail;
         /* IPC mounts */
         for (size_t i = 0; i < info->nipcs; ++i) {
                 /* XXX Only utility libraries require persistenced IPC, everything else is compute only. */
@@ -450,7 +455,7 @@ nvc_driver_mount(struct nvc_context *ctx, const struct nvc_container *cnt, const
                 rv = nsenterat(&ctx->err, ctx->mnt_ns, CLONE_NEWNS);
         }
 
-        array_free(mnt, nmnt);
+        array_free((char **)mnt, nmnt);
         return (rv);
 }
 

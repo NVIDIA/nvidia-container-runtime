@@ -58,6 +58,7 @@ int nsenter(struct error *, const char *, int);
 char **array_new(struct error *, size_t);
 void array_free(char *[], size_t);
 void array_pack(char *[], size_t *);
+size_t array_size(const char * const []);
 const char **array_append(const char **, const char * const [], size_t);
 
 void *file_map(struct error *, const char *, size_t *);

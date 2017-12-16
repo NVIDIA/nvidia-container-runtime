@@ -355,6 +355,16 @@ array_pack(char *arr[], size_t *size)
         }
 }
 
+size_t
+array_size(const char * const arr[])
+{
+        size_t n = 0;
+
+        while (*arr++ != NULL)
+                ++n;
+        return (n);
+}
+
 void *
 file_map(struct error *err, const char *path, size_t *length)
 {
