@@ -17,6 +17,7 @@ const (
 	envNVRequireCUDA        = envNVRequirePrefix + "CUDA"
 	envNVGPU                = "NVIDIA_VISIBLE_DEVICES"
 	envNVDriverCapabilities = "NVIDIA_DRIVER_CAPABILITIES"
+	defaultCapability       = "utility"
 	allCapabilities         = "compute,compat32,graphics,utility,video"
 	envNVDisableRequire     = "NVIDIA_DISABLE_REQUIRE"
 )
@@ -169,7 +170,9 @@ func getNvidiaConfig(env map[string]string) *nvidiaConfig {
 	}
 
 	capabilities := env[envNVDriverCapabilities]
-	if capabilities == "all" {
+	if len(capabilities) == 0 {
+		capabilities = defaultCapability
+	} else if capabilities == "all" {
 		capabilities = allCapabilities
 	}
 

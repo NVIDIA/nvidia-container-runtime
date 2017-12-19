@@ -96,7 +96,7 @@ This option controls which driver libraries/binaries will be mounted inside the 
 #### Possible values
 * `compute,video`, `graphics,utility` …: a comma-separated list of driver features the container needs,
 * `all`: enable all available driver capabilities.
-* *empty*: use default driver capabilities, determined by `nvidia-container-cli`.
+* *empty*: use default driver capability: `utility`.
 
 #### Supported driver capabilities
 * `compute`: required for CUDA and OpenCL applications,
