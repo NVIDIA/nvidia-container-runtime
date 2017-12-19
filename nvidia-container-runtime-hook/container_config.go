@@ -189,7 +189,7 @@ func getNvidiaConfig(env map[string]string) *nvidiaConfig {
 	}
 }
 
-func getContainerConfig() (config *containerConfig) {
+func getContainerConfig() (config containerConfig) {
 	var h HookState
 	d := json.NewDecoder(os.Stdin)
 	if err := d.Decode(&h); err != nil {
@@ -204,7 +204,7 @@ func getContainerConfig() (config *containerConfig) {
 	s := loadSpec(path.Join(b, "config.json"))
 
 	env := getEnvMap(s.Process.Env)
-	return &containerConfig{
+	return containerConfig{
 		Pid:    h.Pid,
 		Rootfs: s.Root.Path,
 		Env:    env,

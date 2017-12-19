@@ -1,8 +1,8 @@
+disable-require = false
+
+[nvidia-container-cli]
 #path = "/usr/bin/nvidia-container-cli"
 environment = []
-load-kmods = true
-disable-require = false
 #debug = "/var/log/nvidia-container-runtime-hook.log"
-
-[configure]
+load-kmods = true
 ldconfig = "@/sbin/ldconfig"

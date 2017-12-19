@@ -51,9 +51,10 @@ func doPrestart() {
 	defer exit()
 	log.SetFlags(0)
 
-	cli := getCLIConfig()
-	container := getContainerConfig()
+	hook := getHookConfig()
+	cli := hook.NvidiaContainerCLI
 
+	container := getContainerConfig()
 	nvidia := container.Nvidia
 	if nvidia == nil {
 		// Not a GPU container, nothing to do.
@@ -69,8 +70,8 @@ func doPrestart() {
 	}
 	args = append(args, "configure")
 
-	if cli.Configure.Ldconfig != nil {
-		args = append(args, fmt.Sprintf("--ldconfig=%s", *cli.Configure.Ldconfig))
+	if cli.Ldconfig != nil {
+		args = append(args, fmt.Sprintf("--ldconfig=%s", *cli.Ldconfig))
 	}
 
 	if len(nvidia.Devices) > 0 {
@@ -84,7 +85,7 @@ func doPrestart() {
 		args = append(args, capabilityToCLI(cap))
 	}
 
-	if !cli.DisableRequire && !nvidia.DisableRequire {
+	if !hook.DisableRequire && !nvidia.DisableRequire {
 		for _, req := range nvidia.Requirements {
 			args = append(args, fmt.Sprintf("--require=%s", req))
 		}
