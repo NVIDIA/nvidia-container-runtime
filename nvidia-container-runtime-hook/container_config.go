@@ -109,6 +109,20 @@ func loadSpec(path string) (spec *Spec) {
 	return
 }
 
+func getDevices(env map[string]string) *string {
+	if devices, ok := env[envNVGPU]; ok {
+		return &devices
+	}
+	return nil
+}
+
+func getCapabilities(env map[string]string) *string {
+	if capabilities, ok := env[envNVDriverCapabilities]; ok {
+		return &capabilities
+	}
+	return nil
+}
+
 func getRequirements(env map[string]string) []string {
 	// All variables with the "NVIDIA_REQUIRE_" prefix are passed to nvidia-container-cli
 	var requirements []string
@@ -122,16 +136,33 @@ func getRequirements(env map[string]string) []string {
 
 // Mimic the new CUDA images if no capabilities or devices are specified.
 func getNvidiaConfigLegacy(env map[string]string) *nvidiaConfig {
-	devices := env[envNVGPU]
-	if len(devices) == 0 {
+	var devices string
+	if d := getDevices(env); d == nil {
+		// Environment variable unset: default to "all"
 		devices = "all"
+	} else if len(*d) == 0 {
+		// Environment variable set but empty: not a GPU container.
+		return nil
+	} else {
+		// Environment variable set and non-empty.
+		devices = *d
 	}
 	if devices == "none" {
 		devices = ""
 	}
 
-	capabilities := env[envNVDriverCapabilities]
-	if len(capabilities) == 0 || capabilities == "all" {
+	var capabilities string
+	if c := getCapabilities(env); c == nil {
+		// Environment variable unset: default to "all"
+		capabilities = allCapabilities
+	} else if len(*c) == 0 {
+		// Environment variable set but empty: use default capability.
+		capabilities = defaultCapability
+	} else {
+		// Environment variable set and non-empty.
+		capabilities = *c
+	}
+	if capabilities == "all" {
 		capabilities = allCapabilities
 	}
 
@@ -160,19 +191,27 @@ func getNvidiaConfig(env map[string]string) *nvidiaConfig {
 		return getNvidiaConfigLegacy(env)
 	}
 
-	devices, ok := env[envNVGPU]
-	if !ok {
-		// envNVGPU is unset: not a GPU container.
+	var devices string
+	if d := getDevices(env); d == nil || len(*d) == 0 {
+		// Environment variable unset or set but empty: not a GPU container.
 		return nil
+	} else {
+		// Environment variable set and non-empty.
+		devices = *d
 	}
 	if devices == "none" {
 		devices = ""
 	}
 
-	capabilities := env[envNVDriverCapabilities]
-	if len(capabilities) == 0 {
+	var capabilities string
+	if c := getCapabilities(env); c == nil || len(*c) == 0 {
+		// Environment variable unset or set but empty: use default capability.
 		capabilities = defaultCapability
-	} else if capabilities == "all" {
+	} else {
+		// Environment variable set and non-empty.
+		capabilities = *c
+	}
+	if capabilities == "all" {
 		capabilities = allCapabilities
 	}
 
