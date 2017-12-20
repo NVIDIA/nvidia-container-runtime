@@ -10,8 +10,9 @@ import (
 	"strings"
 )
 
+var envSwarmGPU *string
+
 const (
-	//	envSwarmGPU      = "DOCKER_RESOURCE_GPU"
 	envNVRequirePrefix      = "NVIDIA_REQUIRE_"
 	envLegacyCUDAVersion    = "CUDA_VERSION"
 	envNVRequireCUDA        = envNVRequirePrefix + "CUDA"
@@ -110,8 +111,16 @@ func loadSpec(path string) (spec *Spec) {
 }
 
 func getDevices(env map[string]string) *string {
-	if devices, ok := env[envNVGPU]; ok {
-		return &devices
+	gpuVars := []string{envNVGPU}
+	if envSwarmGPU != nil {
+		// The Swarm resource has higher precedence.
+		gpuVars = append([]string{*envSwarmGPU}, gpuVars...)
+	}
+
+	for _, gpuVar := range gpuVars {
+		if devices, ok := env[gpuVar]; ok {
+			return &devices
+		}
 	}
 	return nil
 }
@@ -228,7 +237,7 @@ func getNvidiaConfig(env map[string]string) *nvidiaConfig {
 	}
 }
 
-func getContainerConfig() (config containerConfig) {
+func getContainerConfig(hook HookConfig) (config containerConfig) {
 	var h HookState
 	d := json.NewDecoder(os.Stdin)
 	if err := d.Decode(&h); err != nil {
@@ -243,6 +252,7 @@ func getContainerConfig() (config containerConfig) {
 	s := loadSpec(path.Join(b, "config.json"))
 
 	env := getEnvMap(s.Process.Env)
+	envSwarmGPU = hook.SwarmResource
 	return containerConfig{
 		Pid:    h.Pid,
 		Rootfs: s.Root.Path,

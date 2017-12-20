@@ -23,6 +23,7 @@ type CLIConfig struct {
 
 type HookConfig struct {
 	DisableRequire bool    `toml:"disable-require"`
+	SwarmResource  *string `toml:"swarm-resource"`
 
 	NvidiaContainerCLI CLIConfig `toml:"nvidia-container-cli"`
 }
@@ -30,6 +31,7 @@ type HookConfig struct {
 func getDefaultHookConfig() (config HookConfig) {
 	return HookConfig{
 		DisableRequire: false,
+		SwarmResource:  nil,
 		NvidiaContainerCLI: CLIConfig{
 			Path:        "",
 			Environment: []string{},
