@@ -77,7 +77,7 @@ resource "aws_instance" "nvidiaDockerUbuntu" {
         }
 
 	provisioner "file" {
-		    source = "../tests/symlinks"
+		    source = "../tests/misc"
 		    destination = "~/tests"
         }
 

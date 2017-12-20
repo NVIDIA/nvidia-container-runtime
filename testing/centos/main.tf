@@ -89,7 +89,7 @@ resource "aws_instance" "nvidiaDockerCentos" {
 	}
 
 	provisioner "file" {
-		    source = "../tests/symlinks"
+		    source = "../tests/misc"
 		    destination = "~/tests"
 	}
 
