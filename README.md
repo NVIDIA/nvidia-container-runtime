@@ -88,7 +88,7 @@ This variable controls which GPUs will be made accessible inside the container.
 * `0,1,2`, `GPU-fef8089b` …: a comma-separated list of GPU UUID(s) or index(es),
 * `all`: all GPUs will be accessible, this is the default value in our container images,
 * `none`: no GPU will be accessible, but driver capabilities will be enabled.
-* *empty* or *unset*: `nvidia-container-runtime` will have the same behavior as `runc`.
+* `void` or *empty* or *unset*: `nvidia-container-runtime` will have the same behavior as `runc`.
 
 ### `NVIDIA_DRIVER_CAPABILITIES`
 This option controls which driver libraries/binaries will be mounted inside the container.

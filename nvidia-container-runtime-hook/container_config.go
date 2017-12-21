@@ -147,13 +147,13 @@ func getRequirements(env map[string]string) []string {
 func getNvidiaConfigLegacy(env map[string]string) *nvidiaConfig {
 	var devices string
 	if d := getDevices(env); d == nil {
-		// Environment variable unset: default to "all"
+		// Environment variable unset: default to "all".
 		devices = "all"
-	} else if len(*d) == 0 {
-		// Environment variable set but empty: not a GPU container.
+	} else if len(*d) == 0 || *d == "void" {
+		// Environment variable empty or "void": not a GPU container.
 		return nil
 	} else {
-		// Environment variable set and non-empty.
+		// Environment variable non-empty and not "void".
 		devices = *d
 	}
 	if devices == "none" {
@@ -162,13 +162,13 @@ func getNvidiaConfigLegacy(env map[string]string) *nvidiaConfig {
 
 	var capabilities string
 	if c := getCapabilities(env); c == nil {
-		// Environment variable unset: default to "all"
+		// Environment variable unset: default to "all".
 		capabilities = allCapabilities
 	} else if len(*c) == 0 {
-		// Environment variable set but empty: use default capability.
+		// Environment variable empty: use default capability.
 		capabilities = defaultCapability
 	} else {
-		// Environment variable set and non-empty.
+		// Environment variable non-empty.
 		capabilities = *c
 	}
 	if capabilities == "all" {
@@ -201,11 +201,11 @@ func getNvidiaConfig(env map[string]string) *nvidiaConfig {
 	}
 
 	var devices string
-	if d := getDevices(env); d == nil || len(*d) == 0 {
-		// Environment variable unset or set but empty: not a GPU container.
+	if d := getDevices(env); d == nil || len(*d) == 0 || *d == "void" {
+		// Environment variable unset or empty or "void": not a GPU container.
 		return nil
 	} else {
-		// Environment variable set and non-empty.
+		// Environment variable non-empty and not "void".
 		devices = *d
 	}
 	if devices == "none" {
