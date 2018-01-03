@@ -13,7 +13,7 @@ import (
 )
 
 var (
-	prestart = flag.Bool("prestart", false, "run the prestart hook")
+	debugflag = flag.Bool("debug", false, "enable debug output")
 )
 
 func exit() {
@@ -21,7 +21,7 @@ func exit() {
 		if _, ok := err.(runtime.Error); ok {
 			log.Println(err)
 		}
-		if os.Getenv("NV_DEBUG") != "" {
+		if *debugflag {
 			log.Printf("%s", debug.Stack())
 		}
 		os.Exit(1)
@@ -65,7 +65,9 @@ func doPrestart() {
 	if cli.LoadKmods {
 		args = append(args, "--load-kmods")
 	}
-	if cli.Debug != nil {
+	if *debugflag {
+		args = append(args, "--debug=/dev/stderr")
+	} else if cli.Debug != nil {
 		args = append(args, fmt.Sprintf("--debug=%s", *cli.Debug))
 	}
 	args = append(args, "configure")
@@ -100,10 +102,34 @@ func doPrestart() {
 	log.Panicln("exec failed:", err)
 }
 
+func usage() {
+	fmt.Fprintf(os.Stderr, "Usage of %s:\n", os.Args[0])
+	flag.PrintDefaults()
+	fmt.Fprintf(os.Stderr, "\nCommands:\n")
+	fmt.Fprintf(os.Stderr, "  prestart\n        run the prestart hook\n")
+	fmt.Fprintf(os.Stderr, "  poststart\n        no-op\n")
+	fmt.Fprintf(os.Stderr, "  poststop\n        no-op\n")
+}
+
 func main() {
+	flag.Usage = usage
 	flag.Parse()
 
-	if *prestart {
+	args := flag.Args()
+	if len(args) == 0 {
+		flag.Usage()
+		os.Exit(2)
+	}
+
+	switch args[0] {
+	case "prestart":
 		doPrestart()
+		os.Exit(0)
+	case "poststart":
+	case "poststop":
+		os.Exit(0)
+	default:
+		flag.Usage()
+		os.Exit(2)
 	}
 }

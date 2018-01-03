@@ -1,15 +1,16 @@
-From d79d778fa16c7990e68a8ac14024c3fb8d607a06 Mon Sep 17 00:00:00 2001
+From 2d8dcf0bb7f2c66bba46c1b7ebd4abe61b639144 Mon Sep 17 00:00:00 2001
 From: Felix Abecassis <fabecassis@nvidia.com>
-Date: Mon, 7 Aug 2017 11:42:44 -0700
+Date: Wed, 3 Jan 2018 11:50:02 -0800
 Subject: [PATCH 2/2] Add prestart hook nvidia-container-runtime-hook to the
  config
 
+Signed-off-by: Felix Abecassis <fabecassis@nvidia.com>
 ---
- utils.go | 18 ++++++++++++++++++
- 1 file changed, 18 insertions(+)
+ utils.go | 26 ++++++++++++++++++++++++++
+ 1 file changed, 26 insertions(+)
 
 diff --git a/utils.go b/utils.go
-index 98f93a4..a74f472 100644
+index 98f93a4..e3b7df4 100644
 --- a/utils.go
 +++ b/utils.go
 @@ -3,6 +3,7 @@ package main
@@ -20,16 +21,16 @@ index 98f93a4..a74f472 100644
  	"path/filepath"
  
  	"github.com/Sirupsen/logrus"
-@@ -63,6 +64,23 @@ func setupSpec(context *cli.Context) (*specs.Spec, error) {
- 	if err != nil {
- 		return nil, err
- 	}
-+
+@@ -51,6 +52,26 @@ func fatal(err error) {
+ 	os.Exit(1)
+ }
+ 
++func addNVIDIAHook(context *cli.Context, spec *specs.Spec) error {
 +	path, err := exec.LookPath("nvidia-container-runtime-hook")
 +	if err != nil {
-+		return nil, err
++		return err
 +	}
-+	args := []string{path, "-prestart"}
++	args := []string{path}
 +	if context.GlobalBool("debug") {
 +		args = append(args, "-debug")
 +	}
@@ -38,8 +39,23 @@ index 98f93a4..a74f472 100644
 +	}
 +	spec.Hooks.Prestart = append(spec.Hooks.Prestart, specs.Hook{
 +		Path: path,
-+		Args: args,
++		Args: append(args, "prestart"),
 +	})
++
++	return nil
++}
++
+ // setupSpec performs initial setup based on the cli.Context for the container
+ func setupSpec(context *cli.Context) (*specs.Spec, error) {
+ 	bundle := context.String("bundle")
+@@ -63,6 +84,11 @@ func setupSpec(context *cli.Context) (*specs.Spec, error) {
+ 	if err != nil {
+ 		return nil, err
+ 	}
++
++	if err = addNVIDIAHook(context, spec); err != nil {
++		return nil, err
++	}
 +
  	return spec, nil
  }
