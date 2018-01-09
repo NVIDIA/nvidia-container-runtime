@@ -59,7 +59,11 @@ enum {
         OPT_GRAPHICS_LIBS = 1 << 7,
         OPT_UTILITY_BINS  = 1 << 8,
         OPT_COMPUTE_BINS  = 1 << 9,
+#if defined(__powerpc64__) /* ppc64le doesn't support compat32. */
+        OPT_COMPAT32      = 1 << 0,
+#else
         OPT_COMPAT32      = 1 << 10,
+#endif /* defined(__powerpc64__) */
 };
 
 static const struct option container_opts[] = {

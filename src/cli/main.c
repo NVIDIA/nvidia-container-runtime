@@ -57,6 +57,7 @@ print_version(FILE *stream, maybe_unused struct argp_state *state)
         fprintf(stream, "build date: %s\n", BUILD_DATE);
         fprintf(stream, "build revision: %s\n", BUILD_REVISION);
         fprintf(stream, "build compiler: %s\n", BUILD_COMPILER);
+        fprintf(stream, "build platform: %s\n", BUILD_PLATFORM);
         fprintf(stream, "build flags: %s\n", BUILD_FLAGS);
 }
 

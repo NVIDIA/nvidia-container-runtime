@@ -36,20 +36,6 @@ export DEBUG_DIR   ?= $(CURDIR)/.debug
 
 include $(MAKE_DIR)/common.mk
 
-DATE     := $(shell date -u --iso-8601=minutes)
-REVISION := $(shell git rev-parse HEAD)
-COMPILER := $(realpath $(shell which $(CC)))
-
-ifeq ($(DATE),)
-$(error Invalid date format)
-endif
-ifeq ($(REVISION),)
-$(error Invalid commit hash)
-endif
-ifeq ($(COMPILER),)
-$(error Invalid compiler)
-endif
-
 ##### File definitions #####
 
 DOC_FILES    := $(CURDIR)/NOTICE \
@@ -94,11 +80,7 @@ BIN_SCRIPT   = $(SRCS_DIR)/cli/$(BIN_NAME).lds
 
 ##### Target definitions #####
 
-ifneq ($(wildcard /etc/debian_version),)
-ARCH    ?= amd64
-else
-ARCH    ?= x86_64
-endif
+ARCH    ?= $(call getarch)
 MAJOR   := $(call getdef,NVC_MAJOR,$(LIB_INCS))
 MINOR   := $(call getdef,NVC_MINOR,$(LIB_INCS))
 PATCH   := $(call getdef,NVC_PATCH,$(LIB_INCS))
@@ -185,6 +167,7 @@ $(BUILD_DEFS):
 	@printf '#define BUILD_COMPILER "%s " __VERSION__\n' '$(notdir $(COMPILER))' >>$(BUILD_DEFS)
 	@printf '#define BUILD_FLAGS    "%s"\n' '$(strip $(CPPFLAGS) $(CFLAGS) $(LDFLAGS))' >>$(BUILD_DEFS)
 	@printf '#define BUILD_REVISION "%s"\n' '$(strip $(REVISION))' >>$(BUILD_DEFS)
+	@printf '#define BUILD_PLATFORM "%s"\n' '$(strip $(PLATFORM))' >>$(BUILD_DEFS)
 
 $(LIB_RPC_SRCS): $(LIB_RPC_SPEC)
 	$(RM) $@

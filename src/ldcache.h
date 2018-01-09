@@ -19,6 +19,8 @@ struct ldcache {
 };
 
 enum {
+        LD_UNKNOWN                 = (uint32_t)-1,
+
         LD_TYPE_MASK               = 0x00ff,
         LD_ELF                     = 0x0001,
         LD_ELF_LIBC5               = 0x0002,
