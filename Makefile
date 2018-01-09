@@ -7,6 +7,7 @@
 
 ##### Global variables #####
 
+WITH_LIBELF  ?= 0
 WITH_TIRPC   ?= 0
 WITH_SECCOMP ?= 1
 
@@ -16,6 +17,7 @@ export prefix      = /usr/local
 export exec_prefix = $(prefix)
 export bindir      = $(exec_prefix)/bin
 export libdir      = $(exec_prefix)/lib
+export docdir      = $(prefix)/share/doc
 export libdbgdir   = $(prefix)/lib/debug$(libdir)
 export includedir  = $(prefix)/include
 export pkgconfdir  = $(libdir)/pkgconfig
@@ -48,7 +50,12 @@ ifeq ($(COMPILER),)
 $(error Invalid compiler)
 endif
 
-##### Source definitions #####
+##### File definitions #####
+
+DOC_FILES    := $(CURDIR)/NOTICE \
+                $(CURDIR)/LICENSE \
+                $(CURDIR)/COPYING \
+                $(CURDIR)/COPYING.LESSER
 
 BUILD_DEFS   := $(SRCS_DIR)/build.h
 
@@ -131,8 +138,14 @@ LDLIBS   := $(LDLIBS)
 LIB_CPPFLAGS       = -DNV_LINUX -isystem $(CUDA_DIR)/include -isystem $(DEPS_DIR)$(includedir) -include $(BUILD_DEFS)
 LIB_CFLAGS         = -fPIC
 LIB_LDFLAGS        = -L$(DEPS_DIR)$(libdir) -shared -Wl,-soname=$(LIB_SONAME)
-LIB_LDLIBS_STATIC  = -l:libelf.a -l:libnvidia-modprobe-utils.a
+LIB_LDLIBS_STATIC  = -l:libnvidia-modprobe-utils.a
 LIB_LDLIBS_SHARED  = -ldl -lcap
+ifeq ($(WITH_LIBELF), 1)
+LIB_CPPFLAGS       += -DWITH_LIBELF
+LIB_LDLIBS_SHARED  += -lelf
+else
+LIB_LDLIBS_STATIC  += -l:libelf.a
+endif
 ifeq ($(WITH_TIRPC), 1)
 LIB_CPPFLAGS       += -isystem $(DEPS_DIR)$(includedir)/tirpc -DWITH_TIRPC
 LIB_LDLIBS_STATIC  += -l:libtirpc.a
@@ -222,14 +235,16 @@ static: $(LIB_STATIC)($(LIB_STATIC_OBJ))
 deps: export DESTDIR:=$(DEPS_DIR)
 deps: $(LIB_RPC_SRCS) $(BUILD_DEFS)
 	$(MKDIR) -p $(DEPS_DIR)
-	$(MAKE) -f $(MAKE_DIR)/elftoolchain.mk install
 	$(MAKE) -f $(MAKE_DIR)/nvidia-modprobe.mk install
+ifeq ($(WITH_LIBELF), 0)
+	$(MAKE) -f $(MAKE_DIR)/elftoolchain.mk install
+endif
 ifeq ($(WITH_TIRPC), 1)
 	$(MAKE) -f $(MAKE_DIR)/libtirpc.mk install
 endif
 
 install: all
-	$(INSTALL) -d -m 755 $(addprefix $(DESTDIR),$(includedir) $(bindir) $(libdir) $(libdbgdir) $(pkgconfdir))
+	$(INSTALL) -d -m 755 $(addprefix $(DESTDIR),$(includedir) $(bindir) $(libdir) $(docdir) $(libdbgdir) $(pkgconfdir))
 	# Install header files
 	$(INSTALL) -m 644 $(LIB_INCS) $(DESTDIR)$(includedir)
 	# Install library files
@@ -243,6 +258,9 @@ install: all
 	$(MAKE_DIR)/$(LIB_PKGCFG).in "$(strip $(VERSION))" "$(strip $(LIB_LDLIBS_SHARED))" > $(DESTDIR)$(pkgconfdir)/$(LIB_PKGCFG)
 	# Install binary files
 	$(INSTALL) -m 755 $(BIN_NAME) $(DESTDIR)$(bindir)
+	# Install documentation files
+	$(INSTALL) -d -m 755 $(DESTDIR)$(docdir)/$(LIB_NAME)-$(VERSION)
+	$(INSTALL) -m 644 $(DOC_FILES) $(DESTDIR)$(docdir)/$(LIB_NAME)-$(VERSION)
 
 uninstall:
 	# Uninstall header files
@@ -255,6 +273,8 @@ uninstall:
 	$(RM) $(DESTDIR)$(pkgconfdir)/$(LIB_PKGCFG)
 	# Uninstall binary files
 	$(RM) $(DESTDIR)$(bindir)/$(BIN_NAME)
+	# Uninstall documentation files
+	$(RM) -r $(DESTDIR)$(docdir)/$(LIB_NAME)-$(VERSION)
 
 dist: DESTDIR:=$(DIST_DIR)/$(LIB_NAME)_$(VERSION)$(addprefix -,$(TAG))
 dist: install
@@ -263,8 +283,10 @@ dist: install
 
 depsclean:
 	$(RM) $(BUILD_DEFS)
-	-$(MAKE) -f $(MAKE_DIR)/elftoolchain.mk clean
 	-$(MAKE) -f $(MAKE_DIR)/nvidia-modprobe.mk clean
+ifeq ($(WITH_LIBELF), 0)
+	-$(MAKE) -f $(MAKE_DIR)/elftoolchain.mk clean
+endif
 ifeq ($(WITH_TIRPC), 1)
 	-$(MAKE) -f $(MAKE_DIR)/libtirpc.mk clean
 endif

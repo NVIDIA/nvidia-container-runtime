@@ -68,6 +68,9 @@ nvidia-smi -L
 
 This project is released under the [BSD 3-clause license](https://github.com/NVIDIA/libnvidia-container/blob/master/LICENSE).
 
+Additionally, this project can be dynamically linked with libelf from the elfutils package (https://sourceware.org/elfutils), in which case additional terms apply.\
+Refer to [NOTICE](https://github.com/NVIDIA/libnvidia-container/blob/master/NOTICE) for more information.
+
 ## Issues and Contributing
 
 A signed copy of the [Contributor License Agreement](https://raw.githubusercontent.com/NVIDIA/libnvidia-container/master/CLA) needs to be provided to <a href="mailto:digits@nvidia.com">digits@nvidia.com</a> before any change can be accepted.

@@ -1,5 +1,25 @@
 /*
  * Copyright (c) 2017, NVIDIA CORPORATION. All rights reserved.
+ *
+ * This file is part of libnvidia-container.
+ * If this file is being compiled and dynamically linked against libelf from the
+ * elfutils package (usually characterized by the definition of the macro `WITH_LIBELF'),
+ * the following license notice covers the use of said library along with the terms from
+ * the COPYING and COPYING.LESSER files:
+ *
+ *  elfutils is free software: you can redistribute it and/or modify
+ *  it under the terms of the GNU Lesser General Public License as published by
+ *  the Free Software Foundation, either version 3 of the License, or
+ *  (at your option) any later version.
+ *
+ *  elfutils is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU Lesser General Public License for more details.
+ *
+ *  You should have received copies of the GNU General Public License and
+ *  the GNU Lesser General Public License along with this program.  If
+ *  not, see <http://www.gnu.org/licenses/>.
  */
 
 #include <stdint.h>
@@ -13,10 +33,12 @@
 #include "utils.h"
 #include "xfuncs.h"
 
-/* Extracted from <elf.h> */
-#define ELF_NOTE_GNU      "GNU"
-#define ELF_NOTE_ABI      1
-#define ELF_NOTE_OS_LINUX 0
+/* Extracted from <elf.h> since elftoolchain headers conflict. */
+#ifndef WITH_LIBELF
+# define ELF_NOTE_GNU      "GNU"
+# define ELF_NOTE_ABI      1
+# define ELF_NOTE_OS_LINUX 0
+#endif /* WITH_LIBELF */
 
 static int lookup_section(struct elftool *, GElf_Shdr *, Elf_Scn **, Elf64_Word, const char *);
 
@@ -117,7 +139,7 @@ elftool_has_abi(struct elftool *ctx, uint32_t abi[3])
         GElf_Shdr shdr;
         Elf_Scn *scn;
         Elf_Data *data;
-        Elf_Note nhdr;
+        Elf64_Nhdr nhdr;
         char *ptr;
         uint32_t desc[4];
 

@@ -6,13 +6,13 @@
 
 #include <sys/types.h>
 
+#include <elf.h>
 #include <errno.h>
 #include <inttypes.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
 
-#include <elfdefinitions.h>
 #include <pci-enum.h>
 #include <nvidia-modprobe-utils.h>
 
@@ -33,7 +33,7 @@ static int copy_config(struct error *, struct nvc_context *, const struct nvc_co
 const char interpreter[] __attribute__((section(".interp"))) = LIB_DIR "/" LD_SO;
 
 const struct __attribute__((__packed__)) {
-        Elf_Note hdr;
+        Elf64_Nhdr hdr;
         uint32_t desc[5];
 } abitag __attribute__((section (".note.ABI-tag"))) = {
         {0x04, 0x10, 0x01},
