@@ -3,7 +3,7 @@ Upstream-Name: libnvidia-container
 Source: https://github.com/NVIDIA/libnvidia-container
 
 Files: *
-Copyright: 2017 NVIDIA CORPORATION <cudatools@nvidia.com>
+Copyright: 2017-2018 NVIDIA CORPORATION <cudatools@nvidia.com>
 License: BSD-3-Clause
  Redistribution and use in source and binary forms, with or without
  modification, are permitted provided that the following conditions
@@ -30,7 +30,7 @@ License: BSD-3-Clause
  OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 Files: src/elftool.*
-Copyright: 2017 NVIDIA CORPORATION <cudatools@nvidia.com>
+Copyright: 2017-2018 NVIDIA CORPORATION <cudatools@nvidia.com>
 Comment: If these files have been compiled and dynamically linked against libelf from the
  elfutils package (usually characterized by the definition of the macro `WITH_LIBELF'),
  the following license notice covers the use of said library.
