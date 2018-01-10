@@ -521,8 +521,11 @@ file_create(struct error *err, const char *path, const char *data, uid_t uid, gi
                         size = strlen(data);
                         flags |= O_WRONLY|O_TRUNC;
                 }
-                if ((fd = open(path, flags, perm)) < 0)
+                if ((fd = open(path, flags, perm)) < 0) {
+                        if (errno == ELOOP)
+                                errno = EEXIST; /* XXX Better error message if the file exists and is a symlink. */
                         goto fail;
+                }
                 if (data != NULL && write(fd, data, size) < (ssize_t)size) {
                         close(fd);
                         goto fail;
