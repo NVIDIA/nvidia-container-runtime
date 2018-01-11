@@ -85,6 +85,21 @@ This package contains command-line tools that facilitate using the library.
 %{_bindir}/*
 
 %changelog
+* Wed Jan 10 2018 NVIDIA CORPORATION <cudatools@nvidia.com> 1.0.0-0.1.alpha.3
+- d268f8f Improve error message if driver installed in the container
+- 3fdac29 Add optional support for libelf from the elfutils project
+- 584bca5 Remove top directory bind mounts to prevent EXDEV errors
+- c6dc820 Add info command to nvidia-container-cli
+- 44b74ee Add device model to the device informations
+- cbdd58f Strip RPC prefix from error messages
+- d4ee216 Rework the CLI list command
+- b0c4865 Improve the --userspec CLI option and rename it to --user
+- e6fa331 Refactor the CLI and split it into multiple files
+- fa9853b Bump nvidia-modprobe-utils to 387.34
+- 7888296 Move the driver capabilities to the container options
+- ea2f780 Add support for EGL device isolation
+- b5bffa3 Fix driver procfs remount to work with unpatched kernels 
+
 * Mon Oct 30 2017 NVIDIA CORPORATION <cudatools@nvidia.com> 1.0.0-0.1.alpha.2
 - b80e4b6 Relax some requirement constraints
 - 3cd1bb6 Handle 32-bit PCI domains
