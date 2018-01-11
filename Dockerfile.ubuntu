@@ -6,6 +6,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends curl ca-certifi
     rm -rf /var/lib/apt/lists/*
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
+        apt-utils \
         bmake \
         build-essential \
         bzip2 \
@@ -15,12 +16,16 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
         dh-make \
         fakeroot \
         git \
+        gnupg2 \
         libcap-dev \
         libseccomp-dev \
         lintian \
         lsb-release \
-        m4 && \
+        m4 \
+        xz-utils && \
     rm -rf /var/lib/apt/lists/*
+
+ENV GPG_TTY /dev/console
 
 ARG USERSPEC=0:0
 
