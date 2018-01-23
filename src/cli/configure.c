@@ -207,6 +207,7 @@ configure_command(const struct context *ctx)
         }
         nvc_cfg->uid = ctx->uid;
         nvc_cfg->gid = ctx->gid;
+        nvc_cfg->ldcache = ctx->ldcache;
         if (nvc_init(nvc, nvc_cfg, ctx->init_flags) < 0) {
                 warnx("initialization error: %s", nvc_error(nvc));
                 goto fail;

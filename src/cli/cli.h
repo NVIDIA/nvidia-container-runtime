@@ -25,6 +25,7 @@ struct context {
         /* main */
         uid_t uid;
         gid_t gid;
+        char *ldcache;
         bool load_kmods;
         char *init_flags;
         const struct command *command;
