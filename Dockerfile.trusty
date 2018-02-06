@@ -1,0 +1,75 @@
+FROM ubuntu:trusty
+
+# runc dependencies
+RUN apt-get update && apt-get install -y \
+        wget \
+        git \
+        make \
+        pkg-config \
+        gcc \
+        libseccomp2=2.2.3-2ubuntu1~ubuntu14.04.1 \
+        libseccomp-dev=2.2.3-2ubuntu1~ubuntu14.04.1 \
+        libapparmor-dev \
+        libselinux1-dev \
+        build-essential && \
+    rm -rf /var/lib/apt/lists/*
+
+ENV GOLANG_VERSION 1.9.2
+RUN wget -O - https://storage.googleapis.com/golang/go${GOLANG_VERSION}.linux-amd64.tar.gz \
+    | tar -v -C /usr/local -xz
+ENV GOPATH /go
+ENV PATH $GOPATH/bin:/usr/local/go/bin:$PATH
+
+RUN go get github.com/LK4D4/vndr
+
+# packaging dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        dh-make \
+        fakeroot \
+        devscripts && \
+    rm -rf /var/lib/apt/lists/*
+
+# packaging
+ARG PKG_VERS
+ARG PKG_REV
+ARG PKG_ARCH
+
+ENV DEBFULLNAME "NVIDIA CORPORATION"
+ENV DEBEMAIL "cudatools@nvidia.com"
+ENV REVISION "$PKG_VERS-$PKG_REV"
+ENV DISTRIB "UNRELEASED"
+ENV SECTION ""
+
+# output directory
+ENV DIST_DIR=/tmp/nvidia-container-runtime-$PKG_VERS
+RUN mkdir -p $DIST_DIR
+
+# runc
+WORKDIR $GOPATH/src/github.com/opencontainers/runc
+
+ARG RUNC_COMMIT
+COPY runc/$RUNC_COMMIT/ /tmp/patches/runc
+RUN git clone https://github.com/docker/runc.git . && \
+    git fetch https://github.com/opencontainers/runc.git && \
+    git checkout $RUNC_COMMIT && \
+    git apply /tmp/patches/runc/* && \
+    if [ -f vendor.conf ]; then vndr; fi && \
+    make BUILDTAGS="seccomp apparmor selinux" && \
+    mv runc $DIST_DIR/nvidia-container-runtime
+
+# nvidia-container-runtime-hook
+COPY nvidia-container-runtime-hook/ $GOPATH/src/nvidia-container-runtime-hook
+
+RUN go get -v nvidia-container-runtime-hook && \
+    mv $GOPATH/bin/nvidia-container-runtime-hook $DIST_DIR/nvidia-container-runtime-hook
+
+COPY config.toml.xenial $DIST_DIR/config.toml
+
+WORKDIR $DIST_DIR
+COPY debian ./debian
+
+RUN dch --create --package nvidia-container-runtime -v "$REVISION" "v$REVISION" -D "$DISTRIB" && \
+    dch -r ""
+
+CMD debuild -eSECTION --dpkg-buildpackage-hook='sh debian/prepare' -i -us -uc -b && \
+    mv /tmp/*.deb /dist
