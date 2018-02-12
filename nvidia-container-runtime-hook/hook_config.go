@@ -17,6 +17,7 @@ type CLIConfig struct {
 	Path        string   `toml:"path"`
 	Environment []string `toml:"environment"`
 	Debug       *string  `toml:"debug"`
+	Ldcache     *string  `toml:"ldcache"`
 	LoadKmods   bool     `toml:"load-kmods"`
 	Ldconfig    *string  `toml:"ldconfig"`
 }
@@ -36,6 +37,7 @@ func getDefaultHookConfig() (config HookConfig) {
 			Path:        "",
 			Environment: []string{},
 			Debug:       nil,
+			Ldcache:     nil,
 			LoadKmods:   true,
 			Ldconfig:    nil,
 		},

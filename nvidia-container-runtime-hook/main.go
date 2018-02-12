@@ -70,6 +70,9 @@ func doPrestart() {
 	} else if cli.Debug != nil {
 		args = append(args, fmt.Sprintf("--debug=%s", *cli.Debug))
 	}
+	if cli.Ldcache != nil {
+		args = append(args, fmt.Sprintf("--ldcache=%s", *cli.Ldcache))
+	}
 	args = append(args, "configure")
 
 	if cli.Ldconfig != nil {

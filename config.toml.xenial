@@ -3,7 +3,8 @@ disable-require = false
 
 [nvidia-container-cli]
 #path = "/usr/bin/nvidia-container-cli"
-#debug = "/var/log/nvidia-container-runtime-hook.log"
 environment = []
+#debug = "/var/log/nvidia-container-runtime-hook.log"
+#ldcache = "/etc/ld.so.cache"
 load-kmods = true
 ldconfig = "@/sbin/ldconfig.real"
