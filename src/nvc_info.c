@@ -2,6 +2,8 @@
  * Copyright (c) 2017-2018, NVIDIA CORPORATION. All rights reserved.
  */
 
+#include <sys/sysmacros.h>
+
 #include <errno.h>
 #include <limits.h>
 #include <stdio.h>

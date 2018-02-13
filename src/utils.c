@@ -878,7 +878,7 @@ perm_drop_bounds(struct error *err)
                 last_cap = (cap_value_t)n;
 
         for (cap_value_t c = 0; c <= last_cap; ++c) {
-                if (cap_get_bound(c) > 0 && cap_drop_bound(c) < 0) {
+                if (prctl(PR_CAPBSET_READ, c) > 0 && prctl(PR_CAPBSET_DROP, c) < 0) {
                         error_set(err, "capability change failed");
                         return (-1);
                 }

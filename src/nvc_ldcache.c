@@ -3,6 +3,7 @@
  */
 
 #include <linux/securebits.h>
+#include <linux/types.h>
 
 #include <sys/capability.h>
 #include <sys/mount.h>
