@@ -10,7 +10,7 @@ DIST_DIR  := $(CURDIR)/dist
 .NOTPARALLEL:
 .PHONY: all
 
-all: xenial centos7 stretch
+all: trusty xenial centos7 stretch
 
 trusty: 17.12.0-trusty 17.09.1-trusty 17.09.0-trusty 17.06.2-trusty 17.03.2-trusty 1.13.1-trusty 1.12.6-trusty
 
