@@ -1,9 +1,15 @@
-FROM debian:9.2
+ARG IMAGESPEC=debian:9.2
+FROM ${IMAGESPEC}
+ARG IMAGESPEC=debian:9.2
+
+SHELL ["/bin/bash", "-c"]
 
 # XXX: CUDA doesn't officially support debian, we just need the driver headers though
-RUN apt-get update && apt-get install -y --no-install-recommends curl ca-certificates gnupg2 && \
-    curl -fsSL https://developer.download.nvidia.com/compute/cuda/repos/ubuntu1604/x86_64/7fa2af80.pub | apt-key add - && \
-    echo "deb http://developer.download.nvidia.com/compute/cuda/repos/ubuntu1604/x86_64 /" > /etc/apt/sources.list.d/cuda.list && \
+RUN distrib=ubuntu1604 && \
+    arch=$(uname -m); arch=${arch/le/el} && \
+    apt-get update && apt-get install -y --no-install-recommends curl ca-certificates gnupg2 && \
+    curl -fsSL https://developer.download.nvidia.com/compute/cuda/repos/${distrib}/${arch}/7fa2af80.pub | apt-key add - && \
+    echo "deb http://developer.download.nvidia.com/compute/cuda/repos/${distrib}/${arch} /" > /etc/apt/sources.list.d/cuda.list && \
     rm -rf /var/lib/apt/lists/*
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -19,6 +25,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
         git \
         gnupg2 \
         libcap-dev \
+        libelf-dev \
         libseccomp-dev \
         lintian \
         lsb-release \
@@ -34,6 +41,13 @@ WORKDIR /tmp/libnvidia-container
 COPY . .
 RUN chown -R $USERSPEC $PWD
 USER $USERSPEC
+
+ARG WITH_LIBELF=no
+ARG WITH_TIRPC=no
+ARG WITH_SECCOMP=yes
+ENV WITH_LIBELF=${WITH_LIBELF}
+ENV WITH_TIRPC=${WITH_TIRPC}
+ENV WITH_SECCOMP=${WITH_SECCOMP}
 
 RUN make distclean && make -j"$(nproc)"
 

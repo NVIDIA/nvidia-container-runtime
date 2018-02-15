@@ -3,7 +3,7 @@ License: BSD
 Vendor: NVIDIA CORPORATION
 Packager: NVIDIA CORPORATION <cudatools@nvidia.com>
 URL: https://github.com/NVIDIA/libnvidia-container
-BuildRequires: make bmake
+BuildRequires: make
 Version: %{_version}
 Release: 0.1%{?_tag:.%_tag}
 Summary: NVIDIA container runtime library

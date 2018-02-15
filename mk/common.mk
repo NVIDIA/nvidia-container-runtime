@@ -16,11 +16,14 @@ STRIP    ?= strip
 OBJCPY   ?= objcopy
 RPCGEN   ?= rpcgen
 BMAKE    ?= MAKEFLAGS= bmake
+DOCKER   ?= docker
 
+UID      := $(shell id -u)
+GID      := $(shell id -g)
 DATE     := $(shell date -u --iso-8601=minutes)
 REVISION := $(shell git rev-parse HEAD)
 COMPILER := $(realpath $(shell which $(CC)))
-PLATFORM ?= $(shell uname -p)
+PLATFORM ?= $(shell uname -m)
 
 ifeq ($(DATE),)
 $(error Invalid date format)

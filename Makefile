@@ -7,9 +7,9 @@
 
 ##### Global variables #####
 
-WITH_LIBELF  ?= 0
-WITH_TIRPC   ?= 0
-WITH_SECCOMP ?= 1
+WITH_LIBELF  ?= no
+WITH_TIRPC   ?= no
+WITH_SECCOMP ?= yes
 
 ##### Global definitions #####
 
@@ -122,18 +122,18 @@ LIB_CFLAGS         = -fPIC
 LIB_LDFLAGS        = -L$(DEPS_DIR)$(libdir) -shared -Wl,-soname=$(LIB_SONAME)
 LIB_LDLIBS_STATIC  = -l:libnvidia-modprobe-utils.a
 LIB_LDLIBS_SHARED  = -ldl -lcap
-ifeq ($(WITH_LIBELF), 1)
+ifeq ($(WITH_LIBELF), yes)
 LIB_CPPFLAGS       += -DWITH_LIBELF
 LIB_LDLIBS_SHARED  += -lelf
 else
 LIB_LDLIBS_STATIC  += -l:libelf.a
 endif
-ifeq ($(WITH_TIRPC), 1)
+ifeq ($(WITH_TIRPC), yes)
 LIB_CPPFLAGS       += -isystem $(DEPS_DIR)$(includedir)/tirpc -DWITH_TIRPC
 LIB_LDLIBS_STATIC  += -l:libtirpc.a
 LIB_LDLIBS_SHARED  += -lpthread
 endif
-ifeq ($(WITH_SECCOMP), 1)
+ifeq ($(WITH_SECCOMP), yes)
 LIB_CPPFLAGS       += -DWITH_SECCOMP
 LIB_LDLIBS_SHARED  += -lseccomp
 endif
@@ -219,10 +219,10 @@ deps: export DESTDIR:=$(DEPS_DIR)
 deps: $(LIB_RPC_SRCS) $(BUILD_DEFS)
 	$(MKDIR) -p $(DEPS_DIR)
 	$(MAKE) -f $(MAKE_DIR)/nvidia-modprobe.mk install
-ifeq ($(WITH_LIBELF), 0)
+ifeq ($(WITH_LIBELF), no)
 	$(MAKE) -f $(MAKE_DIR)/elftoolchain.mk install
 endif
-ifeq ($(WITH_TIRPC), 1)
+ifeq ($(WITH_TIRPC), yes)
 	$(MAKE) -f $(MAKE_DIR)/libtirpc.mk install
 endif
 
@@ -267,10 +267,10 @@ dist: install
 depsclean:
 	$(RM) $(BUILD_DEFS)
 	-$(MAKE) -f $(MAKE_DIR)/nvidia-modprobe.mk clean
-ifeq ($(WITH_LIBELF), 0)
+ifeq ($(WITH_LIBELF), no)
 	-$(MAKE) -f $(MAKE_DIR)/elftoolchain.mk clean
 endif
-ifeq ($(WITH_TIRPC), 1)
+ifeq ($(WITH_TIRPC), yes)
 	-$(MAKE) -f $(MAKE_DIR)/libtirpc.mk clean
 endif
 
@@ -288,8 +288,8 @@ deb: prefix:=/usr
 deb: libdir:=/usr/lib/@DEB_HOST_MULTIARCH@
 deb: install
 	$(CP) -T $(PKG_DIR)/deb $(DESTDIR)/debian
-	cd $(DESTDIR) && debuild -eDISTRIB -eSECTION --dpkg-buildpackage-hook='debian/prepare %v' -a $(ARCH) -us -uc -B
-	cd $(DESTDIR) && debuild clean
+	cd $(DESTDIR) && debuild -eDISTRIB -eSECTION --dpkg-buildpackage-hook='debian/prepare %v' -a$(ARCH) -us -uc -B
+	cd $(DESTDIR) && (yes | debuild clean || yes | debuild -- clean)
 
 rpm: DESTDIR:=$(DIST_DIR)/$(LIB_NAME)_$(VERSION)_$(ARCH)
 rpm: all
@@ -299,3 +299,16 @@ rpm: all
 	$(MKDIR) -p $(DESTDIR)/RPMS && $(LN) -nsf $(DIST_DIR) $(DESTDIR)/RPMS/$(ARCH)
 	cd $(DESTDIR) && rpmbuild --clean --target=$(ARCH) -bb -D"_topdir $(DESTDIR)" -D"_version $(VERSION)" -D"_tag $(TAG)" -D"_major $(MAJOR)" SPECS/*
 	-cd $(DESTDIR) && rpmlint RPMS/*
+
+
+docker-%: SHELL:=/bin/bash
+docker-%:
+	$(MKDIR) -p $(DIST_DIR)
+	image=$* && $(DOCKER) build --network=host \
+                                --build-arg IMAGESPEC=$* \
+                                --build-arg USERSPEC=$(UID):$(GID) \
+                                --build-arg WITH_LIBELF=$(WITH_LIBELF) \
+                                --build-arg WITH_TIRPC=$(WITH_TIRPC) \
+                                --build-arg WITH_SECCOMP=$(WITH_SECCOMP) \
+                                -f $(MAKE_DIR)/Dockerfile.$${image%%:*} -t $(LIB_NAME):$${image/:} .
+	image=$* && $(DOCKER) run --rm -v $(DIST_DIR):/mnt:Z -e TAG -e DISTRIB -e SECTION $(LIB_NAME):$${image/:}
