@@ -71,6 +71,12 @@ EOF
 sudo pkill -SIGHUP dockerd
 ```
 
+You can optionally reconfigure the default runtime by adding the following to `/etc/docker/daemon.json`:
+```
+"default-runtime": "nvidia"
+```
+
+
 #### Command line
 ```bash
 sudo dockerd --add-runtime=nvidia=/usr/bin/nvidia-container-runtime [...]
