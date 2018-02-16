@@ -1,0 +1,9 @@
+disable-require = false
+#swarm-resource = "DOCKER_RESOURCE_GPU"
+
+[nvidia-container-cli]
+#path = "/usr/bin/nvidia-container-cli"
+#debug = "/var/log/nvidia-container-runtime-hook.log"
+environment = []
+load-kmods = true
+ldconfig = "@/sbin/ldconfig.real"
