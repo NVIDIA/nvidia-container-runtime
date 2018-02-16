@@ -45,11 +45,9 @@ RUN yum install -y \
 # packaging
 ARG PKG_VERS
 ARG PKG_REV
-ARG PKG_ARCH
 
 ENV VERSION $PKG_VERS
 ENV RELEASE $PKG_REV
-ENV ARCHITECTURE $PKG_ARCH
 
 # output directory
 ENV DIST_DIR=/tmp/nvidia-container-runtime-$PKG_VERS/SOURCES
@@ -79,9 +77,10 @@ COPY config.toml.centos7 $DIST_DIR/config.toml
 WORKDIR $DIST_DIR/..
 COPY rpm .
 
-CMD rpmbuild --clean --target=$ARCHITECTURE -bb \
+CMD arch=$(uname -m) && \
+    rpmbuild --clean --target=$arch -bb \
              -D "_topdir $PWD" \
              -D "version $VERSION" \
              -D "release $RELEASE" \
              SPECS/nvidia-container-runtime.spec && \
-    mv RPMS/$ARCHITECTURE/*.rpm /dist
+    mv RPMS/$arch/*.rpm /dist
