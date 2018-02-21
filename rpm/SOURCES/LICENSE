@@ -1,4 +1,4 @@
-Copyright (c) 2017, NVIDIA CORPORATION. All rights reserved.
+Copyright (c) 2017-2018, NVIDIA CORPORATION. All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions
@@ -204,7 +204,7 @@ For runc/*:
 
    END OF TERMS AND CONDITIONS
 
-   Copyright 2017 NVIDIA CORPORATION
+   Copyright 2017-2018 NVIDIA CORPORATION
 
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
