@@ -18,7 +18,7 @@ RUN mkdir -p $DIST_DIR
 # nvidia-container-runtime-hook
 COPY nvidia-container-runtime-hook/ $GOPATH/src/nvidia-container-runtime-hook
 
-RUN go get -v nvidia-container-runtime-hook && \
+RUN go get -ldflags "-s -w" -v nvidia-container-runtime-hook && \
     mv $GOPATH/bin/nvidia-container-runtime-hook $DIST_DIR/nvidia-container-runtime-hook
 
 COPY config.toml.stretch $DIST_DIR/config.toml
