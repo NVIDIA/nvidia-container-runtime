@@ -1,0 +1,33 @@
+FROM nvidia/build-base:stretch
+
+# packaging
+ARG PKG_VERS
+ARG PKG_REV
+ARG PKG_ARCH
+
+ENV DEBFULLNAME "NVIDIA CORPORATION"
+ENV DEBEMAIL "cudatools@nvidia.com"
+ENV REVISION "$PKG_VERS-$PKG_REV"
+ENV DISTRIB "UNRELEASED"
+ENV SECTION ""
+
+# output directory
+ENV DIST_DIR=/tmp/nvidia-container-runtime-hook-$PKG_VERS
+RUN mkdir -p $DIST_DIR
+
+# nvidia-container-runtime-hook
+COPY nvidia-container-runtime-hook/ $GOPATH/src/nvidia-container-runtime-hook
+
+RUN go get -v nvidia-container-runtime-hook && \
+    mv $GOPATH/bin/nvidia-container-runtime-hook $DIST_DIR/nvidia-container-runtime-hook
+
+COPY config.toml.stretch $DIST_DIR/config.toml
+
+WORKDIR $DIST_DIR
+COPY debian ./debian
+
+RUN dch --create --package nvidia-container-runtime-hook -v "$REVISION" "v$REVISION" -D "$DISTRIB" && \
+    dch -r ""
+
+CMD debuild -eSECTION --dpkg-buildpackage-hook='sh debian/prepare' -i -us -uc -b && \
+    mv /tmp/nvidia-container-runtime-hook_*.deb /dist

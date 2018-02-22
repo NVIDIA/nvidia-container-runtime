@@ -1,4 +1,4 @@
-FROM centos:7
+FROM nvidia/build-base:centos7
 
 # Install a more version of git (for vndr)
 RUN yum install -y \
@@ -21,35 +21,19 @@ RUN GIT_DOWNLOAD_SUM=e19d450648d6d100eb93abaa5d06ffbc778394fb502354b7026d73e9bcb
 
 # runc dependencies
 RUN yum install -y \
-        ca-certificates \
-        wget \
         pkgconfig \
         gcc \
         libseccomp-devel \
         libselinux-devel && \
     rm -rf /var/cache/yum/*
 
-ENV GOLANG_VERSION 1.9.4
-RUN set -eux; \
-    \
-    arch="$(uname -m)"; \
-    case "${arch##*-}" in \
-        x86_64 | amd64) ARCH='amd64' ;; \
-        ppc64el | ppc64le) ARCH='ppc64le' ;; \
-        *) echo "unsupported architecture"; exit 1 ;; \
-    esac; \
-    wget -nv -O - https://storage.googleapis.com/golang/go${GOLANG_VERSION}.linux-${ARCH}.tar.gz \
-    | tar -C /usr/local -xz
-
-ENV GOPATH /go
-ENV PATH $GOPATH/bin:/usr/local/go/bin:$PATH
-
 RUN go get github.com/LK4D4/vndr
 
-# packaging dependencies
-RUN yum install -y \
-        rpm-build && \
-    rm -rf /var/cache/yum/*
+# runc
+WORKDIR $GOPATH/src/github.com/opencontainers/runc
+
+RUN git clone https://github.com/docker/runc.git . && \
+    git fetch https://github.com/opencontainers/runc.git
 
 # packaging
 ARG PKG_VERS
@@ -62,26 +46,14 @@ ENV RELEASE $PKG_REV
 ENV DIST_DIR=/tmp/nvidia-container-runtime-$PKG_VERS/SOURCES
 RUN mkdir -p $DIST_DIR
 
-# runc
-WORKDIR $GOPATH/src/github.com/opencontainers/runc
-
 ARG RUNC_COMMIT
 COPY runc/$RUNC_COMMIT/ /tmp/patches/runc
-RUN git clone https://github.com/docker/runc.git . && \
-    git fetch https://github.com/opencontainers/runc.git && \
-    git checkout $RUNC_COMMIT && \
+
+RUN git checkout $RUNC_COMMIT && \
     git apply /tmp/patches/runc/* && \
     if [ -f vendor.conf ]; then vndr; fi && \
     make BUILDTAGS="seccomp selinux" && \
     mv runc $DIST_DIR/nvidia-container-runtime
-
-# nvidia-container-runtime-hook
-COPY nvidia-container-runtime-hook/ $GOPATH/src/nvidia-container-runtime-hook
-
-RUN go get -v nvidia-container-runtime-hook && \
-    mv $GOPATH/bin/nvidia-container-runtime-hook $DIST_DIR/nvidia-container-runtime-hook
-
-COPY config.toml.centos7 $DIST_DIR/config.toml
 
 WORKDIR $DIST_DIR/..
 COPY rpm .

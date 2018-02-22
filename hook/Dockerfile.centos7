@@ -1,0 +1,31 @@
+FROM nvidia/build-base:centos7
+
+# packaging
+ARG PKG_VERS
+ARG PKG_REV
+
+ENV VERSION $PKG_VERS
+ENV RELEASE $PKG_REV
+
+# output directory
+ENV DIST_DIR=/tmp/nvidia-container-runtime-hook-$PKG_VERS/SOURCES
+RUN mkdir -p $DIST_DIR
+
+# nvidia-container-runtime-hook
+COPY nvidia-container-runtime-hook/ $GOPATH/src/nvidia-container-runtime-hook
+
+RUN go get -v nvidia-container-runtime-hook && \
+    mv $GOPATH/bin/nvidia-container-runtime-hook $DIST_DIR/nvidia-container-runtime-hook
+
+COPY config.toml.centos7 $DIST_DIR/config.toml
+
+WORKDIR $DIST_DIR/..
+COPY rpm .
+
+CMD arch=$(uname -m) && \
+    rpmbuild --clean --target=$arch -bb \
+             -D "_topdir $PWD" \
+             -D "version $VERSION" \
+             -D "release $RELEASE" \
+             SPECS/nvidia-container-runtime-hook.spec && \
+    mv RPMS/$arch/*.rpm /dist

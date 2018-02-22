@@ -1,2 +1,2 @@
 config.toml /etc/nvidia-container-runtime
-nvidia-* /usr/bin
+nvidia-container-runtime-hook /usr/bin
