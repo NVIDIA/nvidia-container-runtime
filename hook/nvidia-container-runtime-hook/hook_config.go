@@ -9,7 +9,8 @@ import (
 )
 
 const (
-	configPath = "/etc/nvidia-container-runtime/config.toml"
+	configPath  = "/etc/nvidia-container-runtime/config.toml"
+	defaultPATH = "/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
 )
 
 // CLIConfig: options for nvidia-container-cli.
@@ -50,10 +51,17 @@ func getHookConfig() (config HookConfig) {
 	if err != nil && !os.IsNotExist(err) {
 		log.Panicln("couldn't open configuration file:", err)
 	}
+
 	if len(config.NvidiaContainerCLI.Path) == 0 {
+		if _, ok := os.LookupEnv("PATH"); !ok {
+			if err = os.Setenv("PATH", defaultPATH); err != nil {
+				log.Panicln("couldn't set PATH variable:", err)
+			}
+		}
+
 		config.NvidiaContainerCLI.Path, err = exec.LookPath("nvidia-container-cli")
 		if err != nil {
-			log.Panicln("couldn't find binary nvidia-container-cli:", err)
+			log.Panicln("couldn't find binary nvidia-container-cli in", os.Getenv("PATH"), ":", err)
 		}
 	}
 
