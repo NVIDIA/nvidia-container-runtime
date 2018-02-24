@@ -1,6 +1,8 @@
+
 package main
 
 import (
+	"encoding/json"
 	"flag"
 	"fmt"
 	"log"
@@ -47,14 +49,13 @@ func capabilityToCLI(cap string) string {
 	return ""
 }
 
-func doPrestart() {
-	defer exit()
+func doPrestart(state HookState) {
 	log.SetFlags(0)
 
 	hook := getHookConfig()
 	cli := hook.NvidiaContainerCLI
 
-	container := getContainerConfig(hook)
+	container := getContainerConfig(hook, state)
 	nvidia := container.Nvidia
 	if nvidia == nil {
 		// Not a GPU container, nothing to do.
@@ -108,28 +109,26 @@ func doPrestart() {
 func usage() {
 	fmt.Fprintf(os.Stderr, "Usage of %s:\n", os.Args[0])
 	flag.PrintDefaults()
-	fmt.Fprintf(os.Stderr, "\nCommands:\n")
-	fmt.Fprintf(os.Stderr, "  prestart\n        run the prestart hook\n")
-	fmt.Fprintf(os.Stderr, "  poststart\n        no-op\n")
-	fmt.Fprintf(os.Stderr, "  poststop\n        no-op\n")
 }
 
 func main() {
+	defer exit()
 	flag.Usage = usage
 	flag.Parse()
 
-	args := flag.Args()
-	if len(args) == 0 {
-		flag.Usage()
-		os.Exit(2)
+	var state HookState
+	d := json.NewDecoder(os.Stdin)
+	if err := d.Decode(&state); err != nil {
+		log.Panicln("could not decode container state:", err)
 	}
 
-	switch args[0] {
-	case "prestart":
-		doPrestart()
+	switch state.Status {
+	case "created":
+		doPrestart(state)
 		os.Exit(0)
-	case "poststart":
-	case "poststop":
+	case "creating": fallthrough
+	case "running": fallthrough
+	case "stopped":
 		os.Exit(0)
 	default:
 		flag.Usage()

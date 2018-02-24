@@ -55,7 +55,8 @@ type Spec struct {
 }
 
 type HookState struct {
-	Pid int `json:"pid,omitempty"`
+	Status string `json:"status"`
+	Pid    int `json:"pid,omitempty"`
 	// After 17.06, runc is using the runtime spec:
 	// github.com/docker/runc/blob/17.06/libcontainer/configs/config.go#L262-L263
 	// github.com/opencontainers/runtime-spec/blob/v1.0.0/specs-go/state.go#L3-L17
@@ -237,16 +238,10 @@ func getNvidiaConfig(env map[string]string) *nvidiaConfig {
 	}
 }
 
-func getContainerConfig(hook HookConfig) (config containerConfig) {
-	var h HookState
-	d := json.NewDecoder(os.Stdin)
-	if err := d.Decode(&h); err != nil {
-		log.Panicln("could not decode container state:", err)
-	}
-
-	b := h.Bundle
+func getContainerConfig(hook HookConfig, state HookState) (config containerConfig) {
+	b := state.Bundle
 	if len(b) == 0 {
-		b = h.BundlePath
+		b = state.BundlePath
 	}
 
 	s := loadSpec(path.Join(b, "config.json"))
@@ -254,7 +249,7 @@ func getContainerConfig(hook HookConfig) (config containerConfig) {
 	env := getEnvMap(s.Process.Env)
 	envSwarmGPU = hook.SwarmResource
 	return containerConfig{
-		Pid:    h.Pid,
+		Pid:    state.Pid,
 		Rootfs: s.Root.Path,
 		Env:    env,
 		Nvidia: getNvidiaConfig(env),
