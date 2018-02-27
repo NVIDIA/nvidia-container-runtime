@@ -13,7 +13,6 @@ static error_t configure_parser(int, char *, struct argp_state *);
 static int check_cuda_version(const struct dsl_data *, enum dsl_comparator, const char *);
 static int check_driver_version(const struct dsl_data *, enum dsl_comparator, const char *);
 static int check_device_arch(const struct dsl_data *, enum dsl_comparator, const char *);
-static bool is_root_dir(const char *);
 
 const struct argp configure_usage = {
         (const struct argp_option[]){
@@ -104,7 +103,7 @@ configure_parser(int key, char *arg, struct argp_state *state)
         case ARGP_KEY_ARG:
                 if (state->arg_num > 0)
                         argp_usage(state);
-                if (is_root_dir(arg)) {
+                if (arg[0] != '/' || !strcmp(arg, "/")) {
                         error_setx(&err, "invalid rootfs directory");
                         goto fatal;
                 }
@@ -155,19 +154,6 @@ check_device_arch(const struct dsl_data *data, enum dsl_comparator cmp, const ch
         return (dsl_compare_version(data->dev->arch, cmp, arch));
 }
 
-static bool
-is_root_dir(const char *path)
-{
-        bool rv = false;
-        char *p;
-
-        p = realpath(path, NULL);
-        if (p != NULL && !strcmp(p, "/"))
-                rv = true;
-        free(p);
-        return (rv);
-}
-
 int
 configure_command(const struct context *ctx)
 {
@@ -207,6 +193,7 @@ configure_command(const struct context *ctx)
         }
         nvc_cfg->uid = ctx->uid;
         nvc_cfg->gid = ctx->gid;
+        nvc_cfg->root = ctx->root;
         nvc_cfg->ldcache = ctx->ldcache;
         if (nvc_init(nvc, nvc_cfg, ctx->init_flags) < 0) {
                 warnx("initialization error: %s", nvc_error(nvc));

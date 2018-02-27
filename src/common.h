@@ -11,6 +11,7 @@
 #define PROC_SELF                 "/proc/self"
 #define PROC_MOUNTS_PATH(proc)    proc "/mountinfo"
 #define PROC_CGROUP_PATH(proc)    proc "/cgroup"
+#define PROC_ROOT_PATH(proc)      proc "/root/" /* XXX Leading slash is required */
 #define PROC_NS_PATH(proc)        proc "/ns/%s"
 #define PROC_SETGROUPS_PATH(proc) proc "/setgroups"
 #define PROC_UID_MAP_PATH(proc)   proc "/uid_map"

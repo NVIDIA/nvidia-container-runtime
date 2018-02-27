@@ -84,7 +84,7 @@ list_command(const struct context *ctx)
         int rv = EXIT_FAILURE;
 
         run_as_root = (geteuid() == 0);
-        if (!run_as_root && ctx->load_kmods) {
+        if (!run_as_root && (ctx->load_kmods || ctx->root != NULL)) {
                 warnx("requires root privileges");
                 return (rv);
         }
@@ -115,6 +115,7 @@ list_command(const struct context *ctx)
         }
         nvc_cfg->uid = (!run_as_root && ctx->uid == (uid_t)-1) ? geteuid() : ctx->uid;
         nvc_cfg->gid = (!run_as_root && ctx->gid == (gid_t)-1) ? getegid() : ctx->gid;
+        nvc_cfg->root = ctx->root;
         nvc_cfg->ldcache = ctx->ldcache;
         if (nvc_init(nvc, nvc_cfg, ctx->init_flags) < 0) {
                 warnx("initialization error: %s", nvc_error(nvc));

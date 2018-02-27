@@ -26,7 +26,6 @@ static inline int  xasprintf(struct error *, char **, const char *, ...)
     __attribute__((format(printf, 3, 4), nonnull(3)));
 static inline int  xsnprintf(struct error *, char *, size_t, const char *, ...)
     __attribute__((format(printf, 4, 5), nonnull(4)));
-static inline char *xrealpath(struct error *, const char *, char *);
 static inline void *xdlopen(struct error *, const char *, int);
 static inline int  xdlclose(struct error *, void *);
 static inline int  xmount(struct error *, const char *, const char *,
@@ -120,16 +119,6 @@ xsnprintf(struct error *err, char *str, size_t size, const char *fmt, ...)
         }
         va_end(ap);
         return (rv);
-}
-
-static inline char *
-xrealpath(struct error *err, const char *path, char *resolved_path)
-{
-        char *p;
-
-        if ((p = realpath(path, resolved_path)) == NULL)
-                error_set(err, "path resolution failed: %s", path);
-        return (p);
 }
 
 static inline void *

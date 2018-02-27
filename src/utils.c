@@ -42,7 +42,8 @@ static mode_t get_umask(void);
 static int set_fsugid(uid_t, gid_t);
 static int make_ancestors(char *, mode_t);
 static int do_file_remove(const char *, const struct stat *, int, struct FTW *);
-static int openrel(struct error *, int, const char *);
+static int open_next(struct error *, int, const char *);
+static int do_path_resolve(struct error *, bool, char *, const char *, const char *);
 
 static FILE *logfile;
 
@@ -590,6 +591,23 @@ file_exists(struct error *err, const char *path)
 }
 
 int
+file_exists_at(struct error *err, const char *dir, const char *path)
+{
+        int fd;
+        int rv;
+
+        if ((fd = xopen(err, dir, O_PATH|O_DIRECTORY)) < 0)
+                return (-1);
+        if ((rv = faccessat(fd, (*path == '/') ? path + 1 : path, F_OK, 0)) < 0 && errno != ENOENT) {
+                error_set(err, "file lookup failed: %s", path);
+                close(fd);
+                return (-1);
+        }
+        close(fd);
+        return (rv == 0);
+}
+
+int
 file_mode(struct error *err, const char *path, mode_t *mode)
 {
         struct stat s;
@@ -665,16 +683,29 @@ file_read_uint32(struct error *err, const char *path, uint32_t *v)
 }
 
 int
+path_new(struct error *err, char *buf, const char *path)
+{
+        *buf = '\0';
+        return (path_append(err, buf, path));
+}
+
+int
 path_append(struct error *err, char *buf, const char *path)
 {
         size_t len, cap;
+        char *end;
         int n;
+
+        if (strempty(path))
+                return (0);
 
         len = strlen(buf);
         cap = PATH_MAX - len;
+        end = (len > 0) ? buf + len - 1 : buf;
         buf += len;
 
-        n = snprintf(buf, cap, "%s%s", (*path == '/') ? "" : "/", path);
+        n = snprintf(buf, cap, "%s%s", (*path != '/' && *end != '/') ? "/" : "",
+                                       (*path == '/' && *end == '/') ? path + 1 : path);
         if (n < 0 || (size_t)n >= cap) {
                 if ((size_t)n >= cap)
                         errno = ENAMETOOLONG;
@@ -687,39 +718,29 @@ path_append(struct error *err, char *buf, const char *path)
 int
 path_join(struct error *err, char *buf, const char *p1, const char *p2)
 {
-        size_t cap = PATH_MAX;
-        int n;
-
-        n = snprintf(buf, cap, "%s%s%s", p1, (*p2 == '/') ? "" : "/", p2);
-        if (n < 0 || (size_t)n >= cap) {
-                if ((size_t)n >= cap)
-                        errno = ENAMETOOLONG;
-                error_set(err, "path error: %s/%s", p1, p2);
+        if (path_new(err, buf, p1) < 0)
                 return (-1);
-        }
-        return (0);
+        return (path_append(err, buf, p2));
 }
 
 static int
-openrel(struct error *err, int dir, const char *path)
+open_next(struct error *err, int dir, const char *path)
 {
         int fd;
+        int flags = O_PATH|O_NOFOLLOW;
 
-        if (*path == '/') {
-                if ((fd = xopen(err, path, O_PATH|O_DIRECTORY|O_NOFOLLOW)) < 0)
-                        return (-1);
-        } else {
-                if ((fd = openat(dir, path, O_PATH|O_NOFOLLOW)) < 0) {
-                        error_set(err, "open failed: %s", path);
-                        return (-1);
-                }
+        if (*path == '/')
+                flags |= O_DIRECTORY;
+        if ((fd = openat(dir, path, flags)) < 0) {
+                error_set(err, "open failed: %s", path);
+                return (-1);
         }
         xclose(dir);
         return (fd);
 }
 
-int
-path_resolve(struct error *err, char *buf, const char *root, const char *path)
+static int
+do_path_resolve(struct error *err, bool full, char *buf, const char *root, const char *path)
 {
         int fd = -1;
         int rv = -1;
@@ -736,7 +757,7 @@ path_resolve(struct error *err, char *buf, const char *root, const char *path)
         *realpath = '\0';
         assert(*root == '/');
 
-        if ((fd = openrel(err, -1, root)) < 0)
+        if ((fd = open_next(err, -1, root)) < 0)
                 goto fail;
         if (path_append(err, ptr, path) < 0)
                 goto fail;
@@ -757,7 +778,7 @@ path_resolve(struct error *err, char *buf, const char *root, const char *path)
                         if (noents > 0)
                                 --noents;
                         else {
-                                if ((fd = openrel(err, fd, "..")) < 0)
+                                if ((fd = open_next(err, fd, "..")) < 0)
                                         goto fail;
                         }
                 } else {
@@ -775,7 +796,7 @@ path_resolve(struct error *err, char *buf, const char *root, const char *path)
                                 if (*link == '/') {
                                         ++link;
                                         *realpath = '\0';
-                                        if ((fd = openrel(err, fd, root)) < 0)
+                                        if ((fd = open_next(err, fd, root)) < 0)
                                                 goto fail;
                                 }
                                 if (ptr != NULL) {
@@ -799,7 +820,7 @@ path_resolve(struct error *err, char *buf, const char *root, const char *path)
                                         break;
                                 case EINVAL:
                                         /* Not a symlink, proceed normally */
-                                        if ((fd = openrel(err, fd, file)) < 0)
+                                        if ((fd = open_next(err, fd, file)) < 0)
                                                 goto fail;
                                         if (path_append(err, realpath, file) < 0)
                                                 goto fail;
@@ -811,13 +832,31 @@ path_resolve(struct error *err, char *buf, const char *root, const char *path)
                         }
                 }
         }
-        if (path_join(err, buf, root, realpath) < 0)
-                goto fail;
+
+        if (!full) {
+                if (path_new(err, buf, realpath) < 0)
+                        goto fail;
+        } else {
+                if (path_join(err, buf, root, realpath) < 0)
+                        goto fail;
+        }
         rv = 0;
 
  fail:
         xclose(fd);
         return (rv);
+}
+
+int
+path_resolve(struct error *err, char *buf, const char *root, const char *path)
+{
+        return (do_path_resolve(err, false, buf, root, path));
+}
+
+int
+path_resolve_full(struct error *err, char *buf, const char *root, const char *path)
+{
+        return (do_path_resolve(err, true, buf, root, path));
 }
 
 int

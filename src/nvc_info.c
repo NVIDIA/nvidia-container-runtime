@@ -30,15 +30,15 @@
                   nitems(graphics_libs_glvnd) + \
                   nitems(graphics_libs_compat))
 
-static int select_libraries(struct error *, void *, const char *, const char *);
-static int find_library_paths(struct error *, struct nvc_driver_info *, const char *, const char * const [], size_t);
-static int find_binary_paths(struct error *, struct nvc_driver_info *, const char * const [], size_t);
-static int find_device_node(struct error *, const char *, struct nvc_device_node *);
-static int find_ipc_path(struct error *, const char *, char **);
-static int lookup_libraries(struct error *, struct nvc_driver_info *, int32_t, const char *);
-static int lookup_binaries(struct error *, struct nvc_driver_info *, int32_t);
-static int lookup_devices(struct error *, struct nvc_driver_info *, int32_t);
-static int lookup_ipcs(struct error *, struct nvc_driver_info *, int32_t);
+static int select_libraries(struct error *, void *, const char *, const char *, const char *);
+static int find_library_paths(struct error *, struct nvc_driver_info *, const char *, const char *, const char * const [], size_t);
+static int find_binary_paths(struct error *, struct nvc_driver_info *, const char *, const char * const [], size_t);
+static int find_device_node(struct error *, const char *, const char *, struct nvc_device_node *);
+static int find_ipc_path(struct error *, const char *, const char *, char **);
+static int lookup_libraries(struct error *, struct nvc_driver_info *, const char *, int32_t, const char *);
+static int lookup_binaries(struct error *, struct nvc_driver_info *, const char *, int32_t);
+static int lookup_devices(struct error *, struct nvc_driver_info *, const char *, int32_t);
+static int lookup_ipcs(struct error *, struct nvc_driver_info *, const char *, int32_t);
 
 /*
  * Display libraries are not needed.
@@ -111,15 +111,18 @@ static const char * const graphics_libs_compat[] = {
 };
 
 static int
-select_libraries(struct error *err, void *ptr, const char *orig_path, const char *alt_path)
+select_libraries(struct error *err, void *ptr, const char *root, const char *orig_path, const char *alt_path)
 {
+        char path[PATH_MAX];
         struct nvc_driver_info *info = ptr;
         struct elftool et;
         char *lib;
         int rv = true;
 
+        if (path_join(err, path, root, alt_path) < 0)
+                return (-1);
         elftool_init(&et, err);
-        if (elftool_open(&et, alt_path) < 0)
+        if (elftool_open(&et, path) < 0)
                 return (-1);
 
         lib = basename(alt_path);
@@ -150,13 +153,16 @@ select_libraries(struct error *err, void *ptr, const char *orig_path, const char
 }
 
 static int
-find_library_paths(struct error *err, struct nvc_driver_info *info,
+find_library_paths(struct error *err, struct nvc_driver_info *info, const char *root,
     const char *ldcache, const char * const libs[], size_t size)
 {
+        char path[PATH_MAX];
         struct ldcache ld;
         int rv = -1;
 
-        ldcache_init(&ld, err, ldcache);
+        if (path_resolve_full(err, path, root, ldcache) < 0)
+                return (-1);
+        ldcache_init(&ld, err, path);
         if (ldcache_open(&ld) < 0)
                 return (-1);
 
@@ -164,7 +170,7 @@ find_library_paths(struct error *err, struct nvc_driver_info *info,
         info->libs = array_new(err, size);
         if (info->libs == NULL)
                 goto fail;
-        if (ldcache_resolve(&ld, LIB_ARCH, libs,
+        if (ldcache_resolve(&ld, LIB_ARCH, root, libs,
             info->libs, info->nlibs, select_libraries, info) < 0)
                 goto fail;
 
@@ -172,7 +178,7 @@ find_library_paths(struct error *err, struct nvc_driver_info *info,
         info->libs32 = array_new(err, size);
         if (info->libs32 == NULL)
                 goto fail;
-        if (ldcache_resolve(&ld, LIB32_ARCH, libs,
+        if (ldcache_resolve(&ld, LIB32_ARCH, root, libs,
             info->libs32, info->nlibs32, select_libraries, info) < 0)
                 goto fail;
         rv = 0;
@@ -184,11 +190,12 @@ find_library_paths(struct error *err, struct nvc_driver_info *info,
 }
 
 static int
-find_binary_paths(struct error *err, struct nvc_driver_info *info,
+find_binary_paths(struct error *err, struct nvc_driver_info *info, const char *root,
     const char * const bins[], size_t size)
 {
         char *env, *ptr;
         const char *dir;
+        char tmp[PATH_MAX];
         char path[PATH_MAX];
         int rv = -1;
 
@@ -210,10 +217,12 @@ find_binary_paths(struct error *err, struct nvc_driver_info *info,
                 for (size_t i = 0; i < size; ++i) {
                         if (info->bins[i] != NULL)
                                 continue;
-                        if (path_join(NULL, path, dir, bins[i]) < 0)
+                        if (path_join(NULL, tmp, dir, bins[i]) < 0)
                                 continue;
-                        if (!access(path, X_OK)) {
-                                info->bins[i] = xrealpath(err, path, NULL);
+                        if (path_resolve(NULL, path, root, tmp) < 0)
+                                continue;
+                        if (file_exists_at(NULL, root, path) == true) {
+                                info->bins[i] = xstrdup(err, path);
                                 if (info->bins[i] == NULL)
                                         goto fail;
                                 log_infof("selecting %s", path);
@@ -228,41 +237,46 @@ find_binary_paths(struct error *err, struct nvc_driver_info *info,
 }
 
 static int
-find_device_node(struct error *err, const char *path, struct nvc_device_node *node)
+find_device_node(struct error *err, const char *root, const char *dev, struct nvc_device_node *node)
 {
+        char path[PATH_MAX];
         struct stat s;
 
+        if (path_resolve_full(err, path, root, dev) < 0)
+                return (-1);
         if (xstat(err, path, &s) == 0) {
-                *node = (struct nvc_device_node){(char *)path, s.st_rdev};
+                *node = (struct nvc_device_node){(char *)dev, s.st_rdev};
                 return (true);
         }
         if (err->code == ENOENT) {
-                log_warnf("missing device %s", path);
+                log_warnf("missing device %s", dev);
                 return (false);
         }
         return (-1);
 }
 
 static int
-find_ipc_path(struct error *err, const char *path, char **ipc)
+find_ipc_path(struct error *err, const char *root, const char *ipc, char **buf)
 {
+        char path[PATH_MAX];
         int ret;
 
-        if ((ret = file_exists(err, path)) < 0)
+        if (path_resolve(err, path, root, ipc) < 0)
                 return (-1);
-
-        if (ret == 0)
-                log_warnf("missing ipc %s", path);
-        else {
+        if ((ret = file_exists_at(err, root, path)) < 0)
+                return (-1);
+        if (ret) {
                 log_infof("listing ipc %s", path);
-                if ((*ipc = xrealpath(err, path, NULL)) == NULL)
+                if ((*buf = xstrdup(err, path)) == NULL)
                         return (-1);
+        } else {
+                log_warnf("missing ipc %s", ipc);
         }
         return (0);
 }
 
 static int
-lookup_libraries(struct error *err, struct nvc_driver_info *info, int32_t flags, const char *ldcache)
+lookup_libraries(struct error *err, struct nvc_driver_info *info, const char *root, int32_t flags, const char *ldcache)
 {
         const char *libs[MAX_LIBS];
         const char **ptr = libs;
@@ -276,7 +290,7 @@ lookup_libraries(struct error *err, struct nvc_driver_info *info, int32_t flags,
         else
                 ptr = array_append(ptr, graphics_libs_glvnd, nitems(graphics_libs_glvnd));
 
-        if (find_library_paths(err, info, ldcache, libs, (size_t)(ptr - libs)) < 0)
+        if (find_library_paths(err, info, root, ldcache, libs, (size_t)(ptr - libs)) < 0)
                 return (-1);
 
         for (size_t i = 0; info->libs != NULL && i < info->nlibs; ++i) {
@@ -293,7 +307,7 @@ lookup_libraries(struct error *err, struct nvc_driver_info *info, int32_t flags,
 }
 
 static int
-lookup_binaries(struct error *err, struct nvc_driver_info *info, int32_t flags)
+lookup_binaries(struct error *err, struct nvc_driver_info *info, const char *root, int32_t flags)
 {
         const char *bins[MAX_BINS];
         const char **ptr = bins;
@@ -302,7 +316,7 @@ lookup_binaries(struct error *err, struct nvc_driver_info *info, int32_t flags)
         if (!(flags & OPT_NO_MPS))
                 ptr = array_append(ptr, compute_bins, nitems(compute_bins));
 
-        if (find_binary_paths(err, info, bins, (size_t)(ptr - bins)) < 0)
+        if (find_binary_paths(err, info, root, bins, (size_t)(ptr - bins)) < 0)
                 return (-1);
 
         for (size_t i = 0; info->bins != NULL && i < info->nbins; ++i) {
@@ -314,16 +328,16 @@ lookup_binaries(struct error *err, struct nvc_driver_info *info, int32_t flags)
 }
 
 static int
-lookup_devices(struct error *err, struct nvc_driver_info *info, int32_t flags)
+lookup_devices(struct error *err, struct nvc_driver_info *info, const char *root, int32_t flags)
 {
         struct nvc_device_node uvm, uvm_tools, *node;
         int has_uvm = 0;
         int has_uvm_tools = 0;
 
         if (!(flags & OPT_NO_UVM)) {
-                if ((has_uvm = find_device_node(err, NV_UVM_DEVICE_PATH, &uvm)) < 0)
+                if ((has_uvm = find_device_node(err, root, NV_UVM_DEVICE_PATH, &uvm)) < 0)
                         return (-1);
-                if ((has_uvm_tools = find_device_node(err, NV_UVM_TOOLS_DEVICE_PATH, &uvm_tools)) < 0)
+                if ((has_uvm_tools = find_device_node(err, root, NV_UVM_TOOLS_DEVICE_PATH, &uvm_tools)) < 0)
                         return (-1);
         }
 
@@ -345,7 +359,7 @@ lookup_devices(struct error *err, struct nvc_driver_info *info, int32_t flags)
 }
 
 static int
-lookup_ipcs(struct error *err, struct nvc_driver_info *info, int32_t flags)
+lookup_ipcs(struct error *err, struct nvc_driver_info *info, const char *root, int32_t flags)
 {
         char **ptr;
         const char *mps;
@@ -356,13 +370,13 @@ lookup_ipcs(struct error *err, struct nvc_driver_info *info, int32_t flags)
                 return (-1);
 
         if (!(flags & OPT_NO_PERSISTENCED)) {
-                if (find_ipc_path(err, NV_PERSISTENCED_SOCKET, ptr++) < 0)
+                if (find_ipc_path(err, root, NV_PERSISTENCED_SOCKET, ptr++) < 0)
                         return (-1);
         }
         if (!(flags & OPT_NO_MPS)) {
                 if ((mps = secure_getenv("CUDA_MPS_PIPE_DIRECTORY")) == NULL)
                         mps = NV_MPS_PIPE_DIR;
-                if (find_ipc_path(err, mps, ptr++) < 0)
+                if (find_ipc_path(err, root, mps, ptr++) < 0)
                         return (-1);
         }
         array_pack(info->ipcs, &info->nipcs);
@@ -416,13 +430,13 @@ nvc_driver_info_new(struct nvc_context *ctx, const char *opts)
                 goto fail;
         if (driver_get_cuda_version(&ctx->drv, &info->cuda_version) < 0)
                 goto fail;
-        if (lookup_libraries(&ctx->err, info, flags, ctx->cfg.ldcache) < 0)
+        if (lookup_libraries(&ctx->err, info, ctx->cfg.root, flags, ctx->cfg.ldcache) < 0)
                 goto fail;
-        if (lookup_binaries(&ctx->err, info, flags) < 0)
+        if (lookup_binaries(&ctx->err, info, ctx->cfg.root, flags) < 0)
                 goto fail;
-        if (lookup_devices(&ctx->err, info, flags) < 0)
+        if (lookup_devices(&ctx->err, info, ctx->cfg.root, flags) < 0)
                 goto fail;
-        if (lookup_ipcs(&ctx->err, info, flags) < 0)
+        if (lookup_ipcs(&ctx->err, info, ctx->cfg.root, flags) < 0)
                 goto fail;
         return (info);
 

@@ -29,6 +29,7 @@ static struct argp usage = {
                 {"debug", 'd', "FILE", 0, "Log debug information", -1},
                 {"load-kmods", 'k', NULL, 0, "Load kernel modules", -1},
                 {"user", 'u', "UID[:GID]", OPTION_ARG_OPTIONAL, "User and group to use for privilege separation", -1},
+                {"root", 'r', "PATH", 0, "Path to the driver root directory", -1},
                 {"ldcache", 'l', "FILE", 0, "Path to the system's DSO cache", -1},
                 {NULL, 0, NULL, 0, "Commands:", 0},
                 {"info", 0, NULL, OPTION_DOC|OPTION_NO_USAGE, "Report information about the driver and devices", 0},
@@ -99,6 +100,9 @@ parser(int key, char *arg, struct argp_state *state)
                         ctx->uid = geteuid();
                         ctx->gid = getegid();
                 }
+                break;
+        case 'r':
+                ctx->root = arg;
                 break;
         case 'l':
                 ctx->ldcache = arg;

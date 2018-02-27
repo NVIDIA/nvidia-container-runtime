@@ -149,7 +149,7 @@ find_cgroup_path(struct error *err, const struct nvc_container *cnt, const char 
         char *root = NULL;
         char *cgroup = NULL;
 
-        pid = (cnt->flags & OPT_STANDALONE) ? cnt->cfg.pid : getpid();
+        pid = (cnt->flags & OPT_STANDALONE) ? cnt->cfg.pid : getppid();
         prefix = (cnt->flags & OPT_STANDALONE) ? cnt->cfg.rootfs : "";
 
         if (xsnprintf(err, path, sizeof(path), "%s"PROC_MOUNTS_PATH(PROC_PID), prefix, (int32_t)pid) < 0)
@@ -206,20 +206,34 @@ copy_config(struct error *err, struct nvc_container *cnt, const struct nvc_conta
         const char *libs_dir = cfg->libs_dir;
         const char *libs32_dir = cfg->libs32_dir;
         const char *ldconfig = cfg->ldconfig;
+        char *rootfs;
         int multiarch, ret;
+        int rv = -1;
 
         cnt->cfg.pid = cfg->pid;
-        if ((cnt->cfg.rootfs = xrealpath(err, cfg->rootfs, NULL)) == NULL)
+        if ((cnt->cfg.rootfs = xstrdup(err, cfg->rootfs)) == NULL)
                 return (-1);
+
+        if (cnt->flags & OPT_STANDALONE) {
+                if ((rootfs = xstrdup(err, cnt->cfg.rootfs)) == NULL)
+                        return (-1);
+        } else {
+                if (xsnprintf(err, tmp, sizeof(tmp), PROC_ROOT_PATH(PROC_PID), (int32_t)cnt->cfg.pid) < 0)
+                        return (-1);
+                if (path_resolve_full(err, path, tmp, cnt->cfg.rootfs) < 0)
+                        return (-1);
+                if ((rootfs = xstrdup(err, path)) == NULL)
+                        return (-1);
+        }
 
         if (bins_dir == NULL)
                 bins_dir = USR_BIN_DIR;
         if (libs_dir == NULL || libs32_dir == NULL) {
                 /* Debian and its derivatives use a multiarch directory scheme. */
-                if (path_resolve(err, path, cnt->cfg.rootfs, "/etc/debian_version") < 0)
-                        return (-1);
+                if (path_resolve_full(err, path, rootfs, "/etc/debian_version") < 0)
+                        goto fail;
                 if ((multiarch = file_exists(err, path)) < 0)
-                        return (-1);
+                        goto fail;
 
                 if (multiarch) {
                         if (libs_dir == NULL)
@@ -235,17 +249,17 @@ copy_config(struct error *err, struct nvc_container *cnt, const struct nvc_conta
                                  * Check which one is used in the rootfs.
                                  */
                                 libs32_dir = USR_LIB32_DIR;
-                                if (path_resolve(err, path, cnt->cfg.rootfs, USR_LIB32_DIR) < 0)
-                                        return (-1);
+                                if (path_resolve_full(err, path, rootfs, USR_LIB32_DIR) < 0)
+                                        goto fail;
                                 if ((ret = file_exists(err, path)) < 0)
-                                        return (-1);
+                                        goto fail;
                                 if (!ret) {
-                                        if (path_resolve(err, tmp, cnt->cfg.rootfs, libs_dir) < 0)
-                                                return (-1);
-                                        if (path_resolve(err, path, cnt->cfg.rootfs, USR_LIB32_ALT_DIR) < 0)
-                                                return (-1);
+                                        if (path_resolve_full(err, tmp, rootfs, libs_dir) < 0)
+                                                goto fail;
+                                        if (path_resolve_full(err, path, rootfs, USR_LIB32_ALT_DIR) < 0)
+                                                goto fail;
                                         if ((ret = file_exists(err, path)) < 0)
-                                                return (-1);
+                                                goto fail;
                                         if (ret && strcmp(path, tmp))
                                                 libs32_dir = USR_LIB32_ALT_DIR;
                                 }
@@ -257,23 +271,26 @@ copy_config(struct error *err, struct nvc_container *cnt, const struct nvc_conta
                  * Some distributions have a wrapper script around ldconfig to reduce package install time.
                  * Always refer to the real one to prevent having our privileges dropped by a shebang.
                  */
-                if (path_resolve(err, path, cnt->cfg.rootfs, LDCONFIG_ALT_PATH) < 0)
-                        return (-1);
+                if (path_resolve_full(err, path, rootfs, LDCONFIG_ALT_PATH) < 0)
+                        goto fail;
                 if ((ret = file_exists(err, path)) < 0)
-                        return (-1);
+                        goto fail;
                 ldconfig = ret ? LDCONFIG_ALT_PATH : LDCONFIG_PATH;
         }
 
         if ((cnt->cfg.bins_dir = xstrdup(err, bins_dir)) == NULL)
-                return (-1);
+                goto fail;
         if ((cnt->cfg.libs_dir = xstrdup(err, libs_dir)) == NULL)
-                return (-1);
+                goto fail;
         if ((cnt->cfg.libs32_dir = xstrdup(err, libs32_dir)) == NULL)
-                return (-1);
+                goto fail;
         if ((cnt->cfg.ldconfig = xstrdup(err, ldconfig)) == NULL)
-                return (-1);
+                goto fail;
+        rv = 0;
 
-        return (0);
+ fail:
+        free(rootfs);
+        return (rv);
 }
 
 struct nvc_container *
@@ -284,7 +301,7 @@ nvc_container_new(struct nvc_context *ctx, const struct nvc_container_config *cf
 
         if (validate_context(ctx) < 0)
                 return (NULL);
-        if (validate_args(ctx, cfg != NULL && cfg->pid > 0 && cfg->rootfs != NULL && !strempty(cfg->rootfs) &&
+        if (validate_args(ctx, cfg != NULL && cfg->pid > 0 && cfg->rootfs != NULL && !strempty(cfg->rootfs) && cfg->rootfs[0] == '/' &&
             !strempty(cfg->bins_dir) && !strempty(cfg->libs_dir) && !strempty(cfg->libs32_dir) && !strempty(cfg->ldconfig)) < 0)
                 return (NULL);
         if (opts == NULL)

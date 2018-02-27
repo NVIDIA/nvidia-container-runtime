@@ -77,10 +77,10 @@ static const cap_value_t permitted_caps[] = {
 };
 
 static const cap_value_t effective_caps[][nitems(permitted_caps) + 1] = {
-        [CAPS_INIT]       = {CAP_KILL, CAP_SETGID, CAP_SETUID, -1},
-        [CAPS_INIT_KMODS] = {CAP_CHOWN, CAP_FOWNER, CAP_MKNOD, CAP_KILL, CAP_SETGID, CAP_SETUID, -1},
+        [CAPS_INIT]       = {CAP_KILL, CAP_SETGID, CAP_SETUID, CAP_SYS_CHROOT, -1},
+        [CAPS_INIT_KMODS] = {CAP_CHOWN, CAP_FOWNER, CAP_MKNOD, CAP_KILL, CAP_SETGID, CAP_SETUID, CAP_SYS_CHROOT, -1},
         [CAPS_SHUTDOWN]   = {CAP_KILL, -1},
-        [CAPS_CONTAINER]  = {CAP_DAC_READ_SEARCH, -1},
+        [CAPS_CONTAINER]  = {CAP_DAC_READ_SEARCH, CAP_SYS_PTRACE, -1},
         [CAPS_INFO]       = {-1},
         [CAPS_MOUNT]      = {CAP_DAC_READ_SEARCH, CAP_SETGID, CAP_SETUID, CAP_SYS_ADMIN,
                              CAP_SYS_CHROOT, CAP_SYS_PTRACE, -1},

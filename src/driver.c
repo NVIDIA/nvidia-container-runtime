@@ -37,7 +37,7 @@
 
 static int reset_cuda_environment(struct error *);
 static int setup_rpc_client(struct driver *);
-static noreturn void setup_rpc_service(struct driver *, uid_t, gid_t, pid_t);
+static noreturn void setup_rpc_service(struct driver *, const char *, uid_t, gid_t, pid_t);
 static int reap_process(struct error *, pid_t, int, bool);
 
 static struct driver_device {
@@ -129,8 +129,10 @@ setup_rpc_client(struct driver *ctx)
 }
 
 static void
-setup_rpc_service(struct driver *ctx, uid_t uid, gid_t gid, pid_t ppid)
+setup_rpc_service(struct driver *ctx, const char *root, uid_t uid, gid_t gid, pid_t ppid)
 {
+        int rv = EXIT_FAILURE;
+
         log_info("starting driver service");
         prctl(PR_SET_NAME, (unsigned long)"nvc:[driver]", 0, 0, 0);
 
@@ -142,6 +144,18 @@ setup_rpc_service(struct driver *ctx, uid_t uid, gid_t gid, pid_t ppid)
         }
         if (getppid() != ppid)
                 kill(getpid(), SIGTERM);
+
+        if (strcmp(root, "/")) {
+                if (chroot(root) < 0 || chdir("/") < 0) {
+                        error_set(ctx->err, "change root failed");
+                        goto fail;
+                }
+        }
+
+        if ((ctx->cuda_dl = xdlopen(ctx->err, SONAME_LIBCUDA, RTLD_NOW)) == NULL)
+                goto fail;
+        if ((ctx->nvml_dl = xdlopen(ctx->err, SONAME_LIBNVML, RTLD_NOW)) == NULL)
+                goto fail;
 
         /*
          * Drop privileges and capabilities for security reasons.
@@ -167,14 +181,16 @@ setup_rpc_service(struct driver *ctx, uid_t uid, gid_t gid, pid_t ppid)
         svc_run();
 
         log_info("terminating driver service");
-        svc_destroy(ctx->rpc_svc);
-        _exit(EXIT_SUCCESS);
+        rv = EXIT_SUCCESS;
 
  fail:
-        log_errf("could not start driver service: %s", ctx->err->msg);
+        if (rv != EXIT_SUCCESS)
+                log_errf("could not start driver service: %s", ctx->err->msg);
+        xdlclose(NULL, ctx->cuda_dl);
+        xdlclose(NULL, ctx->nvml_dl);
         if (ctx->rpc_svc != NULL)
                 svc_destroy(ctx->rpc_svc);
-        _exit(EXIT_FAILURE);
+        _exit(rv);
 }
 
 static int
@@ -217,7 +233,7 @@ driver_program_1_freeresult(maybe_unused SVCXPRT *svc, xdrproc_t xdr_result, cad
 }
 
 int
-driver_init(struct driver *ctx, struct error *err, uid_t uid, gid_t gid)
+driver_init(struct driver *ctx, struct error *err, const char *root, uid_t uid, gid_t gid)
 {
         int ret;
         pid_t pid;
@@ -225,18 +241,13 @@ driver_init(struct driver *ctx, struct error *err, uid_t uid, gid_t gid)
 
         *ctx = (struct driver){err, NULL, NULL, {-1, -1}, -1, NULL, NULL};
 
-        if ((ctx->cuda_dl = xdlopen(err, SONAME_LIBCUDA, RTLD_NOW)) == NULL)
-                goto fail;
-        if ((ctx->nvml_dl = xdlopen(err, SONAME_LIBNVML, RTLD_NOW)) == NULL)
-                goto fail;
-
         pid = getpid();
         if (socketpair(PF_LOCAL, SOCK_STREAM|SOCK_CLOEXEC, 0, ctx->fd) < 0 || (ctx->pid = fork()) < 0) {
                 error_set(err, "process creation failed");
                 goto fail;
         }
         if (ctx->pid == 0)
-                setup_rpc_service(ctx, uid, gid, pid);
+                setup_rpc_service(ctx, root, uid, gid, pid);
         if (setup_rpc_client(ctx) < 0)
                 goto fail;
 
@@ -255,8 +266,6 @@ driver_init(struct driver *ctx, struct error *err, uid_t uid, gid_t gid)
 
         xclose(ctx->fd[SOCK_CLT]);
         xclose(ctx->fd[SOCK_SVC]);
-        xdlclose(NULL, ctx->cuda_dl);
-        xdlclose(NULL, ctx->nvml_dl);
         return (-1);
 }
 
@@ -294,11 +303,6 @@ driver_shutdown(struct driver *ctx)
 
         xclose(ctx->fd[SOCK_CLT]);
         xclose(ctx->fd[SOCK_SVC]);
-        if (xdlclose(ctx->err, ctx->cuda_dl) < 0)
-                return (-1);
-        if (xdlclose(ctx->err, ctx->nvml_dl) < 0)
-                return (-1);
-
         *ctx = (struct driver){NULL, NULL, NULL, {-1, -1}, -1, NULL, NULL};
         return (0);
 }

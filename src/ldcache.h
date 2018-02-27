@@ -44,12 +44,12 @@ enum {
         LD_MIPS64_LIBN64_NAN2008   = 0x0e00,
 };
 
-typedef int (*ldcache_select_fn)(struct error *, void *, const char *, const char *);
+typedef int (*ldcache_select_fn)(struct error *, void *, const char *, const char *, const char *);
 
 void ldcache_init(struct ldcache *, struct error *, const char *);
 int  ldcache_open(struct ldcache *);
 int  ldcache_close(struct ldcache *);
-int  ldcache_resolve(struct ldcache *, uint32_t, const char * const [],
+int  ldcache_resolve(struct ldcache *, uint32_t, const char *, const char * const [],
     char *[], size_t, ldcache_select_fn, void *);
 
 #endif /* HEADER_LDCACHE_H */

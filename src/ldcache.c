@@ -107,7 +107,7 @@ ldcache_close(struct ldcache *ctx)
 }
 
 int
-ldcache_resolve(struct ldcache *ctx, uint32_t arch, const char * const libs[],
+ldcache_resolve(struct ldcache *ctx, uint32_t arch, const char *root, const char * const libs[],
     char *paths[], size_t size, ldcache_select_fn select, void *select_ctx)
 {
         char path[PATH_MAX];
@@ -128,11 +128,11 @@ ldcache_resolve(struct ldcache *ctx, uint32_t arch, const char * const libs[],
                 for (size_t j = 0; j < size; ++j) {
                         if (strpcmp(key, libs[j]))
                                 continue;
-                        if (xrealpath(ctx->err, value, path) == NULL)
+                        if (path_resolve(ctx->err, path, root, value) < 0)
                                 return (-1);
                         if (paths[j] != NULL && !strcmp(paths[j], path))
                                 continue;
-                        if ((override = select(ctx->err, select_ctx, paths[j], path)) < 0)
+                        if ((override = select(ctx->err, select_ctx, root, paths[j], path)) < 0)
                                 return (-1);
                         if (override) {
                                 free(paths[j]);

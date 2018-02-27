@@ -35,7 +35,7 @@ struct driver {
 
 void driver_program_1(struct svc_req *, register SVCXPRT *);
 
-int driver_init(struct driver *, struct error *, uid_t, gid_t);
+int driver_init(struct driver *, struct error *, const char *, uid_t, gid_t);
 int driver_shutdown(struct driver *);
 int driver_get_rm_version(struct driver *, char **);
 int driver_get_cuda_version(struct driver *, char **);

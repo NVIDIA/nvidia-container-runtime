@@ -66,14 +66,17 @@ int  file_unmap(struct error *, const char *, void *, size_t);
 int  file_create(struct error *, const char *, const char *, uid_t, gid_t, mode_t);
 int  file_remove(struct error *, const char *);
 int  file_exists(struct error *, const char *);
+int  file_exists_at(struct error *, const char *, const char *);
 int  file_mode(struct error *, const char *, mode_t *);
 int  file_read_line(struct error *, const char *, char *, size_t);
 int  file_read_text(struct error *, const char *, char **);
 int  file_read_uint32(struct error *, const char *, uint32_t *);
 
+int path_new(struct error *, char *, const char *);
 int path_append(struct error *, char *, const char *);
 int path_join(struct error *, char *, const char *, const char *);
 int path_resolve(struct error *, char *, const char *, const char *);
+int path_resolve_full(struct error *, char *, const char *, const char *);
 
 int perm_drop_privileges(struct error *, uid_t, gid_t, bool);
 int perm_drop_bounds(struct error *);
