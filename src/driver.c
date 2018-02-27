@@ -111,7 +111,7 @@ setup_rpc_client(struct driver *ctx)
 {
         struct sockaddr_un addr;
         socklen_t addrlen;
-        struct timeval timeout = {1, 0};
+        struct timeval timeout = {10, 0};
 
         xclose(ctx->fd[SOCK_SVC]);
 
