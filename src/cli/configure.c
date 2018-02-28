@@ -25,6 +25,7 @@ const struct argp configure_usage = {
                 {"utility", 'u', NULL, 0, "Enable utility capability", -1},
                 {"video", 'v', NULL, 0, "Enable video capability", -1},
                 {"graphics", 'g', NULL, 0, "Enable graphics capability", -1},
+                {"display", 'D', NULL, 0, "Enable display capability", -1},
                 {"compat32", 0x80, NULL, 0, "Enable 32bits compatibility", -1},
                 {"no-cgroups", 0x81, NULL, 0, "Don't use cgroup enforcement", -1},
                 {"no-devbind", 0x82, NULL, 0, "Don't bind mount devices", -1},
@@ -86,6 +87,10 @@ configure_parser(int key, char *arg, struct argp_state *state)
                 break;
         case 'g':
                 if (strjoin(&err, &ctx->container_flags, "graphics", " ") < 0)
+                        goto fatal;
+                break;
+        case 'D':
+                if (strjoin(&err, &ctx->container_flags, "display", " ") < 0)
                         goto fatal;
                 break;
         case 0x80:

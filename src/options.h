@@ -29,13 +29,15 @@ static const char * const default_library_opts = "";
 enum {
         OPT_NO_GLVND        = 1 << 0,
         OPT_NO_UVM          = 1 << 1,
-        OPT_NO_MPS          = 1 << 2,
-        OPT_NO_PERSISTENCED = 1 << 3,
+        OPT_NO_MODESET      = 1 << 2,
+        OPT_NO_MPS          = 1 << 3,
+        OPT_NO_PERSISTENCED = 1 << 4,
 };
 
 static const struct option driver_opts[] = {
         {"no-glvnd", OPT_NO_GLVND},
         {"no-uvm", OPT_NO_UVM},
+        {"no-modeset", OPT_NO_MODESET},
         {"no-mps", OPT_NO_MPS},
         {"no-persistenced", OPT_NO_PERSISTENCED},
 };
@@ -57,12 +59,13 @@ enum {
         OPT_COMPUTE_LIBS  = 1 << 5,
         OPT_VIDEO_LIBS    = 1 << 6,
         OPT_GRAPHICS_LIBS = 1 << 7,
-        OPT_UTILITY_BINS  = 1 << 8,
-        OPT_COMPUTE_BINS  = 1 << 9,
+        OPT_DISPLAY       = 1 << 8,
+        OPT_UTILITY_BINS  = 1 << 9,
+        OPT_COMPUTE_BINS  = 1 << 10,
 #if defined(__powerpc64__) /* ppc64le doesn't support compat32. */
         OPT_COMPAT32      = 1 << 0,
 #else
-        OPT_COMPAT32      = 1 << 10,
+        OPT_COMPAT32      = 1 << 11,
 #endif /* defined(__powerpc64__) */
 };
 
@@ -75,6 +78,7 @@ static const struct option container_opts[] = {
         {"compute", OPT_COMPUTE_BINS|OPT_COMPUTE_LIBS},
         {"video", OPT_VIDEO_LIBS|OPT_COMPUTE_LIBS},
         {"graphics", OPT_GRAPHICS_LIBS},
+        {"display", OPT_DISPLAY|OPT_GRAPHICS_LIBS},
         {"compat32", OPT_COMPAT32},
 };
 

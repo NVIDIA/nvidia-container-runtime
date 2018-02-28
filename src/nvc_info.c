@@ -330,9 +330,10 @@ lookup_binaries(struct error *err, struct nvc_driver_info *info, const char *roo
 static int
 lookup_devices(struct error *err, struct nvc_driver_info *info, const char *root, int32_t flags)
 {
-        struct nvc_device_node uvm, uvm_tools, *node;
+        struct nvc_device_node uvm, uvm_tools, modeset, *node;
         int has_uvm = 0;
         int has_uvm_tools = 0;
+        int has_modeset = 0;
 
         if (!(flags & OPT_NO_UVM)) {
                 if ((has_uvm = find_device_node(err, root, NV_UVM_DEVICE_PATH, &uvm)) < 0)
@@ -340,8 +341,13 @@ lookup_devices(struct error *err, struct nvc_driver_info *info, const char *root
                 if ((has_uvm_tools = find_device_node(err, root, NV_UVM_TOOLS_DEVICE_PATH, &uvm_tools)) < 0)
                         return (-1);
         }
+        if (!(flags & OPT_NO_MODESET)) {
+                modeset.path = (char *)NV_MODESET_DEVICE_PATH;
+                modeset.id = makedev(NV_DEVICE_MAJOR, NV_MODESET_DEVICE_MINOR);
+                has_modeset = 1;
+        }
 
-        info->ndevs = (size_t)(1 + has_uvm + has_uvm_tools);
+        info->ndevs = (size_t)(1 + has_uvm + has_uvm_tools + has_modeset);
         info->devs = node = xcalloc(err, info->ndevs, sizeof(*info->devs));
         if (info->devs == NULL)
                 return (-1);
@@ -352,6 +358,8 @@ lookup_devices(struct error *err, struct nvc_driver_info *info, const char *root
                 *(++node) = uvm;
         if (has_uvm_tools)
                 *(++node) = uvm_tools;
+        if (has_modeset)
+                *(++node) = modeset;
 
         for (size_t i = 0; i < info->ndevs; ++i)
                 log_infof("listing device %s", info->devs[i].path);
