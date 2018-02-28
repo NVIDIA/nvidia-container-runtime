@@ -129,6 +129,7 @@ func main() {
 		doPrestart()
 		os.Exit(0)
 	case "poststart":
+		fallthrough
 	case "poststop":
 		os.Exit(0)
 	default:
