@@ -5,11 +5,17 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"os/exec"
+	"path/filepath"
 	"runtime"
 	"runtime/debug"
 	"strconv"
 	"strings"
 	"syscall"
+)
+
+const (
+	defaultPATH = "/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
 )
 
 var (
@@ -47,7 +53,38 @@ func capabilityToCLI(cap string) string {
 	return ""
 }
 
+// getCLIPath must be called after the chroot.
+func getCLIPath(config CLIConfig) string {
+	if config.Path != nil {
+		return *config.Path
+	}
+
+	if _, ok := os.LookupEnv("PATH"); !ok {
+		if err := os.Setenv("PATH", defaultPATH); err != nil {
+			log.Panicln("couldn't set PATH variable:", err)
+		}
+	}
+
+	path, err := exec.LookPath("nvidia-container-cli")
+	if err != nil {
+		log.Panicln("couldn't find binary nvidia-container-cli in", os.Getenv("PATH"), ":", err)
+	}
+	return path
+}
+
+// getRootfsPath returns an absolute path. We don't need to resolve symlinks for now.
+// Must be called *before* the chroot.
+func getRootfsPath(config containerConfig) string {
+	rootfs, err := filepath.Abs(config.Rootfs)
+	if err != nil {
+		log.Panicln(err)
+	}
+	return rootfs
+}
+
 func doPrestart() {
+	var err error
+
 	defer exit()
 	log.SetFlags(0)
 
@@ -61,7 +98,17 @@ func doPrestart() {
 		return
 	}
 
-	args := []string{cli.Path}
+	rootfs := getRootfsPath(container)
+	if cli.Root != nil {
+		if err := syscall.Chroot(*cli.Root); err != nil {
+			log.Panicf("couldn't chroot to %s: %s", *cli.Root, err)
+		}
+	}
+
+	args := []string{getCLIPath(cli)}
+	if cli.Root != nil {
+		args = append(args, fmt.Sprintf("--root=%s", *cli.Root))
+	}
 	if cli.LoadKmods {
 		args = append(args, "--load-kmods")
 	}
@@ -97,11 +144,11 @@ func doPrestart() {
 	}
 
 	args = append(args, fmt.Sprintf("--pid=%s", strconv.FormatUint(uint64(container.Pid), 10)))
-	args = append(args, container.Rootfs)
+	args = append(args, rootfs)
 
 	log.Printf("exec command: %v", args)
 	env := append(os.Environ(), cli.Environment...)
-	err := syscall.Exec(cli.Path, args, env)
+	err = syscall.Exec(args[0], args, env)
 	log.Panicln("exec failed:", err)
 }
 
