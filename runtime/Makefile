@@ -18,6 +18,8 @@ centos7: 17.12.1-centos7 17.12.0-centos7 17.09.1-centos7 17.09.0-centos7 17.06.2
 
 stretch: 17.12.1-stretch 17.12.0-stretch 17.09.1-stretch 17.09.0-stretch 17.06.2-stretch 17.03.2-stretch
 
+amzn1: 17.09.1-amzn1 17.06.2-amzn1 17.03.2-amzn1
+
 17.12.1-xenial:
 	$(DOCKER) build --build-arg RUNC_COMMIT="9f9c96235cc97674e935002fc3d78361b696a69e" \
                         --build-arg PKG_VERS="$(VERSION)+docker17.12.1" \
@@ -171,3 +173,24 @@ stretch: 17.12.1-stretch 17.12.0-stretch 17.09.1-stretch 17.09.0-stretch 17.06.2
                         --build-arg PKG_REV="$(PKG_REV)" \
                         -t nvidia-container-runtime:$@ -f Dockerfile.stretch .
 	$(DOCKER) run --rm -v $(DIST_DIR)/stretch:/dist:Z nvidia-container-runtime:$@
+
+17.09.1-amzn1:
+	$(DOCKER) build --build-arg RUNC_COMMIT="3f2f8b84a77f73d38244dd690525642a72156c64" \
+                        --build-arg PKG_VERS="$(VERSION)" \
+                        --build-arg PKG_REV="$(PKG_REV).docker17.09.1.amzn1" \
+                        -t nvidia-container-runtime:$@ -f Dockerfile.amzn1 .
+	$(DOCKER) run --rm -v $(DIST_DIR)/amzn1:/dist:Z nvidia-container-runtime:$@
+
+17.06.2-amzn1:
+	$(DOCKER) build --build-arg RUNC_COMMIT="810190ceaa507aa2727d7ae6f4790c76ec150bd2" \
+                        --build-arg PKG_VERS="$(VERSION)" \
+                        --build-arg PKG_REV="$(PKG_REV).docker17.06.2.amzn1" \
+                        -t nvidia-container-runtime:$@ -f Dockerfile.amzn1 .
+	$(DOCKER) run --rm -v $(DIST_DIR)/amzn1:/dist:Z nvidia-container-runtime:$@
+
+17.03.2-amzn1:
+	$(DOCKER) build --build-arg RUNC_COMMIT="54296cf40ad8143b62dbcaa1d90e520a2136ddfe" \
+                        --build-arg PKG_VERS="$(VERSION)" \
+                        --build-arg PKG_REV="$(PKG_REV).docker17.03.2.amzn1" \
+                        -t nvidia-container-runtime:$@ -f Dockerfile.amzn1 .
+	$(DOCKER) run --rm -v $(DIST_DIR)/amzn1:/dist:Z nvidia-container-runtime:$@

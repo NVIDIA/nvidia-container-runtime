@@ -10,7 +10,7 @@ DIST_DIR  := $(CURDIR)/../dist
 .NOTPARALLEL:
 .PHONY: all
 
-all: xenial centos7 stretch
+all: xenial centos7 stretch amzn1
 
 %: $(CURDIR)/Dockerfile.%
 	$(DOCKER) build --build-arg PKG_VERS="$(VERSION)" \

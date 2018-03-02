@@ -2,7 +2,7 @@
 
 .PHONY: all
 
-all: xenial centos7 stretch
+all: xenial centos7 stretch amzn1
 
 # Build all packages for a specific distribution.
 xenial: runtime-xenial hook-xenial
@@ -10,6 +10,8 @@ xenial: runtime-xenial hook-xenial
 centos7: runtime-centos7 hook-centos7
 
 stretch: runtime-stretch hook-stretch
+
+amzn1: runtime-amzn1 hook-amzn1
 
 base-%: $(CURDIR)/base/Dockerfile.%
 	make -C $(CURDIR)/base $*
@@ -29,3 +31,6 @@ runtime-%: base-% $(CURDIR)/runtime/Dockerfile.%
 
 %-runtime-centos7: base-centos7
 	make -C $(CURDIR)/runtime $*-centos7
+
+%-runtime-amzn1: base-amzn1
+	make -C $(CURDIR)/runtime $*-amzn1
