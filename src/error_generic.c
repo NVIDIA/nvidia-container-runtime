@@ -45,7 +45,7 @@ error_vset(struct error *err, int errcode, const char *errmsg, const char *fmt, 
                 goto fail;
         }
         err->msg[strcspn(err->msg, "\n")] = '\0';
-        strlower(strrchr(err->msg, ':'));
+        str_lower(strrchr(err->msg, ':'));
         rv = 0;
 
  fail:

@@ -91,7 +91,7 @@ lookup_section(struct elftool *ctx, GElf_Shdr *shdr, Elf_Scn **scn, Elf64_Word t
                            goto fail;
                    if (shdr->sh_type == type && name == NULL)
                            return (0);
-                   else if (shdr->sh_type == type && !strcmp(shname, name))
+                   else if (shdr->sh_type == type && str_equal(shname, name))
                            return (0);
         }
         error_setx(ctx->err, "elf section 0x%x missing: %s", type, ctx->path);
@@ -122,7 +122,7 @@ elftool_has_dependency(struct elftool *ctx, const char *lib)
                 if (dyn.d_tag == DT_NEEDED) {
                         if ((dep = elf_strptr(ctx->elf, shdr.sh_link, dyn.d_un.d_ptr)) == NULL)
                                 goto fail;
-                        if (!strpcmp(dep, lib))
+                        if (str_has_prefix(dep, lib))
                                 return (true);
                 }
         }

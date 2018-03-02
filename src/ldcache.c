@@ -126,11 +126,11 @@ ldcache_resolve(struct ldcache *ctx, uint32_t arch, const char *root, const char
                         continue;
 
                 for (size_t j = 0; j < size; ++j) {
-                        if (strpcmp(key, libs[j]))
+                        if (!str_has_prefix(key, libs[j]))
                                 continue;
                         if (path_resolve(ctx->err, path, root, value) < 0)
                                 return (-1);
-                        if (paths[j] != NULL && !strcmp(paths[j], path))
+                        if (paths[j] != NULL && str_equal(paths[j], path))
                                 continue;
                         if ((override = select(ctx->err, select_ctx, root, paths[j], path)) < 0)
                                 return (-1);

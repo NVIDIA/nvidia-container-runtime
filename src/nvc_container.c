@@ -68,11 +68,11 @@ cgroup_mount(char *line, char *prefix, const char *subsys)
                 return (NULL);
         if (*root == '\0' || *mount == '\0' || *fstype == '\0' || *substr == '\0')
                 return (NULL);
-        if (strcmp(fstype, "cgroup"))
+        if (!str_equal(fstype, "cgroup"))
                 return (NULL);
         if (strstr(substr, subsys) == NULL)
                 return (NULL);
-        if (strlen(root) >= PATH_MAX || !strpcmp(root, "/.."))
+        if (strlen(root) >= PATH_MAX || str_has_prefix(root, "/.."))
                 return (NULL);
         strcpy(prefix, root);
 
@@ -94,9 +94,9 @@ cgroup_root(char *line, char *prefix, const char *subsys)
                 return (NULL);
         if (strstr(substr, subsys) == NULL)
                 return (NULL);
-        if (strlen(root) >= PATH_MAX || !strpcmp(root, "/.."))
+        if (strlen(root) >= PATH_MAX || str_has_prefix(root, "/.."))
                 return (NULL);
-        if (strcmp(prefix, "/") && !strpcmp(root, prefix))
+        if (!str_equal(prefix, "/") && str_has_prefix(root, prefix))
                 root += strlen(prefix);
 
         return (root);
@@ -260,7 +260,7 @@ copy_config(struct error *err, struct nvc_container *cnt, const struct nvc_conta
                                                 goto fail;
                                         if ((ret = file_exists(err, path)) < 0)
                                                 goto fail;
-                                        if (ret && strcmp(path, tmp))
+                                        if (ret && !str_equal(path, tmp))
                                                 libs32_dir = USR_LIB32_ALT_DIR;
                                 }
                         }
@@ -301,8 +301,8 @@ nvc_container_new(struct nvc_context *ctx, const struct nvc_container_config *cf
 
         if (validate_context(ctx) < 0)
                 return (NULL);
-        if (validate_args(ctx, cfg != NULL && cfg->pid > 0 && cfg->rootfs != NULL && !strempty(cfg->rootfs) && cfg->rootfs[0] == '/' &&
-            !strempty(cfg->bins_dir) && !strempty(cfg->libs_dir) && !strempty(cfg->libs32_dir) && !strempty(cfg->ldconfig)) < 0)
+        if (validate_args(ctx, cfg != NULL && cfg->pid > 0 && cfg->rootfs != NULL && !str_empty(cfg->rootfs) && cfg->rootfs[0] == '/' &&
+            !str_empty(cfg->bins_dir) && !str_empty(cfg->libs_dir) && !str_empty(cfg->libs32_dir) && !str_empty(cfg->ldconfig)) < 0)
                 return (NULL);
         if (opts == NULL)
                 opts = default_container_opts;

@@ -145,7 +145,7 @@ setup_rpc_service(struct driver *ctx, const char *root, uid_t uid, gid_t gid, pi
         if (getppid() != ppid)
                 kill(getpid(), SIGTERM);
 
-        if (strcmp(root, "/")) {
+        if (!str_equal(root, "/")) {
                 if (chroot(root) < 0 || chdir("/") < 0) {
                         error_set(ctx->err, "change root failed");
                         goto fail;

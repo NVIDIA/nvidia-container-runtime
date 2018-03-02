@@ -131,46 +131,58 @@ log_pipe_output(struct error *err, int fd[2])
 }
 
 void
-strlower(char *str)
+str_lower(char *str)
 {
         for (char *p = str; *p != '\0'; ++p)
                 *p = (char)tolower(*p);
 }
 
-int
-strpcmp(const char *s1, const char *s2)
+bool
+str_equal(const char *s1, const char *s2)
 {
-        return (strncmp(s1, s2, strlen(s2)));
-}
-
-int
-strrcmp(const char *s1, const char *s2)
-{
-        size_t l1, l2;
-
-        l1 = strlen(s1);
-        l2 = strlen(s2);
-        return ((l1 >= l2) ? strcmp(s1 + l1 - l2, s2) : -1);
+        return (!strcmp(s1, s2));
 }
 
 bool
-strempty(const char *str)
+str_case_equal(const char *s1, const char *s2)
+{
+        return (!strcasecmp(s1, s2));
+}
+
+bool
+str_has_prefix(const char *str, const char *prefix)
+{
+        return (!strncmp(str, prefix, strlen(prefix)));
+}
+
+bool
+str_has_suffix(const char *str, const char *suffix)
+{
+        size_t len, slen;
+
+        len = strlen(str);
+        slen = strlen(suffix);
+        return ((len >= slen) ? str_equal(str + len - slen, suffix) : false);
+}
+
+bool
+str_empty(const char *str)
 {
         return (str != NULL && *str == '\0');
 }
 
 bool
-strmatch(const char *str, const char * const arr[], size_t size)
+str_array_match(const char *str, const char * const arr[], size_t size)
 {
         for (size_t i = 0; i < size; ++i) {
-                if (!strpcmp(str, arr[i]))
+                if (str_has_prefix(str, arr[i]))
                         return (true);
         }
         return (false);
 }
 
 int
-strjoin(struct error *err, char **s1, const char *s2, const char *sep)
+str_join(struct error *err, char **s1, const char *s2, const char *sep)
 {
         size_t size = 1;
         char *buf;
@@ -192,7 +204,7 @@ strjoin(struct error *err, char **s1, const char *s2, const char *sep)
 }
 
 int
-strtopid(struct error *err, const char *str, pid_t *pid)
+str_to_pid(struct error *err, const char *str, pid_t *pid)
 {
         char *ptr;
         intmax_t n;
@@ -215,7 +227,7 @@ strtopid(struct error *err, const char *str, pid_t *pid)
 }
 
 int
-strtougid(struct error *err, char *str, uid_t *uid, gid_t *gid)
+str_to_ugid(struct error *err, char *str, uid_t *uid, gid_t *gid)
 {
         char *ptr;
         uintmax_t n;
@@ -284,7 +296,7 @@ strtougid(struct error *err, char *str, uid_t *uid, gid_t *gid)
 }
 
 int
-nsenterat(struct error *err, int fd, int nstype)
+ns_enter_at(struct error *err, int fd, int nstype)
 {
         if (setns(fd, nstype) < 0) {
                 error_set(err, "namespace association failed");
@@ -294,7 +306,7 @@ nsenterat(struct error *err, int fd, int nstype)
 }
 
 int
-nsenter(struct error *err, const char *path, int nstype)
+ns_enter(struct error *err, const char *path, int nstype)
 {
         int fd;
         int rv = -1;
@@ -651,7 +663,7 @@ file_read_text(struct error *err, const char *path, char **txt)
         *txt = NULL;
         while ((n = fread(buf, 1, sizeof(buf), fs)) > 0) {
                 buf[n] = '\0';
-                if (strjoin(err, txt, buf, "") < 0)
+                if (str_join(err, txt, buf, "") < 0)
                         goto fail;
         }
         if (feof(fs))
@@ -696,7 +708,7 @@ path_append(struct error *err, char *buf, const char *path)
         char *end;
         int n;
 
-        if (strempty(path))
+        if (str_empty(path))
                 return (0);
 
         len = strlen(buf);
@@ -763,9 +775,9 @@ do_path_resolve(struct error *err, bool full, char *buf, const char *root, const
                 goto fail;
 
         while ((file = strsep(&ptr, "/")) != NULL) {
-                if (*file == '\0' || !strcmp(file, "."))
+                if (*file == '\0' || str_equal(file, "."))
                         continue;
-                else if (!strcmp(file, "..")) {
+                else if (str_equal(file, "..")) {
                         /*
                          * Remove the last component from the resolved path. If we are not below
                          * non-existent components, restore the previous file descriptor as well.

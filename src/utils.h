@@ -43,17 +43,19 @@ int  log_pipe_output(struct error *, int[2]);
 #define log_warnf(fmt, ...) log_write('W', __FILE__, __LINE__, fmt, __VA_ARGS__)
 #define log_errf(fmt, ...)  log_write('E', __FILE__, __LINE__, fmt, __VA_ARGS__)
 
-void strlower(char *);
-int  strpcmp(const char *, const char *);
-int  strrcmp(const char *, const char *);
-bool strempty(const char *);
-bool strmatch(const char *, const char * const [], size_t);
-int  strtopid(struct error *, const char *, pid_t *);
-int  strtougid(struct error *, char *, uid_t *, gid_t *);
-int  strjoin(struct error *, char **, const char *, const char *);
+void str_lower(char *);
+bool str_equal(const char *, const char *);
+bool str_case_equal(const char *, const char *);
+bool str_has_prefix(const char *, const char *);
+bool str_has_suffix(const char *, const char *);
+bool str_empty(const char *);
+bool str_array_match(const char *, const char * const [], size_t);
+int  str_to_pid(struct error *, const char *, pid_t *);
+int  str_to_ugid(struct error *, char *, uid_t *, gid_t *);
+int  str_join(struct error *, char **, const char *, const char *);
 
-int nsenterat(struct error *, int, int);
-int nsenter(struct error *, const char *, int);
+int ns_enter_at(struct error *, int, int);
+int ns_enter(struct error *, const char *, int);
 
 char **array_new(struct error *, size_t);
 void array_free(char *[], size_t);

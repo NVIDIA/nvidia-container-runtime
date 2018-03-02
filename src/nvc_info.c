@@ -126,15 +126,15 @@ select_libraries(struct error *err, void *ptr, const char *root, const char *ori
                 return (-1);
 
         lib = basename(alt_path);
-        if (!strpcmp(lib, "libnvidia-tls.so")) {
+        if (str_has_prefix(lib, "libnvidia-tls.so")) {
                 /* Only choose the TLS library using the new ABI (kernel 2.3.99). */
                 if ((rv = elftool_has_abi(&et, (uint32_t[3]){0x02, 0x03, 0x63})) != true)
                         goto done;
         }
         /* Check the driver version. */
-        if ((rv = !strrcmp(lib, info->nvrm_version)) == false)
+        if ((rv = str_has_suffix(lib, info->nvrm_version)) == false)
                 goto done;
-        if (strmatch(lib, graphics_libs_compat, nitems(graphics_libs_compat))) {
+        if (str_array_match(lib, graphics_libs_compat, nitems(graphics_libs_compat))) {
                 /* Only choose OpenGL/EGL libraries issued by NVIDIA. */
                 if ((rv = elftool_has_dependency(&et, "libnvidia-glcore.so")) != false)
                         goto done;
@@ -394,9 +394,9 @@ lookup_ipcs(struct error *err, struct nvc_driver_info *info, const char *root, i
 bool
 match_binary_flags(const char *bin, int32_t flags)
 {
-        if ((flags & OPT_UTILITY_BINS) && strmatch(bin, utility_bins, nitems(utility_bins)))
+        if ((flags & OPT_UTILITY_BINS) && str_array_match(bin, utility_bins, nitems(utility_bins)))
                 return (true);
-        if ((flags & OPT_COMPUTE_BINS) && strmatch(bin, compute_bins, nitems(compute_bins)))
+        if ((flags & OPT_COMPUTE_BINS) && str_array_match(bin, compute_bins, nitems(compute_bins)))
                 return (true);
         return (false);
 }
@@ -404,15 +404,15 @@ match_binary_flags(const char *bin, int32_t flags)
 bool
 match_library_flags(const char *lib, int32_t flags)
 {
-        if ((flags & OPT_UTILITY_LIBS) && strmatch(lib, utility_libs, nitems(utility_libs)))
+        if ((flags & OPT_UTILITY_LIBS) && str_array_match(lib, utility_libs, nitems(utility_libs)))
                 return (true);
-        if ((flags & OPT_COMPUTE_LIBS) && strmatch(lib, compute_libs, nitems(compute_libs)))
+        if ((flags & OPT_COMPUTE_LIBS) && str_array_match(lib, compute_libs, nitems(compute_libs)))
                 return (true);
-        if ((flags & OPT_VIDEO_LIBS) && strmatch(lib, video_libs, nitems(video_libs)))
+        if ((flags & OPT_VIDEO_LIBS) && str_array_match(lib, video_libs, nitems(video_libs)))
                 return (true);
-        if ((flags & OPT_GRAPHICS_LIBS) && (strmatch(lib, graphics_libs, nitems(graphics_libs)) ||
-            strmatch(lib, graphics_libs_glvnd, nitems(graphics_libs_glvnd)) ||
-            strmatch(lib, graphics_libs_compat, nitems(graphics_libs_compat))))
+        if ((flags & OPT_GRAPHICS_LIBS) && (str_array_match(lib, graphics_libs, nitems(graphics_libs)) ||
+            str_array_match(lib, graphics_libs_glvnd, nitems(graphics_libs_glvnd)) ||
+            str_array_match(lib, graphics_libs_compat, nitems(graphics_libs_compat))))
                 return (true);
         return (false);
 }

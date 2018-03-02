@@ -328,7 +328,7 @@ mount_procfs_gpu(struct error *err, const char *root, const struct nvc_container
 static void
 unmount(const char *path)
 {
-        if (path == NULL || strempty(path))
+        if (path == NULL || str_empty(path))
                 return;
         umount2(path, MNT_DETACH);
         file_remove(NULL, path);
@@ -388,11 +388,11 @@ symlink_libraries(struct error *err, const struct nvc_container *cnt, const char
 
         for (size_t i = 0; i < size; ++i) {
                 lib = basename(paths[i]);
-                if (!strpcmp(lib, "libcuda.so")) {
+                if (str_has_prefix(lib, "libcuda.so")) {
                         /* XXX Many applications wrongly assume that libcuda.so exists (e.g. with dlopen). */
                         if (symlink_library(err, paths[i], lib, "libcuda.so", cnt->uid, cnt->gid) < 0)
                                 return (-1);
-                } else if (!strpcmp(lib, "libGLX_nvidia.so")) {
+                } else if (str_has_prefix(lib, "libGLX_nvidia.so")) {
                         /* XXX GLVND requires this symlink for indirect GLX support. */
                         if (symlink_library(err, paths[i], lib, "libGLX_indirect.so.0", cnt->uid, cnt->gid) < 0)
                                 return (-1);
@@ -413,7 +413,7 @@ nvc_driver_mount(struct nvc_context *ctx, const struct nvc_container *cnt, const
         if (validate_args(ctx, cnt != NULL && info != NULL) < 0)
                 return (-1);
 
-        if (nsenter(&ctx->err, cnt->mnt_ns, CLONE_NEWNS) < 0)
+        if (ns_enter(&ctx->err, cnt->mnt_ns, CLONE_NEWNS) < 0)
                 return (-1);
 
         nmnt = 2 + info->nbins + info->nlibs + info->nlibs32 + info->nipcs + info->ndevs;
@@ -453,7 +453,7 @@ nvc_driver_mount(struct nvc_context *ctx, const struct nvc_container *cnt, const
         /* IPC mounts */
         for (size_t i = 0; i < info->nipcs; ++i) {
                 /* XXX Only utility libraries require persistenced IPC, everything else is compute only. */
-                if (!strrcmp(NV_PERSISTENCED_SOCKET, info->ipcs[i])) {
+                if (str_has_suffix(NV_PERSISTENCED_SOCKET, info->ipcs[i])) {
                         if (!(cnt->flags & OPT_UTILITY_LIBS))
                                 continue;
                 } else if (!(cnt->flags & OPT_COMPUTE_LIBS))
@@ -484,9 +484,9 @@ nvc_driver_mount(struct nvc_context *ctx, const struct nvc_container *cnt, const
         if (rv < 0) {
                 for (size_t i = 0; mnt != NULL && i < nmnt; ++i)
                         unmount(mnt[i]);
-                assert_func(nsenterat(NULL, ctx->mnt_ns, CLONE_NEWNS));
+                assert_func(ns_enter_at(NULL, ctx->mnt_ns, CLONE_NEWNS));
         } else {
-                rv = nsenterat(&ctx->err, ctx->mnt_ns, CLONE_NEWNS);
+                rv = ns_enter_at(&ctx->err, ctx->mnt_ns, CLONE_NEWNS);
         }
 
         array_free((char **)mnt, nmnt);
@@ -505,7 +505,7 @@ nvc_device_mount(struct nvc_context *ctx, const struct nvc_container *cnt, const
         if (validate_args(ctx, cnt != NULL && dev != NULL) < 0)
                 return (-1);
 
-        if (nsenter(&ctx->err, cnt->mnt_ns, CLONE_NEWNS) < 0)
+        if (ns_enter(&ctx->err, cnt->mnt_ns, CLONE_NEWNS) < 0)
                 return (-1);
 
         if (!(cnt->flags & OPT_NO_DEVBIND)) {
@@ -528,9 +528,9 @@ nvc_device_mount(struct nvc_context *ctx, const struct nvc_container *cnt, const
         if (rv < 0) {
                 unmount(proc_mnt);
                 unmount(dev_mnt);
-                assert_func(nsenterat(NULL, ctx->mnt_ns, CLONE_NEWNS));
+                assert_func(ns_enter_at(NULL, ctx->mnt_ns, CLONE_NEWNS));
         } else {
-                rv = nsenterat(&ctx->err, ctx->mnt_ns, CLONE_NEWNS);
+                rv = ns_enter_at(&ctx->err, ctx->mnt_ns, CLONE_NEWNS);
         }
 
         free(proc_mnt);

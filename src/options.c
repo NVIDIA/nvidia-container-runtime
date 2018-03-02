@@ -30,7 +30,7 @@ options_parse(struct error *err, const char *str, const struct option *opts, siz
                 if (*opt == '\0')
                         continue;
                 for (i = 0; i < nopts; ++i) {
-                        if (!strcmp(opt, opts[i].name)) {
+                        if (str_equal(opt, opts[i].name)) {
                                 flags |= opts[i].value;
                                 break;
                         }

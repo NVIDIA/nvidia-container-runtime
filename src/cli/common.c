@@ -18,7 +18,7 @@ select_devices(struct error *err, char *devs, const struct nvc_device *selected[
         while ((gpu = strsep(&devs, ",")) != NULL) {
                 if (*gpu == '\0')
                         continue;
-                if (!strcasecmp(gpu, "all")) {
+                if (str_case_equal(gpu, "all")) {
                         for (i = 0; i < size; ++i)
                                 selected[i] = &available[i];
                         break;

@@ -43,7 +43,7 @@ secure_mode(void)
         char *s;
 
         s = secure_getenv("NVC_INSECURE_MODE");
-        return (s == NULL || !strcmp(s, "0") || !strcasecmp(s, "false") || !strcasecmp(s, "no"));
+        return (s == NULL || str_equal(s, "0") || str_case_equal(s, "false") || str_case_equal(s, "no"));
 }
 
 static pid_t
@@ -133,7 +133,7 @@ change_rootfs(struct error *err, const char *rootfs, bool mount_proc, bool *drop
          * restricted from setting supplementary groups.
          */
         file_read_line(NULL, PROC_SETGROUPS_PATH(PROC_SELF), buf, sizeof(buf));
-        *drop_groups = strpcmp(buf, "deny");
+        *drop_groups = !str_has_prefix(buf, "deny");
 
         /* Hide sensitive mountpoints. */
         for (size_t i = mount_proc; i < nitems(mounts); ++i) {
@@ -335,7 +335,7 @@ nvc_ldcache_update(struct nvc_context *ctx, const struct nvc_container *cnt)
         if (child == 0) {
                 prctl(PR_SET_NAME, (unsigned long)"nvc:[ldconfig]", 0, 0, 0);
 
-                if (nsenter(&ctx->err, cnt->mnt_ns, CLONE_NEWNS) < 0)
+                if (ns_enter(&ctx->err, cnt->mnt_ns, CLONE_NEWNS) < 0)
                         goto fail;
                 if (ajust_capabilities(&ctx->err, cnt->uid, host_ldconfig) < 0)
                         goto fail;

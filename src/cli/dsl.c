@@ -103,7 +103,7 @@ evaluate_rule(char *buf, char *expr, void *ctx, const struct dsl_rule rules[], s
 
         /* Lookup the rule and evaluate it. */
         for (i = 0; i < size; ++i) {
-                if (!strcasecmp(expr, rules[i].name)) {
+                if (str_case_equal(expr, rules[i].name)) {
                         if ((ret = rules[i].func(ctx, op->cmp, val)) == false) {
                                 /* Save the expression formatted for error reporting. */
                                 if (snprintf(buf, EXPR_MAX, "%s %s %s", expr, op->str, val) >= EXPR_MAX)

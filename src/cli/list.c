@@ -36,7 +36,7 @@ list_parser(int key, char *arg, struct argp_state *state)
 
         switch (key) {
         case 'd':
-                if (strjoin(&err, &ctx->devices, arg, ",") < 0)
+                if (str_join(&err, &ctx->devices, arg, ",") < 0)
                         goto fatal;
                 break;
         case 'l':

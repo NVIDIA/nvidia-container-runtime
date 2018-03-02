@@ -66,7 +66,7 @@ static const struct command *
 lookup_command(struct argp_state *state)
 {
         for (size_t i = 0; i < nitems(commands); ++i) {
-                if (!strcmp(state->argv[0], commands[i].name)) {
+                if (str_equal(state->argv[0], commands[i].name)) {
                         state->argv[0] = alloca(strlen(state->name) + strlen(commands[i].name) + 2);
                         sprintf(state->argv[0], "%s %s", state->name, commands[i].name);
                         argp_parse(commands[i].argp, state->argc, state->argv, 0, NULL, state->input);
@@ -89,12 +89,12 @@ parser(int key, char *arg, struct argp_state *state)
                 break;
         case 'k':
                 ctx->load_kmods = true;
-                if (strjoin(&err, &ctx->init_flags, "load-kmods", " ") < 0)
+                if (str_join(&err, &ctx->init_flags, "load-kmods", " ") < 0)
                         goto fatal;
                 break;
         case 'u':
                 if (arg != NULL) {
-                        if (strtougid(&err, arg, &ctx->uid, &ctx->gid) < 0)
+                        if (str_to_ugid(&err, arg, &ctx->uid, &ctx->gid) < 0)
                                 goto fatal;
                 } else {
                         ctx->uid = geteuid();

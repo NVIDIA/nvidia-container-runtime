@@ -113,7 +113,7 @@ init_within_userns(struct error *err)
 
         if (file_read_line(err, PROC_UID_MAP_PATH(PROC_SELF), buf, sizeof(buf)) < 0)
                 return ((err->code == ENOENT) ? false : -1); /* User namespace unsupported. */
-        if (strempty(buf))
+        if (str_empty(buf))
                 return (true); /* User namespace uninitialized. */
         if (sscanf(buf, "%"PRIu32" %"PRIu32" %"PRIu32, &start, &pstart, &len) < 3) {
                 error_setx(err, "invalid map file: %s", PROC_UID_MAP_PATH(PROC_SELF));
@@ -124,7 +124,7 @@ init_within_userns(struct error *err)
 
         if (file_read_line(err, PROC_GID_MAP_PATH(PROC_SELF), buf, sizeof(buf)) < 0)
                 return ((err->code == ENOENT) ? false : -1);
-        if (strempty(buf))
+        if (str_empty(buf))
                 return (true);
         if (sscanf(buf, "%"PRIu32" %"PRIu32" %"PRIu32, &start, &pstart, &len) < 3) {
                 error_setx(err, "invalid map file: %s", PROC_GID_MAP_PATH(PROC_SELF));
@@ -135,7 +135,7 @@ init_within_userns(struct error *err)
 
         if (file_read_line(err, PROC_SETGROUPS_PATH(PROC_SELF), buf, sizeof(buf)) < 0)
                 return ((err->code == ENOENT) ? false : -1);
-        if (!strpcmp(buf, "deny"))
+        if (str_has_prefix(buf, "deny"))
                 return (true);
 
         return (false);
@@ -263,7 +263,7 @@ nvc_init(struct nvc_context *ctx, const struct nvc_config *cfg, const char *opts
                 return (0);
         if (cfg == NULL)
                 cfg = &(struct nvc_config){NULL, NULL, (uid_t)-1, (gid_t)-1};
-        if (validate_args(ctx, !strempty(cfg->ldcache) && !strempty(cfg->root)) < 0)
+        if (validate_args(ctx, !str_empty(cfg->ldcache) && !str_empty(cfg->root)) < 0)
                 return (-1);
         if (opts == NULL)
                 opts = default_library_opts;

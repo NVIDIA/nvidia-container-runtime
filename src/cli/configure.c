@@ -56,11 +56,11 @@ configure_parser(int key, char *arg, struct argp_state *state)
 
         switch (key) {
         case 'p':
-                if (strtopid(&err, arg, &ctx->pid) < 0)
+                if (str_to_pid(&err, arg, &ctx->pid) < 0)
                         goto fatal;
                 break;
         case 'd':
-                if (strjoin(&err, &ctx->devices, arg, ",") < 0)
+                if (str_join(&err, &ctx->devices, arg, ",") < 0)
                         goto fatal;
                 break;
         case 'r':
@@ -74,41 +74,41 @@ configure_parser(int key, char *arg, struct argp_state *state)
                 ctx->ldconfig = arg;
                 break;
         case 'c':
-                if (strjoin(&err, &ctx->container_flags, "compute", " ") < 0)
+                if (str_join(&err, &ctx->container_flags, "compute", " ") < 0)
                         goto fatal;
                 break;
         case 'u':
-                if (strjoin(&err, &ctx->container_flags, "utility", " ") < 0)
+                if (str_join(&err, &ctx->container_flags, "utility", " ") < 0)
                         goto fatal;
                 break;
         case 'v':
-                if (strjoin(&err, &ctx->container_flags, "video", " ") < 0)
+                if (str_join(&err, &ctx->container_flags, "video", " ") < 0)
                         goto fatal;
                 break;
         case 'g':
-                if (strjoin(&err, &ctx->container_flags, "graphics", " ") < 0)
+                if (str_join(&err, &ctx->container_flags, "graphics", " ") < 0)
                         goto fatal;
                 break;
         case 'D':
-                if (strjoin(&err, &ctx->container_flags, "display", " ") < 0)
+                if (str_join(&err, &ctx->container_flags, "display", " ") < 0)
                         goto fatal;
                 break;
         case 0x80:
-                if (strjoin(&err, &ctx->container_flags, "compat32", " ") < 0)
+                if (str_join(&err, &ctx->container_flags, "compat32", " ") < 0)
                         goto fatal;
                 break;
         case 0x81:
-                if (strjoin(&err, &ctx->container_flags, "no-cgroups", " ") < 0)
+                if (str_join(&err, &ctx->container_flags, "no-cgroups", " ") < 0)
                         goto fatal;
                 break;
         case 0x82:
-                if (strjoin(&err, &ctx->container_flags, "no-devbind", " ") < 0)
+                if (str_join(&err, &ctx->container_flags, "no-devbind", " ") < 0)
                         goto fatal;
                 break;
         case ARGP_KEY_ARG:
                 if (state->arg_num > 0)
                         argp_usage(state);
-                if (arg[0] != '/' || !strcmp(arg, "/")) {
+                if (arg[0] != '/' || str_equal(arg, "/")) {
                         error_setx(&err, "invalid rootfs directory");
                         goto fatal;
                 }
@@ -116,11 +116,11 @@ configure_parser(int key, char *arg, struct argp_state *state)
                 break;
         case ARGP_KEY_SUCCESS:
                 if (ctx->pid > 0) {
-                        if (strjoin(&err, &ctx->container_flags, "supervised", " ") < 0)
+                        if (str_join(&err, &ctx->container_flags, "supervised", " ") < 0)
                                 goto fatal;
                 } else {
                         ctx->pid = getppid();
-                        if (strjoin(&err, &ctx->container_flags, "standalone", " ") < 0)
+                        if (str_join(&err, &ctx->container_flags, "standalone", " ") < 0)
                                 goto fatal;
                 }
                 break;
