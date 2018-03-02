@@ -53,7 +53,6 @@ func capabilityToCLI(cap string) string {
 	return ""
 }
 
-// getCLIPath must be called after the chroot.
 func getCLIPath(config CLIConfig) string {
 	if config.Path != nil {
 		return *config.Path
@@ -73,7 +72,6 @@ func getCLIPath(config CLIConfig) string {
 }
 
 // getRootfsPath returns an absolute path. We don't need to resolve symlinks for now.
-// Must be called *before* the chroot.
 func getRootfsPath(config containerConfig) string {
 	rootfs, err := filepath.Abs(config.Rootfs)
 	if err != nil {
@@ -99,11 +97,6 @@ func doPrestart() {
 	}
 
 	rootfs := getRootfsPath(container)
-	if cli.Root != nil {
-		if err := syscall.Chroot(*cli.Root); err != nil {
-			log.Panicf("couldn't chroot to %s: %s", *cli.Root, err)
-		}
-	}
 
 	args := []string{getCLIPath(cli)}
 	if cli.Root != nil {

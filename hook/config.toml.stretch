@@ -2,7 +2,7 @@ disable-require = false
 #swarm-resource = "DOCKER_RESOURCE_GPU"
 
 [nvidia-container-cli]
-#root = "/run/nvidia"
+#root = "/run/nvidia/driver"
 #path = "/usr/bin/nvidia-container-cli"
 environment = []
 #debug = "/var/log/nvidia-container-runtime-hook.log"
