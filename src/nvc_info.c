@@ -475,14 +475,16 @@ nvc_device_info_new(struct nvc_context *ctx, const char *opts)
         struct nvc_device *gpu;
         unsigned int n, minor;
         struct driver_device *dev;
-        int32_t flags;
+        /*int32_t flags;*/
 
         if (validate_context(ctx) < 0)
                 return (NULL);
         if (opts == NULL)
                 opts = default_device_opts;
+        /*
         if ((flags = options_parse(&ctx->err, opts, device_opts, nitems(device_opts))) < 0)
                 return (NULL);
+        */
 
         log_infof("requesting device information with '%s'", opts);
         if ((info = xcalloc(&ctx->err, 1, sizeof(*info))) == NULL)

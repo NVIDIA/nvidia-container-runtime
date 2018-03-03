@@ -45,7 +45,7 @@ static const struct option driver_opts[] = {
 static const char * const default_driver_opts = "";
 
 /* Device options */
-static const struct option device_opts[] = {};
+/* static const struct option device_opts[] = {}; */
 
 static const char * const default_device_opts = "";
 
