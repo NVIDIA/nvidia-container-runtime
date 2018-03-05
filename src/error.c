@@ -76,9 +76,30 @@ error_set_rpc(struct error *err, int errcode, const char *fmt, ...)
         va_list ap;
         int rv;
 
-        errmsg = clnt_sperrno((enum clnt_stat)errcode);
-        if (!strncmp(errmsg, "RPC: ", 5))
-                errmsg += 5;
+        switch (errcode) {
+        case RPC_CANTSEND:
+        case RPC_CANTRECV:
+        case RPC_CANTENCODEARGS:
+        case RPC_CANTDECODERES:
+        case RPC_CANTDECODEARGS:
+                errmsg = "failed to process request";
+                break;
+        case RPC_VERSMISMATCH:
+        case RPC_PROGUNAVAIL:
+        case RPC_PROGVERSMISMATCH:
+        case RPC_PROCUNAVAIL:
+        case RPC_UNKNOWNHOST:
+        case RPC_UNKNOWNPROTO:
+        case RPC_PMAPFAILURE:
+        case RPC_PROGNOTREGISTERED:
+                errmsg = "failed to perform handshake";
+                break;
+        default:
+                errmsg = clnt_sperrno((enum clnt_stat)errcode);
+                if (!strncmp(errmsg, "RPC: ", 5))
+                        errmsg += 5;
+                break;
+        }
         va_start(ap, fmt);
         rv = error_vset(err, errcode, errmsg, fmt, ap);
         va_end(ap);
