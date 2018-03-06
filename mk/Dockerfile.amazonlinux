@@ -1,12 +1,13 @@
-ARG IMAGESPEC=centos:7
+ARG IMAGESPEC=amazonlinux:2
 FROM ${IMAGESPEC}
-ARG IMAGESPEC=centos:7
+ARG IMAGESPEC=amazonlinux:2
 
 SHELL ["/bin/bash", "-c"]
 
 COPY mk/cuda.repo /etc/yum.repos.d/
 
-RUN distrib=rhel${IMAGESPEC##*:} && \
+# XXX: CUDA doesn't officially support Amazon Linux, we just need the driver headers though
+RUN distrib=rhel7 && \
     arch=$(uname -m) && \
     echo $distrib > /etc/yum/vars/distrib && \
     curl -fsSL https://developer.download.nvidia.com/compute/cuda/repos/${distrib}/${arch}/7fa2af80.pub > /etc/pki/rpm-gpg/RPM-GPG-KEY-NVIDIA && \

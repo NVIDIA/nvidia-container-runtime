@@ -303,12 +303,13 @@ rpm: all
 
 docker-%: SHELL:=/bin/bash
 docker-%:
-	$(MKDIR) -p $(DIST_DIR)
-	image=$* && $(DOCKER) build --network=host \
-                                --build-arg IMAGESPEC=$* \
-                                --build-arg USERSPEC=$(UID):$(GID) \
-                                --build-arg WITH_LIBELF=$(WITH_LIBELF) \
-                                --build-arg WITH_TIRPC=$(WITH_TIRPC) \
-                                --build-arg WITH_SECCOMP=$(WITH_SECCOMP) \
-                                -f $(MAKE_DIR)/Dockerfile.$${image%%:*} -t $(LIB_NAME):$${image/:} .
-	image=$* && $(DOCKER) run --rm -v $(DIST_DIR):/mnt:Z -e TAG -e DISTRIB -e SECTION $(LIB_NAME):$${image/:}
+	image=$* ;\
+	$(MKDIR) -p $(DIST_DIR)/$${image/:} ;\
+	$(DOCKER) build --network=host \
+                    --build-arg IMAGESPEC=$* \
+                    --build-arg USERSPEC=$(UID):$(GID) \
+                    --build-arg WITH_LIBELF=$(WITH_LIBELF) \
+                    --build-arg WITH_TIRPC=$(WITH_TIRPC) \
+                    --build-arg WITH_SECCOMP=$(WITH_SECCOMP) \
+                    -f $(MAKE_DIR)/Dockerfile.$${image%%:*} -t $(LIB_NAME):$${image/:} . ;\
+	$(DOCKER) run --rm -v $(DIST_DIR)/$${image/:}:/mnt:Z -e TAG -e DISTRIB -e SECTION $(LIB_NAME):$${image/:}
