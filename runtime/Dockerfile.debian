@@ -1,4 +1,5 @@
-FROM nvidia/build-base:stretch
+ARG VERSION_ID
+FROM nvidia/base/debian:${VERSION_ID}
 
 # runc dependencies
 RUN apt-get update && apt-get install -y \

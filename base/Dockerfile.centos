@@ -1,14 +1,12 @@
-FROM ubuntu:xenial
+ARG VERSION_ID
+FROM centos:${VERSION_ID}
 
-RUN apt-get update && apt-get install -y --no-install-recommends \
+RUN yum install -y \
+        ca-certificates \
         wget \
-	ca-certificates \
 	git \
-	build-essential \
-	dh-make \
-        fakeroot \
-        devscripts && \
-    rm -rf /var/lib/apt/lists/*
+	rpm-build && \
+    rm -rf /var/cache/yum/*
 
 ARG GOLANG_VERSION=0.0.0
 RUN set -eux; \
@@ -17,7 +15,7 @@ RUN set -eux; \
     case "${arch##*-}" in \
         x86_64 | amd64) ARCH='amd64' ;; \
         ppc64el | ppc64le) ARCH='ppc64le' ;; \
-        *) echo "unsupported architecture" ; exit 1 ;; \
+        *) echo "unsupported architecture"; exit 1 ;; \
     esac; \
     wget -nv -O - https://storage.googleapis.com/golang/go${GOLANG_VERSION}.linux-${ARCH}.tar.gz \
     | tar -C /usr/local -xz

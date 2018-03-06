@@ -1,4 +1,5 @@
-FROM nvidia/build-base:centos7
+ARG VERSION_ID
+FROM nvidia/base/amzn:${VERSION_ID}
 
 # packaging
 ARG PKG_VERS
@@ -17,7 +18,7 @@ COPY nvidia-container-runtime-hook/ $GOPATH/src/nvidia-container-runtime-hook
 RUN go get -ldflags "-s -w" -v nvidia-container-runtime-hook && \
     mv $GOPATH/bin/nvidia-container-runtime-hook $DIST_DIR/nvidia-container-runtime-hook
 
-COPY config.toml.centos7 $DIST_DIR/config.toml
+COPY config.toml.amzn $DIST_DIR/config.toml
 
 WORKDIR $DIST_DIR/..
 COPY rpm .

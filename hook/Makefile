@@ -10,10 +10,32 @@ DIST_DIR  := $(CURDIR)/../dist
 .NOTPARALLEL:
 .PHONY: all
 
-all: xenial centos7 stretch amzn1
+all: ubuntu16.04 debian9 centos7 amzn1
 
-%: $(CURDIR)/Dockerfile.%
-	$(DOCKER) build --build-arg PKG_VERS="$(VERSION)" \
+ubuntu%: $(CURDIR)/Dockerfile.ubuntu
+	$(DOCKER) build --build-arg VERSION_ID="$*" \
+	                --build-arg PKG_VERS="$(VERSION)" \
 	                --build-arg PKG_REV="$(PKG_REV)" \
-	                -t nvidia-container-runtime-hook:$@ -f Dockerfile.$@ .
-	$(DOCKER) run --rm -v $(DIST_DIR)/$@:/dist:Z nvidia-container-runtime-hook:$@
+	                -t "nvidia/hook/ubuntu:$*" -f Dockerfile.ubuntu .
+	$(DOCKER) run --rm -v $(DIST_DIR)/$@:/dist:Z "nvidia/hook/ubuntu:$*"
+
+debian%: $(CURDIR)/Dockerfile.debian
+	$(DOCKER) build --build-arg VERSION_ID="$*" \
+	                --build-arg PKG_VERS="$(VERSION)" \
+	                --build-arg PKG_REV="$(PKG_REV)" \
+	                -t "nvidia/hook/debian:$*" -f Dockerfile.debian .
+	$(DOCKER) run --rm -v $(DIST_DIR)/$@:/dist:Z "nvidia/hook/debian:$*"
+
+centos%: $(CURDIR)/Dockerfile.centos
+	$(DOCKER) build --build-arg VERSION_ID="$*" \
+	                --build-arg PKG_VERS="$(VERSION)" \
+	                --build-arg PKG_REV="$(PKG_REV)" \
+	                -t "nvidia/hook/centos:$*" -f Dockerfile.centos .
+	$(DOCKER) run --rm -v $(DIST_DIR)/$@:/dist:Z "nvidia/hook/centos:$*"
+
+amzn%: $(CURDIR)/Dockerfile.amzn
+	$(DOCKER) build --build-arg VERSION_ID="$*" \
+	                --build-arg PKG_VERS="$(VERSION)" \
+	                --build-arg PKG_REV="$(PKG_REV)" \
+	                -t "nvidia/hook/amzn:$*" -f Dockerfile.amzn .
+	$(DOCKER) run --rm -v $(DIST_DIR)/$@:/dist:Z "nvidia/hook/amzn:$*"

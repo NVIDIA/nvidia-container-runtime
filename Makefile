@@ -2,32 +2,32 @@
 
 .PHONY: all
 
-all: xenial centos7 stretch amzn1
+all: ubuntu16.04 debian9 centos7 amzn1
 
 # Build all packages for a specific distribution.
-xenial: runtime-xenial hook-xenial
+ubuntu16.04: runtime-ubuntu16.04 hook-ubuntu16.04
+
+debian9: runtime-debian9 hook-debian9
 
 centos7: runtime-centos7 hook-centos7
 
-stretch: runtime-stretch hook-stretch
-
 amzn1: runtime-amzn1 hook-amzn1
 
-base-%: $(CURDIR)/base/Dockerfile.%
+base-%:
 	make -C $(CURDIR)/base $*
 
-hook-%: base-% $(CURDIR)/hook/Dockerfile.%
+hook-%: base-%
 	make -C $(CURDIR)/hook $*
 
-runtime-%: base-% $(CURDIR)/runtime/Dockerfile.%
+runtime-%: base-%
 	make -C $(CURDIR)/runtime $*
 
 # Build nvidia-container-runtime for specific versions of docker.
-%-runtime-xenial: base-xenial
-	make -C $(CURDIR)/runtime $*-xenial
+%-runtime-ubuntu16.04: base-ubuntu16.04
+	make -C $(CURDIR)/runtime $*-ubuntu16.04
 
-%-runtime-stretch: base-stretch
-	make -C $(CURDIR)/runtime $*-stretch
+%-runtime-debian9: base-debian9
+	make -C $(CURDIR)/runtime $*-debian9
 
 %-runtime-centos7: base-centos7
 	make -C $(CURDIR)/runtime $*-centos7
