@@ -6,8 +6,6 @@
 [![Travis](https://img.shields.io/travis/NVIDIA/libnvidia-container.svg?style=flat-square)](https://travis-ci.org/NVIDIA/libnvidia-container)
 [![Coverity Scan](https://img.shields.io/coverity/scan/12444.svg?style=flat-square)](https://scan.coverity.com/projects/nvidia-libnvidia-container)
 
-**Warning: This project is an alpha release. Although this software has been proven to be stable, ABI compatibility is not guaranteed.**
-
 This repository provides a library and a simple CLI utility to automatically configure GNU/Linux containers leveraging NVIDIA hardware.\
 The implementation relies on kernel primitives and is designed to be agnostic of the container runtime.
 
@@ -19,7 +17,7 @@ Refer to the [repository configuration](https://nvidia.github.io/libnvidia-conta
 With Docker:
 ```bash
 # Generate packages for a given distribution in the dist/ directory
-make docker-ubuntu:16.04
+make docker-ubuntu:16.04 TAG=beta.1
 ````
 
 Without Docker:

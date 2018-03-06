@@ -23,7 +23,7 @@ addons:
         project:
             name: "NVIDIA/libnvidia-container"
             version: "1.0.0"
-            description: "alpha"
+            description: "NVIDIA container runtime library"
         notification_email: fabecassis@nvidia.com
         build_command_prepend: "make clean"
         build_command: "make"

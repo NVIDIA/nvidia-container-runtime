@@ -85,6 +85,16 @@ This package contains command-line tools that facilitate using the library.
 %{_bindir}/*
 
 %changelog
+* Mon Mar 05 2018 NVIDIA CORPORATION <cudatools@nvidia.com> 1.0.0-0.1.beta.1
+- 6822b13 Bump nvidia-modprobe-utils to 390.25
+- 8245f6c Slightly improve RPC error messages
+- 9398d41 Add support for display capability
+- 57a0dd5 Increase driver service timeout from 1s to 10s
+- e48a0d4 Add device minor to the CLI info command
+- 019fdc1 Add support for custom driver root directory
+- b78a28c Add ppc64le support
+- 41656bf Add --ldcache option to the CLI
+
 * Wed Jan 10 2018 NVIDIA CORPORATION <cudatools@nvidia.com> 1.0.0-0.1.alpha.3
 - d268f8f Improve error message if driver installed in the container
 - 3fdac29 Add optional support for libelf from the elfutils project

@@ -1,3 +1,16 @@
+libnvidia-container (1.0.0~beta.1-1) UNRELEASED; urgency=medium
+
+  * 6822b13 Bump nvidia-modprobe-utils to 390.25
+  * 8245f6c Slightly improve RPC error messages
+  * 9398d41 Add support for display capability
+  * 57a0dd5 Increase driver service timeout from 1s to 10s
+  * e48a0d4 Add device minor to the CLI info command
+  * 019fdc1 Add support for custom driver root directory
+  * b78a28c Add ppc64le support
+  * 41656bf Add --ldcache option to the CLI
+
+ -- NVIDIA CORPORATION <cudatools@nvidia.com>  Mon, 05 Mar 2018 16:10:35 -0800
+
 libnvidia-container (1.0.0~alpha.3-1) UNRELEASED; urgency=medium
 
   * d268f8f Improve error message if driver installed in the container
