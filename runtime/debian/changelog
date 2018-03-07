@@ -1,0 +1,5 @@
+nvidia-container-runtime (2.0.0+@VERSION@) UNRELEASED; urgency=medium
+
+  * Split into nvidia-container-runtime and nvidia-container-runtime-hook
+
+ -- NVIDIA CORPORATION <cudatools@nvidia.com>  Wed, 07 Mar 2018 05:47:37 +0000

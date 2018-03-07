@@ -25,7 +25,6 @@ ARG PKG_ARCH
 ENV DEBFULLNAME "NVIDIA CORPORATION"
 ENV DEBEMAIL "cudatools@nvidia.com"
 ENV REVISION "$PKG_VERS-$PKG_REV"
-ENV DISTRIB "UNRELEASED"
 ENV SECTION ""
 
 # output directory
@@ -44,8 +43,9 @@ RUN git checkout $RUNC_COMMIT && \
 WORKDIR $DIST_DIR
 COPY debian ./debian
 
-RUN dch --create --package nvidia-container-runtime -v "$REVISION" "v$REVISION" -D "$DISTRIB" && \
-    dch -r ""
+RUN sed -i "s;@VERSION@;${REVISION#*+};" debian/changelog && \
+    if [ "$REVISION" != "$(dpkg-parsechangelog --show-field=Version)" ]; then exit 1; fi
 
-CMD debuild -eSECTION --dpkg-buildpackage-hook='sh debian/prepare' -i -us -uc -b && \
+CMD export DISTRIB="unstable" && \
+    debuild -eDISTRIB -eSECTION --dpkg-buildpackage-hook='sh debian/prepare' -i -us -uc -b && \
     mv /tmp/nvidia-container-runtime_*.deb /dist

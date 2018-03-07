@@ -1,0 +1,5 @@
+nvidia-container-runtime-hook (1.2.1-1) UNRELEASED; urgency=medium
+
+  * Extract hook from nvidia-container-runtime package
+
+ -- NVIDIA CORPORATION <cudatools@nvidia.com>  Wed, 07 Mar 2018 02:43:03 +0000

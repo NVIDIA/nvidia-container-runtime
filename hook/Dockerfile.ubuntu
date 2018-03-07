@@ -9,7 +9,6 @@ ARG PKG_ARCH
 ENV DEBFULLNAME "NVIDIA CORPORATION"
 ENV DEBEMAIL "cudatools@nvidia.com"
 ENV REVISION "$PKG_VERS-$PKG_REV"
-ENV DISTRIB "UNRELEASED"
 ENV SECTION ""
 
 # output directory
@@ -27,8 +26,8 @@ COPY config.toml.ubuntu $DIST_DIR/config.toml
 WORKDIR $DIST_DIR
 COPY debian ./debian
 
-RUN dch --create --package nvidia-container-runtime-hook -v "$REVISION" "v$REVISION" -D "$DISTRIB" && \
-    dch -r ""
+RUN if [ "$REVISION" != "$(dpkg-parsechangelog --show-field=Version)" ]; then exit 1; fi
 
-CMD debuild -eSECTION --dpkg-buildpackage-hook='sh debian/prepare' -i -us -uc -b && \
+CMD export DISTRIB="$(lsb_release -cs)" && \
+    debuild -eDISTRIB -eSECTION --dpkg-buildpackage-hook='sh debian/prepare' -i -us -uc -b && \
     mv /tmp/*.deb /dist

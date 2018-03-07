@@ -3,10 +3,10 @@ FROM debian:${VERSION_ID}
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
         wget \
-	ca-certificates \
-	git \
-	build-essential \
-	dh-make \
+        ca-certificates \
+        git \
+        build-essential \
+        dh-make \
         fakeroot \
         devscripts && \
     rm -rf /var/lib/apt/lists/*

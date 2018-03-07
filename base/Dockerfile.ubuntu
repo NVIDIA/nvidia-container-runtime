@@ -3,12 +3,13 @@ FROM ubuntu:${VERSION_ID}
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
         wget \
-	ca-certificates \
-	git \
-	build-essential \
-	dh-make \
+        ca-certificates \
+        git \
+        build-essential \
+        dh-make \
         fakeroot \
-        devscripts && \
+        devscripts \
+        lsb-release && \
     rm -rf /var/lib/apt/lists/*
 
 ARG GOLANG_VERSION=0.0.0
