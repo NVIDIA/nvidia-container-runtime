@@ -4,7 +4,6 @@ FROM nvidia/base/debian:${VERSION_ID}
 # packaging
 ARG PKG_VERS
 ARG PKG_REV
-ARG PKG_ARCH
 
 ENV DEBFULLNAME "NVIDIA CORPORATION"
 ENV DEBEMAIL "cudatools@nvidia.com"

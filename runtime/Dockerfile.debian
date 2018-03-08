@@ -22,7 +22,6 @@ RUN git clone https://github.com/docker/runc.git . && \
 # packaging
 ARG PKG_VERS
 ARG PKG_REV
-ARG PKG_ARCH
 
 ENV DEBFULLNAME "NVIDIA CORPORATION"
 ENV DEBEMAIL "cudatools@nvidia.com"
