@@ -6,6 +6,7 @@ import (
 	"log"
 	"os"
 	"os/exec"
+	"path"
 	"path/filepath"
 	"runtime"
 	"runtime/debug"
@@ -14,12 +15,10 @@ import (
 	"syscall"
 )
 
-const (
-	defaultPATH = "/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
-)
-
 var (
 	debugflag = flag.Bool("debug", false, "enable debug output")
+
+	defaultPATH = []string{"/usr/local/sbin", "/usr/local/bin", "/usr/sbin", "/usr/bin", "/sbin", "/bin"}
 )
 
 func exit() {
@@ -35,24 +34,20 @@ func exit() {
 	os.Exit(0)
 }
 
-func capabilityToCLI(cap string) string {
-	switch cap {
-	case "compute":
-		return "--compute"
-	case "compat32":
-		return "--compat32"
-	case "graphics":
-		return "--graphics"
-	case "utility":
-		return "--utility"
-	case "video":
-		return "--video"
-	case "display":
-		return "--display"
-	default:
-		log.Panicln("unknown driver capability:", cap)
+func getPATH(config CLIConfig) string {
+	dirs := filepath.SplitList(os.Getenv("PATH"))
+	// directories from the hook environment have higher precedence
+	dirs = append(dirs, defaultPATH...)
+
+	if config.Root != nil {
+		rootDirs := []string{}
+		for _, dir := range dirs {
+			rootDirs = append(rootDirs, path.Join(*config.Root, dir))
+		}
+		// directories with the root prefix have higher precedence
+		dirs = append(rootDirs, dirs...)
 	}
-	return ""
+	return strings.Join(dirs, ":")
 }
 
 func getCLIPath(config CLIConfig) string {
@@ -60,10 +55,8 @@ func getCLIPath(config CLIConfig) string {
 		return *config.Path
 	}
 
-	if _, ok := os.LookupEnv("PATH"); !ok {
-		if err := os.Setenv("PATH", defaultPATH); err != nil {
-			log.Panicln("couldn't set PATH variable:", err)
-		}
+	if err := os.Setenv("PATH", getPATH(config)); err != nil {
+		log.Panicln("couldn't set PATH variable:", err)
 	}
 
 	path, err := exec.LookPath("nvidia-container-cli")
