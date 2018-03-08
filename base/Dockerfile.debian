@@ -8,8 +8,11 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
         build-essential \
         dh-make \
         fakeroot \
-        devscripts && \
+        devscripts \
+        lsb-release && \
     rm -rf /var/lib/apt/lists/*
+
+RUN echo "deb http://ftp.debian.org/debian $(lsb_release -cs)-backports main" > /etc/apt/sources.list.d/backports.list
 
 ARG GOLANG_VERSION=0.0.0
 RUN set -eux; \

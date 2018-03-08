@@ -23,6 +23,11 @@ RUN go get -ldflags "-s -w" -v nvidia-container-runtime-hook && \
 
 COPY config.toml.debian $DIST_DIR/config.toml
 
+# Debian Jessie still had ldconfig.real
+RUN if [ "$(lsb_release -cs)" = "jessie" ]; then \
+       sed -i 's;"@/sbin/ldconfig";"@/sbin/ldconfig.real";' $DIST_DIR/config.toml; \
+    fi
+
 WORKDIR $DIST_DIR
 COPY debian ./debian
 

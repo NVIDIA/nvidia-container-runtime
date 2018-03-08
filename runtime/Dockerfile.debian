@@ -2,9 +2,11 @@ ARG VERSION_ID
 FROM nvidia/base/debian:${VERSION_ID}
 
 # runc dependencies
-RUN apt-get update && apt-get install -y \
+RUN apt-get update && \
+    apt-get install -t "$(lsb_release -cs)-backports" -y \
+        libseccomp-dev && \
+    apt-get install -y \
         pkg-config \
-        libseccomp-dev \
         libapparmor-dev \
         libselinux1-dev && \
     rm -rf /var/lib/apt/lists/*

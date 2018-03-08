@@ -4,8 +4,9 @@ FROM amazonlinux:${VERSION_ID}
 RUN yum install -y \
         ca-certificates \
         wget \
-	git \
-	rpm-build && \
+        git \
+        rpm-build \
+        make && \
     rm -rf /var/cache/yum/*
 
 ARG GOLANG_VERSION=0.0.0
