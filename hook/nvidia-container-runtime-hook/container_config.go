@@ -19,7 +19,7 @@ const (
 	envNVGPU                = "NVIDIA_VISIBLE_DEVICES"
 	envNVDriverCapabilities = "NVIDIA_DRIVER_CAPABILITIES"
 	defaultCapability       = "utility"
-	allCapabilities         = "compute,compat32,graphics,utility,video"
+	allCapabilities         = "compute,compat32,graphics,utility,video,display"
 	envNVDisableRequire     = "NVIDIA_DISABLE_REQUIRE"
 )
 
