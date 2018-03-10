@@ -35,11 +35,17 @@
 # define LIB32_ARCH               LD_I386_LIB32
 # define USR_LIB_MULTIARCH_DIR    "/usr/lib/x86_64-linux-gnu"
 # define USR_LIB32_MULTIARCH_DIR  "/usr/lib/i386-linux-gnu"
+# if !defined(__NR_execveat)
+#  define __NR_execveat 322
+# endif /* !defined(__NR_execveat) */
 #elif defined(__powerpc64__)
 # define LIB_ARCH                 LD_POWERPC_LIB64
 # define LIB32_ARCH               LD_UNKNOWN
 # define USR_LIB_MULTIARCH_DIR    "/usr/lib/powerpc64le-linux-gnu"
 # define USR_LIB32_MULTIARCH_DIR  "/var/empty"
+# if !defined(__NR_execveat)
+#  define __NR_execveat 362
+# endif /* !defined(__NR_execveat) */
 #else
 # error "unsupported architecture"
 #endif /* defined(__x86_64__) */

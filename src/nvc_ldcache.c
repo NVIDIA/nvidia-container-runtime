@@ -242,6 +242,7 @@ limit_syscalls(struct error *err)
                 SCMP_SYS(chmod),
                 SCMP_SYS(close),
                 SCMP_SYS(execve),
+                SCMP_SYS(execveat),
                 SCMP_SYS(exit),
                 SCMP_SYS(fcntl),
                 SCMP_SYS(fstat),
