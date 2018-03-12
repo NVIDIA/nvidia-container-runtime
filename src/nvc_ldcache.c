@@ -32,8 +32,8 @@
 static inline bool secure_mode(void);
 static pid_t create_process(struct error *, int);
 static int   change_rootfs(struct error *, const char *, bool, bool *);
-static int   ajust_capabilities(struct error *, uid_t, bool);
-static int   ajust_privileges(struct error *, uid_t, gid_t, bool);
+static int   adjust_capabilities(struct error *, uid_t, bool);
+static int   adjust_privileges(struct error *, uid_t, gid_t, bool);
 static int   limit_resources(struct error *);
 static int   limit_syscalls(struct error *);
 
@@ -151,7 +151,7 @@ change_rootfs(struct error *err, const char *rootfs, bool mount_proc, bool *drop
 }
 
 static int
-ajust_capabilities(struct error *err, uid_t uid, bool host_ldconfig)
+adjust_capabilities(struct error *err, uid_t uid, bool host_ldconfig)
 {
         cap_value_t cap = CAP_DAC_OVERRIDE;
 
@@ -189,7 +189,7 @@ ajust_capabilities(struct error *err, uid_t uid, bool host_ldconfig)
 }
 
 static int
-ajust_privileges(struct error *err, uid_t uid, gid_t gid, bool drop_groups)
+adjust_privileges(struct error *err, uid_t uid, gid_t gid, bool drop_groups)
 {
         /*
          * Prevent the kernel from adjusting capabilities on UID change.
@@ -338,13 +338,13 @@ nvc_ldcache_update(struct nvc_context *ctx, const struct nvc_container *cnt)
 
                 if (ns_enter(&ctx->err, cnt->mnt_ns, CLONE_NEWNS) < 0)
                         goto fail;
-                if (ajust_capabilities(&ctx->err, cnt->uid, host_ldconfig) < 0)
+                if (adjust_capabilities(&ctx->err, cnt->uid, host_ldconfig) < 0)
                         goto fail;
                 if (change_rootfs(&ctx->err, cnt->cfg.rootfs, host_ldconfig, &drop_groups) < 0)
                         goto fail;
                 if (limit_resources(&ctx->err) < 0)
                         goto fail;
-                if (ajust_privileges(&ctx->err, cnt->uid, cnt->gid, drop_groups) < 0)
+                if (adjust_privileges(&ctx->err, cnt->uid, cnt->gid, drop_groups) < 0)
                         goto fail;
                 if (limit_syscalls(&ctx->err) < 0)
                         goto fail;

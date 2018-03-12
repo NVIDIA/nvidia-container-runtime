@@ -264,7 +264,7 @@ mount_procfs(struct error *err, const char *root, const struct nvc_container *cn
                 }
                 if (file_read_text(err, src, &buf) < 0)
                         goto fail;
-                /* Prevent NVRM from ajusting the device nodes. */
+                /* Prevent NVRM from adjusting the device nodes. */
                 if (i == 0 && (param = strstr(buf, "ModifyDeviceFiles: 1")) != NULL)
                         param[19] = '0';
                 if (file_create(err, dst, buf, cnt->uid, cnt->gid, mode) < 0)
