@@ -2,24 +2,24 @@
 Hash: SHA512
 
 Architectures: amd64
-Codename: xenial
+Codename: trusty
 Components: main
 Date: Wed, 27 Sep 2017 23:08:53 +0000
 Description: NVIDIA container runtime repository
 Label: NVIDIA CORPORATION <cudatools@nvidia.com>
 Origin: https://nvidia.github.io/nvidia-container-runtime
-Suite: xenial
+Suite: trusty
 Version: 1.0
 SHA512:
- 39c8715f5e25c24aedaa908dad6808b6a37e0534db6b560535aafe43aaccb8e39e5847d29d3788eb9003c6b8f6f5f87c2d9be1336cf98de4acc37469bf3dff34             4405 Packages
- f72e2ca46105a0c22e93f3986667bd8f2925ac57695f485e69669343b6687a6d3b80a4a213d2276a8e79a928a1780d9079785f1aef08a158ddbbeee79b47e739             1428 Packages.xz
+ b74e92d2054e9b5bcdac266d1e2350f06a2224c45ba8ca89f7ba4f47c8426685b37f8d77a938a07aa8498d188e3c6ab1d0ddf9da26ac22bba6f2a91e10a00a51             5260 Packages
+ 62fc8f913ca85d9ad004481fefa0278c89e34b36b8d3bbae803a0ade737c94ffde0556cedd6dfe1f515a4addc2f9f3c926c53fb0a03e1cc3d4259bb192377460             1592 Packages.xz
 -----BEGIN PGP SIGNATURE-----
 
-iQEcBAEBCgAGBQJaoeQtAAoJEMRbFnagTqVSTGwIAL0wqJYlGnaUjvhdbN32L5uc
-JwYpoH5ErImngdwXsRXjwwFq/mKJ2QSmfFOkDTGgA0X/WQgX62aDkRlR/94JWw5E
-qVJiGe/jF8IKONdMDxagidf9r3ovIQDV3WjvY2sn/eq/mH5A9WItMSMBYvkc0S40
-2JtnAg+ozh5JEdBBUNoMY2uc2wo3Dsw851sK6TEbk37MiPKr2XtvCIK8Ut79bsyN
-Wwsdu8sGOoTqfnCjJdmEmWSgF3CCDYn2I+Trm5ldHmDHh+mFNqJ9Wy9dGFo+P1e7
-TdvTEOTvHryejuTnbob2G286VQInpCsZoUdWHZC8RYAFnpnPHN5IYkS6Y6vyBxA=
-=XHEq
+iQEcBAEBCgAGBQJas+G+AAoJEMRbFnagTqVSbKUIAIbamxAoDcykmzYIlDSCeDhj
+Azm1XlztEDcubFM8oYsEBGREKBcRvIUGbZXXRfWKAj9XgwdN9L0QLrbUHy85Gc19
+1chMtfRFfCwP7N5GcPUx9Ax0I1N+ak96Zhdwv1Zd5OMZgqaQ5DsK+abPF2FD35EV
+NrXd+K0Lrk9OiInyQMiV0WW3kbUcHLlCVwUshlL+58Y8lQsHMg7JrGK1d4Zv3IpU
+UiE/KfFStKuyUy3EupovhqE4m6ulZM03b5T5P4KJQ4YSB0OrfF708IZ9Ma9wFJpC
+N8AZusQy8ga3pa66jLynHvHkvGPk9GUUSyFyT5x4P1SPaVwpgsGISxuDyap6ZPo=
+=/j/I
 -----END PGP SIGNATURE-----

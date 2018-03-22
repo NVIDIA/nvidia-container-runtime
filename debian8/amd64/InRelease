@@ -2,24 +2,24 @@
 Hash: SHA512
 
 Architectures: amd64
-Codename: stretch
+Codename: jessie
 Components: main
 Date: Wed, 27 Sep 2017 23:08:53 +0000
 Description: NVIDIA container runtime repository
 Label: NVIDIA CORPORATION <cudatools@nvidia.com>
 Origin: https://nvidia.github.io/nvidia-container-runtime
-Suite: stretch
+Suite: jessie
 Version: 1.0
 SHA512:
- bb065d1b1cc842ea553d24ed37bbda655d84c6925b04c2d93aab01da1e1b792319f472af51d8227b120871f82fdb69110fb38042242d578dcc7b80d0ba48e685             3521 Packages
- 984760803ebb8c9960b777be07707d4bce8de6561346bffce90b9c033ce155f11d638040dc48ad7ea5fe99d9830f774edbdc721a3c1fc1c48b22bec0ac46dde9             1260 Packages.xz
+ b81ae6a53cf6bca243b4b5d9d7db4cbe618e7757a2b30835a38252c30290706d0392b4e0ce4ebe0b864c931d88a3908cd280ca8f44cfa90d4cc956d199fcd840             4376 Packages
+ b8f8e88c7282b2d78f85cb91a6063f91205222e65fce18237e07f7d120d62dee866e8f76cc5861b04ebc630bc79f7c60a479cafd4eb29a94a580004655e12cb7             1428 Packages.xz
 -----BEGIN PGP SIGNATURE-----
 
-iQEcBAEBCgAGBQJaoeXRAAoJEMRbFnagTqVSpj0IAOJcez4i/M09VotfNaRQrxNm
-LpMA0nQvJpIdc2M6nTR0yjS08+XtTqhT1fsXPd728vf5Zzji08MJZw4vXQ61ajay
-lvuvcJ6br+VIcKYedqrh81Qf24pAIQ+AQpImJ4urMEXyoD2NmjoScPanw8jJCVnA
-3Xv6HQaLMv+Ym5RGlHNbEI+8SfV/RozHM7h72pO9GiLH1euzz5xjrop6uFedXbhb
-7MKM1ZlKvUlSYNr3lIBlk+DHBoRH2D5Tdo6muFAfyO48NAiXWejDlSeVJpx3kOvj
-c47mjNiRNVjrcmD0bcVUCeAh1VZ72jX5vr0GeQkjSjQHdS00ASBo/BXp93qM7ys=
-=Tpah
+iQEcBAEBCgAGBQJas+HPAAoJEMRbFnagTqVShu4H/ikvMM7UVX1oibu6DCmWRDUH
+xrVf5+OFj3yK1W3NVXwBpxZ2a0RDrVoWX/LQ8oMMoqViXILwkG98bL6IXghlcN8j
+FFjUZTwtfKdpNVToMDbBzhFyHl7P1RMjdkI3zjIsq44vvTIbkQdhnt1sHL+X4t9y
+G9rtscfJ9iV7NZxxw5L2l58JCvSr1XO6nM+gqgV9V3nsUUiroFJ3c48if0g+WQ/C
++jrWTtRvTJ0QdJ7WH6MRPKynMWg2syfIui0J4VyhFddc4XFatvvmLztgtJ4Duqtc
+CbxP5Ts3p442oZC/y5HEO19gLIeVfZgPIJsBoGlpCCVsqunYnfDLJK6xDtsDcr8=
+=SAgI
 -----END PGP SIGNATURE-----
