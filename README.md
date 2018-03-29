@@ -89,8 +89,8 @@ These variables are already set in our [official CUDA images](https://hub.docker
 This variable controls which GPUs will be made accessible inside the container.  
 
 #### Possible values
-* `0,1,2`, `GPU-fef8089b` …: a comma-separated list of GPU UUID(s) or index(es),
-* `all`: all GPUs will be accessible, this is the default value in our container images,
+* `0,1,2`, `GPU-fef8089b` …: a comma-separated list of GPU UUID(s) or index(es).
+* `all`: all GPUs will be accessible, this is the default value in our container images.
 * `none`: no GPU will be accessible, but driver capabilities will be enabled.
 * `void` or *empty* or *unset*: `nvidia-container-runtime` will have the same behavior as `runc`.
 
@@ -98,23 +98,24 @@ This variable controls which GPUs will be made accessible inside the container.
 This option controls which driver libraries/binaries will be mounted inside the container.
 
 #### Possible values
-* `compute,video`, `graphics,utility` …: a comma-separated list of driver features the container needs,
+* `compute,video`, `graphics,utility` …: a comma-separated list of driver features the container needs.
 * `all`: enable all available driver capabilities.
 * *empty* or *unset*: use default driver capability: `utility`.
 
 #### Supported driver capabilities
-* `compute`: required for CUDA and OpenCL applications,
-* `compat32`: required for running 32-bit applications,
-* `graphics`: required for running OpenGL and Vulkan applications,
-* `utility`: required for using `nvidia-smi` and NVML,
+* `compute`: required for CUDA and OpenCL applications.
+* `compat32`: required for running 32-bit applications.
+* `graphics`: required for running OpenGL and Vulkan applications.
+* `utility`: required for using `nvidia-smi` and NVML.
 * `video`: required for using the Video Codec SDK.
+* `display`: required for leveraging X11 display.
 
 ### `NVIDIA_REQUIRE_*`
 A logical expression to define constraints on the configurations supported by the container.  
 
 #### Supported constraints
-* `cuda`: constraint on the CUDA driver version,
-* `driver`: constraint on the driver version,
+* `cuda`: constraint on the CUDA driver version.
+* `driver`: constraint on the driver version.
 * `arch`: constraint on the compute architectures of the selected GPUs.
 
 #### Expressions
