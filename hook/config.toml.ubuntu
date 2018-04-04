@@ -8,4 +8,5 @@ environment = []
 #debug = "/var/log/nvidia-container-runtime-hook.log"
 #ldcache = "/etc/ld.so.cache"
 load-kmods = true
+#user = "root:video"
 ldconfig = "@/sbin/ldconfig.real"

@@ -108,6 +108,9 @@ func doPrestart() {
 	if cli.Ldcache != nil {
 		args = append(args, fmt.Sprintf("--ldcache=%s", *cli.Ldcache))
 	}
+	if cli.User != nil {
+		args = append(args, fmt.Sprintf("--user=%s", *cli.User))
+	}
 	args = append(args, "configure")
 
 	if cli.Ldconfig != nil {

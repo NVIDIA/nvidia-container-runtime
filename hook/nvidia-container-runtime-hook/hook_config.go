@@ -19,6 +19,7 @@ type CLIConfig struct {
 	Debug       *string  `toml:"debug"`
 	Ldcache     *string  `toml:"ldcache"`
 	LoadKmods   bool     `toml:"load-kmods"`
+	User        *string  `toml:"user"`
 	Ldconfig    *string  `toml:"ldconfig"`
 }
 
@@ -40,6 +41,7 @@ func getDefaultHookConfig() (config HookConfig) {
 			Debug:       nil,
 			Ldcache:     nil,
 			LoadKmods:   true,
+			User:        nil,
 			Ldconfig:    nil,
 		},
 	}
