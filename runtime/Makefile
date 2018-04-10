@@ -10,7 +10,9 @@ DIST_DIR  := $(CURDIR)/../dist
 .NOTPARALLEL:
 .PHONY: all
 
-all: ubuntu16.04 ubuntu14.04 debian9 debian8 centos7 amzn2 amzn1
+all: ubuntu18.04 ubuntu16.04 ubuntu14.04 debian9 debian8 centos7 amzn2 amzn1
+
+ubuntu18.04: $(addsuffix -ubuntu18.04, 18.03.0 17.03.2)
 
 ubuntu16.04: $(addsuffix -ubuntu16.04, 18.03.0 17.12.1 17.12.0 17.09.1 17.09.0 17.06.2 17.03.2 1.13.1 1.12.6)
 
@@ -50,6 +52,14 @@ amzn1: $(addsuffix -amzn1, 17.09.1 17.06.2 17.03.2)
 1.12.6-%-runc:
 	echo "50a19c6ff828c58e5dab13830bd3dacde268afe5"
 
+%-ubuntu18.04:
+	runc="$(shell $(MAKE) -s $@-runc)" && \
+	$(DOCKER) build --build-arg VERSION_ID="18.04" \
+                        --build-arg RUNC_COMMIT="$${runc}" \
+                        --build-arg PKG_VERS="$(VERSION)+docker$*" \
+                        --build-arg PKG_REV="$(PKG_REV)" \
+                        -t "nvidia/runtime/ubuntu:18.04-docker$*" -f Dockerfile.ubuntu .
+	$(DOCKER) run --rm -v $(DIST_DIR)/ubuntu18.04:/dist:Z "nvidia/runtime/ubuntu:18.04-docker$*"
 
 %-ubuntu16.04:
 	runc="$(shell $(MAKE) -s $@-runc)" && \

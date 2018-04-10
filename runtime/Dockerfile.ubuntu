@@ -3,7 +3,7 @@ FROM nvidia/base/ubuntu:${VERSION_ID}
 
 # runc dependencies
 RUN apt-get update && \
-    apt-get install -t "$(lsb_release -cs)-backports" -y \
+    apt-get install -t "$(lsb_release -cs)" -y \
         libseccomp-dev && \
     apt-get install -y \
         pkg-config \
