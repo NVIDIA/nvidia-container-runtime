@@ -10,7 +10,7 @@ DIST_DIR  := $(CURDIR)/../dist
 .NOTPARALLEL:
 .PHONY: all
 
-all: ubuntu16.04 ubuntu14.04 debian9 debian8 centos7 amzn2 amzn1
+all: ubuntu18.04 ubuntu16.04 ubuntu14.04 debian9 debian8 centos7 amzn2 amzn1
 
 ubuntu%: $(CURDIR)/Dockerfile.ubuntu
 	$(DOCKER) build --build-arg VERSION_ID="$*" \

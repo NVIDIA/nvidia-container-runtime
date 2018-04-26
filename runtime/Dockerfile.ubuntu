@@ -3,8 +3,11 @@ FROM nvidia/base/ubuntu:${VERSION_ID}
 
 # runc dependencies
 RUN apt-get update && \
-    apt-get install -t "$(lsb_release -cs)-backports" -y \
-        libseccomp-dev && \
+    if [ "$(lsb_release -cs)" = "trusty" ]; then \
+        apt-get install -t "trusty-backports" -y libseccomp-dev; \
+    else \
+        apt-get install -y libseccomp-dev; \
+    fi && \
     apt-get install -y \
         pkg-config \
         libapparmor-dev \

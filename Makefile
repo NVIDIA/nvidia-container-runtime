@@ -2,9 +2,11 @@
 
 .PHONY: all
 
-all: ubuntu16.04 ubuntu14.04 debian9 debian8 centos7 amzn2 amzn1
+all: ubuntu18.04 ubuntu16.04 ubuntu14.04 debian9 debian8 centos7 amzn2 amzn1
 
 # Build all packages for a specific distribution.
+ubuntu18.04: runtime-ubuntu18.04 hook-ubuntu18.04
+
 ubuntu16.04: runtime-ubuntu16.04 hook-ubuntu16.04
 
 ubuntu14.04: runtime-ubuntu14.04 hook-ubuntu14.04
@@ -29,6 +31,9 @@ runtime-%: base-%
 	make -C $(CURDIR)/runtime $*
 
 # Build nvidia-container-runtime for specific versions of docker.
+%-runtime-ubuntu18.04: base-ubuntu18.04
+	make -C $(CURDIR)/runtime $*-ubuntu18.04
+
 %-runtime-ubuntu16.04: base-ubuntu16.04
 	make -C $(CURDIR)/runtime $*-ubuntu16.04
 
