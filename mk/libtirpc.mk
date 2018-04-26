@@ -6,7 +6,7 @@ include $(MAKE_DIR)/common.mk
 
 ##### Source definitions #####
 
-VERSION  := 1.0.2
+VERSION  := 1.0.3
 PREFIX   := libtirpc-$(VERSION)
 URL      := https://downloads.sourceforge.net/project/libtirpc/libtirpc/$(VERSION)/$(PREFIX).tar.bz2
 
