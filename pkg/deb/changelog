@@ -1,3 +1,11 @@
+libnvidia-container (1.0.0~rc.1-1) UNRELEASED; urgency=medium
+
+  * 4d43665 Bump nvidia-modprobe-utils to 396.18
+  * d8338a6 Bump libtirpc to 1.0.3
+  * cef6c8f Add execveat to the list of allowed syscalls
+
+ -- NVIDIA CORPORATION <cudatools@nvidia.com>  Thu, 26 Apr 2018 15:35:29 -0700
+
 libnvidia-container (1.0.0~beta.1-1) UNRELEASED; urgency=medium
 
   * 6822b13 Bump nvidia-modprobe-utils to 390.25

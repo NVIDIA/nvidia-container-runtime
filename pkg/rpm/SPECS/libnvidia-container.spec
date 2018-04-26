@@ -85,6 +85,11 @@ This package contains command-line tools that facilitate using the library.
 %{_bindir}/*
 
 %changelog
+* Thu Apr 26 2018 NVIDIA CORPORATION <cudatools@nvidia.com> 1.0.0-0.1.rc.1
+- 4d43665 Bump nvidia-modprobe-utils to 396.18
+- d8338a6 Bump libtirpc to 1.0.3
+- cef6c8f Add execveat to the list of allowed syscalls
+
 * Mon Mar 05 2018 NVIDIA CORPORATION <cudatools@nvidia.com> 1.0.0-0.1.beta.1
 - 6822b13 Bump nvidia-modprobe-utils to 390.25
 - 8245f6c Slightly improve RPC error messages
