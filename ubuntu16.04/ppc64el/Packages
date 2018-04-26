@@ -1,0 +1,96 @@
+Package: nvidia-container-runtime-hook
+Architecture: ppc64el
+Version: 1.3.0-1
+Priority: optional
+Section: utils
+Maintainer: NVIDIA CORPORATION <cudatools@nvidia.com>
+Installed-Size: 1831
+Depends: libnvidia-container-tools (>= 0.1.0), libnvidia-container-tools (<< 2.0.0)
+Breaks: nvidia-container-runtime (<< 2.0.0)
+Replaces: nvidia-container-runtime (<< 2.0.0)
+Filename: ./nvidia-container-runtime-hook_1.3.0-1_ppc64el.deb
+Size: 493200
+MD5sum: 726123eaf80d13fd8cc701fc1614fb90
+SHA1: 3d3ba67892d44dd2828cdd54131bea3d9c79f38f
+SHA256: e2c6fdcb30436d57200377959bd17a1743727375b493ca970498738fa30fdccd
+SHA512: 2223f509375bef38f7a4ca26b7d9876dd6ff9598415bb1c5488b3ed1d3e4fc845c569ef59c9e3ece8a77335b83b358286f1ea81e19d109190f5e90e82bc8604a
+Homepage: https://github.com/NVIDIA/nvidia-container-runtime/wiki
+Description: NVIDIA container runtime hook
+ Provides a OCI hook to enable GPU support in containers.
+
+Package: nvidia-container-runtime
+Architecture: ppc64el
+Version: 2.0.0+docker17.09.1-1
+Priority: optional
+Section: utils
+Maintainer: NVIDIA CORPORATION <cudatools@nvidia.com>
+Installed-Size: 5272
+Depends: libapparmor1 (>= 2.6~devel), libc6 (>= 2.17), libseccomp2 (>= 2.1.0), nvidia-container-runtime-hook (<< 2.0.0)
+Filename: ./nvidia-container-runtime_2.0.0+docker17.09.1-1_ppc64el.deb
+Size: 1312290
+MD5sum: 25bcbed848edcb123b8a44b5b84c876d
+SHA1: c8d96fd35e357df0e8885746680f75fbcac25937
+SHA256: 042b6e95183c8a9d0b26130440290841270a95e662d74b2f19d71afb571a81cc
+SHA512: 58d6da1791e5a36ed6e7bb5bba4142cc144897bf0c63898958af6d20a5e95685f648dfe6c9a15cb14af81fc7799c794b86165a43c6e45388a8bf2639a38fbfc9
+Homepage: https://github.com/NVIDIA/nvidia-container-runtime/wiki
+Description: NVIDIA container runtime
+ Provides a modified version of runc allowing users to run GPU enabled
+ containers.
+
+Package: nvidia-container-runtime
+Architecture: ppc64el
+Version: 2.0.0+docker17.12.1-1
+Priority: optional
+Section: utils
+Maintainer: NVIDIA CORPORATION <cudatools@nvidia.com>
+Installed-Size: 7255
+Depends: libc6 (>= 2.17), libseccomp2 (>= 2.3.0), nvidia-container-runtime-hook (<< 2.0.0)
+Filename: ./nvidia-container-runtime_2.0.0+docker17.12.1-1_ppc64el.deb
+Size: 1501554
+MD5sum: 6d30f4cf2479f94354211abed10efcdd
+SHA1: 4afb53753222cffe6bc03274119c418ddadba493
+SHA256: bc87338e1edd4a1df0d76fea1fc0946a8d278ae907a086c487d0eabec4eeb8a3
+SHA512: 4c3414e5f5653bfe1085864be99bf07b278433fb995ec270e8aafc75bea9c5bbba6c8ed632e0d1d636a6ec313b46004f7d2f71a6fedfeaabdf36f6ce2e5c48a4
+Homepage: https://github.com/NVIDIA/nvidia-container-runtime/wiki
+Description: NVIDIA container runtime
+ Provides a modified version of runc allowing users to run GPU enabled
+ containers.
+
+Package: nvidia-container-runtime
+Architecture: ppc64el
+Version: 2.0.0+docker18.03.0-1
+Priority: optional
+Section: utils
+Maintainer: NVIDIA CORPORATION <cudatools@nvidia.com>
+Installed-Size: 7255
+Depends: libc6 (>= 2.17), libseccomp2 (>= 2.3.0), nvidia-container-runtime-hook (<< 2.0.0)
+Filename: ./nvidia-container-runtime_2.0.0+docker18.03.0-1_ppc64el.deb
+Size: 1503434
+MD5sum: cdc99165c7fe000c8d0b10e104a08498
+SHA1: 858bd970b354ef226251f00e168b2c2490688763
+SHA256: 1eedfa264eb2d9b441dcffa9eedd78f20553dc3a4219952ae1fe1c263f7c1ab4
+SHA512: e58c18227dcae38f81d72fa8dfee4ef5ba42c760c8f4472f71d30c6c0423f3407430f953bbbf5ddf058df89703c1435b5ca034059c0b9a8e27baac6de139d42e
+Homepage: https://github.com/NVIDIA/nvidia-container-runtime/wiki
+Description: NVIDIA container runtime
+ Provides a modified version of runc allowing users to run GPU enabled
+ containers.
+
+Package: nvidia-container-runtime
+Architecture: ppc64el
+Version: 2.0.0+docker18.03.1-1
+Priority: optional
+Section: utils
+Maintainer: NVIDIA CORPORATION <cudatools@nvidia.com>
+Installed-Size: 7255
+Depends: libc6 (>= 2.17), libseccomp2 (>= 2.3.0), nvidia-container-runtime-hook (<< 2.0.0)
+Filename: ./nvidia-container-runtime_2.0.0+docker18.03.1-1_ppc64el.deb
+Size: 1503550
+MD5sum: e630bd9b447dbcda463980256fe295d1
+SHA1: ab19b8270cc4880260c060086c9496ea3c68b7c3
+SHA256: 4ea38752b4e5fda9d0e596576ffc8c50dd69d3b1ea8cf14b7b384bef2973d0e8
+SHA512: e0410feca0c1a7723cfa37370ad1490cd4244046f7a0453703db06f2d3dfce37ef12d2ec6818d66e9b9958951ec20b176c7137f9b46f28cd3469e665f52f16a0
+Homepage: https://github.com/NVIDIA/nvidia-container-runtime/wiki
+Description: NVIDIA container runtime
+ Provides a modified version of runc allowing users to run GPU enabled
+ containers.
+
