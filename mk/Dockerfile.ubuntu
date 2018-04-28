@@ -6,9 +6,9 @@ SHELL ["/bin/bash", "-c"]
 
 RUN distrib=${IMAGESPEC//[.:]} && \
     arch=$(uname -m); arch=${arch/le/el} && \
-    apt-get update && apt-get install -y --no-install-recommends curl ca-certificates && \
-    curl -fsSL https://developer.download.nvidia.com/compute/cuda/repos/${distrib}/${arch}/7fa2af80.pub | apt-key add - && \
-    echo "deb http://developer.download.nvidia.com/compute/cuda/repos/${distrib}/${arch} /" > /etc/apt/sources.list.d/cuda.list && \
+    apt-get update && apt-get install -y --no-install-recommends gnupg2 curl ca-certificates && \
+    curl -fsSL https://developer.download.nvidia.com/compute/cuda/repos/${distrib/1804/1604}/${arch}/7fa2af80.pub | apt-key add - && \
+    echo "deb http://developer.download.nvidia.com/compute/cuda/repos/${distrib/1804/1604}/${arch} /" > /etc/apt/sources.list.d/cuda.list && \
     rm -rf /var/lib/apt/lists/*
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -22,7 +22,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
         dh-make \
         fakeroot \
         git \
-        gnupg2 \
         libcap-dev \
         libelf-dev \
         libseccomp-dev \
