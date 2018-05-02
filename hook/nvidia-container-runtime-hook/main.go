@@ -116,7 +116,9 @@ func doPrestart() {
 	if cli.Ldconfig != nil {
 		args = append(args, fmt.Sprintf("--ldconfig=%s", *cli.Ldconfig))
 	}
-
+        if cli.NoCgroups {
+		args = append(args, "--no-cgroups")
+	}
 	if len(nvidia.Devices) > 0 {
 		args = append(args, fmt.Sprintf("--device=%s", nvidia.Devices))
 	}
