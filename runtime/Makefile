@@ -26,7 +26,7 @@ centos7: $(addsuffix -centos7, 18.03.1 18.03.0 17.12.1 17.12.0 17.09.1 17.09.0 1
 
 amzn2: $(addsuffix -amzn2, 17.06.2)
 
-amzn1: $(addsuffix -amzn1, 17.09.1 17.06.2 17.03.2)
+amzn1: $(addsuffix -amzn1, 17.12.1 17.09.1 17.06.2 17.03.2)
 
 18.03.1-%-runc:
 	echo "4fc53a81fb7c994640722ac585fa9ca548971871"
