@@ -204,7 +204,8 @@ $(BIN_NAME): $(BIN_OBJS)
 all: CPPFLAGS += -DNDEBUG
 all: shared static tools
 
-debug: CFLAGS += -pedantic -fsanitize=undefined -fno-omit-frame-pointer -fno-common
+# Run with ASAN_OPTIONS="protect_shadow_gap=0" to avoid CUDA OOM errors
+debug: CFLAGS += -pedantic -fsanitize=undefined -fno-omit-frame-pointer -fno-common -fsanitize=address
 debug: LDLIBS += -lubsan
 debug: STRIP  := @echo skipping: strip
 debug: shared static tools
