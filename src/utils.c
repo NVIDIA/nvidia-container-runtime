@@ -661,7 +661,7 @@ file_read_text(struct error *err, const char *path, char **txt)
         if ((fs = xfopen(err, path, "r")) == NULL)
                 return (-1);
         *txt = NULL;
-        while ((n = fread(buf, 1, sizeof(buf), fs)) > 0) {
+        while ((n = fread(buf, 1, sizeof(buf) - 1, fs)) > 0) {
                 buf[n] = '\0';
                 if (str_join(err, txt, buf, "") < 0)
                         goto fail;
