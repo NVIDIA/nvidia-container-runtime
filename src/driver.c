@@ -138,24 +138,12 @@ setup_rpc_service(struct driver *ctx, const char *root, uid_t uid, gid_t gid, pi
 
         xclose(ctx->fd[SOCK_CLT]);
 
-        if (prctl(PR_SET_PDEATHSIG, SIGTERM, 0, 0, 0) < 0) {
-                error_set(ctx->err, "process initialization failed");
-                goto fail;
-        }
-        if (getppid() != ppid)
-                kill(getpid(), SIGTERM);
-
         if (!str_equal(root, "/")) {
                 if (chroot(root) < 0 || chdir("/") < 0) {
                         error_set(ctx->err, "change root failed");
                         goto fail;
                 }
         }
-
-        if ((ctx->cuda_dl = xdlopen(ctx->err, SONAME_LIBCUDA, RTLD_NOW)) == NULL)
-                goto fail;
-        if ((ctx->nvml_dl = xdlopen(ctx->err, SONAME_LIBNVML, RTLD_NOW)) == NULL)
-                goto fail;
 
         /*
          * Drop privileges and capabilities for security reasons.
@@ -171,6 +159,22 @@ setup_rpc_service(struct driver *ctx, const char *root, uid_t uid, gid_t gid, pi
         if (perm_set_capabilities(ctx->err, CAP_PERMITTED, NULL, 0) < 0)
                 goto fail;
         if (reset_cuda_environment(ctx->err) < 0)
+                goto fail;
+
+        /*
+         * Set PDEATHSIG in case our parent terminates unexpectedly.
+         * We need to do it late since the kernel resets it on credential change.
+         */
+        if (prctl(PR_SET_PDEATHSIG, SIGTERM, 0, 0, 0) < 0) {
+                error_set(ctx->err, "process initialization failed");
+                goto fail;
+        }
+        if (getppid() != ppid)
+                kill(getpid(), SIGTERM);
+
+        if ((ctx->cuda_dl = xdlopen(ctx->err, SONAME_LIBCUDA, RTLD_NOW)) == NULL)
+                goto fail;
+        if ((ctx->nvml_dl = xdlopen(ctx->err, SONAME_LIBNVML, RTLD_NOW)) == NULL)
                 goto fail;
 
         if ((ctx->rpc_svc = svcunixfd_create(ctx->fd[SOCK_SVC], 0, 0)) == NULL ||
