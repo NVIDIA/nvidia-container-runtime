@@ -918,7 +918,7 @@ perm_drop_privileges(struct error *err, uid_t uid, gid_t gid, bool drop_groups)
 }
 
 int
-perm_drop_bounds(struct error *err)
+perm_set_bounds(struct error *err, const cap_value_t caps[], size_t size)
 {
         uint32_t n;
         cap_value_t last_cap = CAP_LAST_CAP;
@@ -929,10 +929,15 @@ perm_drop_bounds(struct error *err)
                 last_cap = (cap_value_t)n;
 
         for (cap_value_t c = 0; c <= last_cap; ++c) {
+                for (size_t i = 0; caps != NULL && i < size; ++i) {
+                        if (caps[i] == c)
+                                goto next;
+                }
                 if (prctl(PR_CAPBSET_READ, c) > 0 && prctl(PR_CAPBSET_DROP, c) < 0) {
                         error_set(err, "capability change failed");
                         return (-1);
                 }
+         next:;
         }
         return (0);
 }
@@ -949,11 +954,9 @@ perm_set_capabilities(struct error *err, cap_flag_t type, const cap_value_t caps
                 /* Ambient capabilities are only supported since Linux 4.3 and are not available in libcap. */
                 if (prctl(PR_CAP_AMBIENT, PR_CAP_AMBIENT_CLEAR_ALL, 0, 0, 0) < 0 && errno != EINVAL)
                         goto fail;
-                if (caps != NULL && size > 0) {
-                        for (size_t i = 0; i < size; ++i) {
-                                if (prctl(PR_CAP_AMBIENT, PR_CAP_AMBIENT_RAISE, caps[i], 0, 0) < 0 && errno != EINVAL)
-                                        goto fail;
-                        }
+                for (size_t i = 0; caps != NULL && i < size; ++i) {
+                        if (prctl(PR_CAP_AMBIENT, PR_CAP_AMBIENT_RAISE, caps[i], 0, 0) < 0 && errno != EINVAL)
+                                goto fail;
                 }
                 return (0);
         }
@@ -971,13 +974,11 @@ perm_set_capabilities(struct error *err, cap_flag_t type, const cap_value_t caps
                         goto fail;
                 if (cap_clear_flag(state, CAP_EFFECTIVE) < 0)
                         goto fail;
-                if (caps != NULL && size > 0) {
-                        for (size_t i = 0; i < size; ++i) {
-                                if (cap_get_flag(tmp, caps[i], CAP_EFFECTIVE, &flag) < 0)
-                                        goto fail;
-                                if (cap_set_flag(state, CAP_EFFECTIVE, 1, &caps[i], flag) < 0)
-                                        goto fail;
-                        }
+                for (size_t i = 0; caps != NULL && i < size; ++i) {
+                        if (cap_get_flag(tmp, caps[i], CAP_EFFECTIVE, &flag) < 0)
+                                goto fail;
+                        if (cap_set_flag(state, CAP_EFFECTIVE, 1, &caps[i], flag) < 0)
+                                goto fail;
                 }
         }
         if (cap_set_proc(state) < 0)

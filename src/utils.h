@@ -81,7 +81,7 @@ int path_resolve(struct error *, char *, const char *, const char *);
 int path_resolve_full(struct error *, char *, const char *, const char *);
 
 int perm_drop_privileges(struct error *, uid_t, gid_t, bool);
-int perm_drop_bounds(struct error *);
+int perm_set_bounds(struct error *, const cap_value_t [], size_t);
 int perm_set_capabilities(struct error *, cap_flag_t, const cap_value_t [], size_t);
 
 #endif /* HEADER_UTILS_H */

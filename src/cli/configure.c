@@ -173,20 +173,16 @@ configure_command(const struct context *ctx)
         struct error err = {0};
         int rv = EXIT_FAILURE;
 
-        if (geteuid() != 0) {
-                warnx("requires root privileges");
-                return (rv);
-        }
-        if (perm_set_capabilities(&err, CAP_PERMITTED, permitted_caps, nitems(permitted_caps)) < 0 ||
-            perm_set_capabilities(&err, CAP_INHERITABLE, inherited_caps, nitems(inherited_caps)) < 0 ||
-            perm_drop_bounds(&err) < 0) {
+        if (perm_set_capabilities(&err, CAP_PERMITTED, pcaps, nitems(pcaps)) < 0 ||
+            perm_set_capabilities(&err, CAP_INHERITABLE, NULL, 0) < 0 ||
+            perm_set_bounds(&err, bcaps, nitems(bcaps)) < 0) {
                 warnx("permission error: %s", err.msg);
                 return (rv);
         }
 
         /* Initialize the library and container contexts. */
-        int c = ctx->load_kmods ? CAPS_INIT_KMODS : CAPS_INIT;
-        if (perm_set_capabilities(&err, CAP_EFFECTIVE, effective_caps[c], effective_caps_size(c)) < 0) {
+        int c = ctx->load_kmods ? NVC_INIT_KMODS : NVC_INIT;
+        if (perm_set_capabilities(&err, CAP_EFFECTIVE, ecaps[c], ecaps_size(c)) < 0) {
                 warnx("permission error: %s", err.msg);
                 goto fail;
         }
@@ -204,7 +200,7 @@ configure_command(const struct context *ctx)
                 warnx("initialization error: %s", nvc_error(nvc));
                 goto fail;
         }
-        if (perm_set_capabilities(&err, CAP_EFFECTIVE, effective_caps[CAPS_CONTAINER], effective_caps_size(CAPS_CONTAINER)) < 0) {
+        if (perm_set_capabilities(&err, CAP_EFFECTIVE, ecaps[NVC_CONTAINER], ecaps_size(NVC_CONTAINER)) < 0) {
                 warnx("permission error: %s", err.msg);
                 goto fail;
         }
@@ -215,7 +211,7 @@ configure_command(const struct context *ctx)
         }
 
         /* Query the driver and device information. */
-        if (perm_set_capabilities(&err, CAP_EFFECTIVE, effective_caps[CAPS_INFO], effective_caps_size(CAPS_INFO)) < 0) {
+        if (perm_set_capabilities(&err, CAP_EFFECTIVE, ecaps[NVC_INFO], ecaps_size(NVC_INFO)) < 0) {
                 warnx("permission error: %s", err.msg);
                 goto fail;
         }
@@ -263,7 +259,7 @@ configure_command(const struct context *ctx)
         }
 
         /* Mount the driver and visible devices. */
-        if (perm_set_capabilities(&err, CAP_EFFECTIVE, effective_caps[CAPS_MOUNT], effective_caps_size(CAPS_MOUNT)) < 0) {
+        if (perm_set_capabilities(&err, CAP_EFFECTIVE, ecaps[NVC_MOUNT], ecaps_size(NVC_MOUNT)) < 0) {
                 warnx("permission error: %s", err.msg);
                 goto fail;
         }
@@ -279,7 +275,7 @@ configure_command(const struct context *ctx)
         }
 
         /* Update the container ldcache. */
-        if (perm_set_capabilities(&err, CAP_EFFECTIVE, effective_caps[CAPS_LDCACHE], effective_caps_size(CAPS_LDCACHE)) < 0) {
+        if (perm_set_capabilities(&err, CAP_EFFECTIVE, ecaps[NVC_LDCACHE], ecaps_size(NVC_LDCACHE)) < 0) {
                 warnx("permission error: %s", err.msg);
                 goto fail;
         }
@@ -288,7 +284,7 @@ configure_command(const struct context *ctx)
                 goto fail;
         }
 
-        if (perm_set_capabilities(&err, CAP_EFFECTIVE, effective_caps[CAPS_SHUTDOWN], effective_caps_size(CAPS_SHUTDOWN)) < 0) {
+        if (perm_set_capabilities(&err, CAP_EFFECTIVE, ecaps[NVC_SHUTDOWN], ecaps_size(NVC_SHUTDOWN)) < 0) {
                 warnx("permission error: %s", err.msg);
                 goto fail;
         }

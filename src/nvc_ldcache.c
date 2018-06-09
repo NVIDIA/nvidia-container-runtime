@@ -153,8 +153,6 @@ change_rootfs(struct error *err, const char *rootfs, bool mount_proc, bool *drop
 static int
 adjust_capabilities(struct error *err, uid_t uid, bool host_ldconfig)
 {
-        cap_value_t cap = CAP_DAC_OVERRIDE;
-
         /*
          * Drop all the inheritable capabilities and the ambient capabilities consequently.
          * Don't bother with the other capabilities, execve will take care of it.
@@ -168,13 +166,13 @@ adjust_capabilities(struct error *err, uid_t uid, bool host_ldconfig)
                  * If allowed, set the CAP_DAC_OVERRIDE capability because some distributions rely on it
                  * (e.g. https://bugzilla.redhat.com/show_bug.cgi?id=517575).
                  */
-                if (perm_set_capabilities(err, CAP_INHERITABLE, &cap, 1) < 0) {
+                if (perm_set_capabilities(err, CAP_INHERITABLE, &(cap_value_t){CAP_DAC_OVERRIDE}, 1) < 0) {
                         if (err->code != EPERM)
                                 return (-1);
                         if (perm_set_capabilities(err, CAP_INHERITABLE, NULL, 0) < 0)
                                 return (-1);
                         log_warn("could not set inheritable capabilities, containers may require additional tuning");
-                } else if (uid != 0 && perm_set_capabilities(err, CAP_AMBIENT, &cap, 1) < 0) {
+                } else if (uid != 0 && perm_set_capabilities(err, CAP_AMBIENT, &(cap_value_t){CAP_DAC_OVERRIDE}, 1) < 0) {
                         if (err->code != EPERM)
                                 return (-1);
                         log_warn("could not set ambient capabilities, containers may require additional tuning");
@@ -182,7 +180,7 @@ adjust_capabilities(struct error *err, uid_t uid, bool host_ldconfig)
         }
 
         /* Drop all the bounding set */
-        if (perm_drop_bounds(err) < 0)
+        if (perm_set_bounds(err, NULL, 0) < 0)
                 return (-1);
 
         return (0);

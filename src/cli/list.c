@@ -84,27 +84,18 @@ list_command(const struct context *ctx)
         int rv = EXIT_FAILURE;
 
         run_as_root = (geteuid() == 0);
-        if (!run_as_root && (ctx->load_kmods || ctx->root != NULL)) {
-                warnx("requires root privileges");
-                return (rv);
-        }
         if (run_as_root) {
-                if (perm_set_capabilities(&err, CAP_PERMITTED, permitted_caps, nitems(permitted_caps)) < 0 ||
-                    perm_set_capabilities(&err, CAP_INHERITABLE, inherited_caps, nitems(inherited_caps)) < 0 ||
-                    perm_drop_bounds(&err) < 0) {
-                        warnx("permission error: %s", err.msg);
-                        return (rv);
-                }
-        } else {
-                if (perm_set_capabilities(&err, CAP_PERMITTED, NULL, 0) < 0) {
+                if (perm_set_capabilities(&err, CAP_PERMITTED, pcaps, nitems(pcaps)) < 0 ||
+                    perm_set_capabilities(&err, CAP_INHERITABLE, NULL, 0) < 0 ||
+                    perm_set_bounds(&err, bcaps, nitems(bcaps)) < 0) {
                         warnx("permission error: %s", err.msg);
                         return (rv);
                 }
         }
 
         /* Initialize the library context. */
-        int c = ctx->load_kmods ? CAPS_INIT_KMODS : CAPS_INIT;
-        if (run_as_root && perm_set_capabilities(&err, CAP_EFFECTIVE, effective_caps[c], effective_caps_size(c)) < 0) {
+        int c = ctx->load_kmods ? NVC_INIT_KMODS : NVC_INIT;
+        if (run_as_root && perm_set_capabilities(&err, CAP_EFFECTIVE, ecaps[c], ecaps_size(c)) < 0) {
                 warnx("permission error: %s", err.msg);
                 goto fail;
         }
@@ -123,7 +114,7 @@ list_command(const struct context *ctx)
         }
 
         /* Query the driver and device information. */
-        if (run_as_root && perm_set_capabilities(&err, CAP_EFFECTIVE, effective_caps[CAPS_INFO], effective_caps_size(CAPS_INFO)) < 0) {
+        if (run_as_root && perm_set_capabilities(&err, CAP_EFFECTIVE, ecaps[NVC_INFO], ecaps_size(NVC_INFO)) < 0) {
                 warnx("permission error: %s", err.msg);
                 goto fail;
         }
@@ -169,7 +160,7 @@ list_command(const struct context *ctx)
                         printf("%s\n", drv->ipcs[i]);
         }
 
-        if (run_as_root && perm_set_capabilities(&err, CAP_EFFECTIVE, effective_caps[CAPS_SHUTDOWN], effective_caps_size(CAPS_SHUTDOWN)) < 0) {
+        if (run_as_root && perm_set_capabilities(&err, CAP_EFFECTIVE, ecaps[NVC_SHUTDOWN], ecaps_size(NVC_SHUTDOWN)) < 0) {
                 warnx("permission error: %s", err.msg);
                 goto fail;
         }

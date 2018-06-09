@@ -175,8 +175,15 @@ load_kernel_modules(struct error *err, const char *root)
                 return (-1);
         }
         if (pid == 0) {
-                if (chroot(root) < 0 || chdir("/") < 0) {
-                        log_errf("failed to change root directory: %s", strerror(errno));
+                if (!str_equal(root, "/")) {
+                        if (chroot(root) < 0 || chdir("/") < 0) {
+                                log_errf("failed to change root directory: %s", strerror(errno));
+                                log_warn("skipping kernel modules load due to failure");
+                                _exit(EXIT_FAILURE);
+                        }
+                }
+                if (perm_set_capabilities(NULL, CAP_INHERITABLE, &(cap_value_t){CAP_SYS_MODULE}, 1) < 0) {
+                        log_warn("failed to set inheritable capabilities");
                         log_warn("skipping kernel modules load due to failure");
                         _exit(EXIT_FAILURE);
                 }
