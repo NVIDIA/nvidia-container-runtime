@@ -17,7 +17,7 @@ Refer to the [repository configuration](https://nvidia.github.io/libnvidia-conta
 With Docker:
 ```bash
 # Generate packages for a given distribution in the dist/ directory
-make docker-ubuntu:16.04 TAG=rc.1
+make docker-ubuntu:16.04 TAG=rc.2
 ````
 
 Without Docker:

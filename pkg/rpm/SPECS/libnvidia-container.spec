@@ -85,6 +85,12 @@ This package contains command-line tools that facilitate using the library.
 %{_bindir}/*
 
 %changelog
+* Mon Jun 11 2018 NVIDIA CORPORATION <cudatools@nvidia.com> 1.0.0-0.1.rc.2
+- 7ea554a Rework capabilities to support more unprivileged use-cases
+- f06cbbb Fix driver process DEATHSIG teardown
+- 931bd4f Allow more syscalls in ldconfig
+- a0644ea Fix off-by-one error
+
 * Thu Apr 26 2018 NVIDIA CORPORATION <cudatools@nvidia.com> 1.0.0-0.1.rc.1
 - 4d43665 Bump nvidia-modprobe-utils to 396.18
 - d8338a6 Bump libtirpc to 1.0.3

@@ -1,3 +1,12 @@
+libnvidia-container (1.0.0~rc.2-1) UNRELEASED; urgency=medium
+
+  * 7ea554a Rework capabilities to support more unprivileged use-cases
+  * f06cbbb Fix driver process DEATHSIG teardown
+  * 931bd4f Allow more syscalls in ldconfig
+  * a0644ea Fix off-by-one error
+
+ -- NVIDIA CORPORATION <cudatools@nvidia.com>  Mon, 11 Jun 2018 13:39:47 -0700
+
 libnvidia-container (1.0.0~rc.1-1) UNRELEASED; urgency=medium
 
   * 4d43665 Bump nvidia-modprobe-utils to 396.18
