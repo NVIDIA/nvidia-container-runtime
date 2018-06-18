@@ -3,13 +3,20 @@ package main
 import (
 	"log"
 	"os"
+	"path"
 
 	"github.com/BurntSushi/toml"
 )
 
 const (
 	configPath = "/etc/nvidia-container-runtime/config.toml"
+	driverPath = "/run/nvidia/driver"
 )
+
+var defaultPaths = [...]string{
+	path.Join(driverPath, configPath),
+	configPath,
+}
 
 // CLIConfig: options for nvidia-container-cli.
 type CLIConfig struct {
@@ -48,10 +55,24 @@ func getDefaultHookConfig() (config HookConfig) {
 }
 
 func getHookConfig() (config HookConfig) {
-	config = getDefaultHookConfig()
-	_, err := toml.DecodeFile(configPath, &config)
-	if err != nil && !os.IsNotExist(err) {
-		log.Panicln("couldn't open configuration file:", err)
+	var err error
+
+	if len(*configflag) > 0 {
+		config = getDefaultHookConfig()
+		_, err = toml.DecodeFile(*configflag, &config)
+		if err != nil {
+			log.Panicln("couldn't open configuration file:", err)
+		}
+	} else {
+		for _, p := range defaultPaths {
+			config = getDefaultHookConfig()
+			_, err = toml.DecodeFile(p, &config)
+			if err == nil {
+				break
+			} else if !os.IsNotExist(err) {
+				log.Panicln("couldn't open default configuration file:", err)
+			}
+		}
 	}
 
 	return config

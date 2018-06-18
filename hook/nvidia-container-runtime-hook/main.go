@@ -16,7 +16,8 @@ import (
 )
 
 var (
-	debugflag = flag.Bool("debug", false, "enable debug output")
+	debugflag  = flag.Bool("debug", false, "enable debug output")
+	configflag = flag.String("config", "", "configuration file")
 
 	defaultPATH = []string{"/usr/local/sbin", "/usr/local/bin", "/usr/sbin", "/usr/bin", "/sbin", "/bin"}
 )
