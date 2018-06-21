@@ -2,7 +2,7 @@
 
 DOCKER ?= docker
 
-GOLANG_VERSION := 1.9.7
+GOLANG_VERSION := 1.10.3
 
 .NOTPARALLEL:
 .PHONY: all
