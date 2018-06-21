@@ -12,7 +12,7 @@ DIST_DIR  := $(CURDIR)/../dist
 
 all: ubuntu18.04 ubuntu16.04 ubuntu14.04 debian9 debian8 centos7 amzn2 amzn1
 
-ubuntu18.04: $(addsuffix -ubuntu18.04, 17.12.1)
+ubuntu18.04: $(addsuffix -ubuntu18.04, 18.03.1 17.12.1)
 
 ubuntu16.04: $(addsuffix -ubuntu16.04, 18.03.1 18.03.0 17.12.1 17.12.0 17.09.1 17.09.0 17.06.2 17.03.2 1.13.1 1.12.6)
 
