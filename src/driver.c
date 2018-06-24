@@ -139,6 +139,14 @@ setup_rpc_service(struct driver *ctx, const char *root, uid_t uid, gid_t gid, pi
         xclose(ctx->fd[SOCK_CLT]);
 
         if (!str_equal(root, "/")) {
+                /* Preload glibc libraries to avoid symbols mismatch after changing root. */
+                if (xdlopen(ctx->err, "libm.so.6", RTLD_NOW) == NULL)
+                        goto fail;
+                if (xdlopen(ctx->err, "librt.so.1", RTLD_NOW) == NULL)
+                        goto fail;
+                if (xdlopen(ctx->err, "libpthread.so.0", RTLD_NOW) == NULL)
+                        goto fail;
+
                 if (chroot(root) < 0 || chdir("/") < 0) {
                         error_set(ctx->err, "change root failed");
                         goto fail;
