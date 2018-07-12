@@ -5,7 +5,7 @@ BASE_DEPENDENCY := base-%
 
 .PHONY: all
 
-all: base ubuntu18.04 ubuntu16.04 debian9 centos7 amzn2 amzn1
+all: base ubuntu18.04 ubuntu16.04 debian9 centos7 amzn2 amzn1 opensuse-leap15.1
 
 verify: fmt lint vet
 
@@ -20,9 +20,9 @@ lint:
 vet:
 	go list ./... | grep -v "vendor" | xargs go vet
 
-runtime: runtime-ubuntu18.04 runtime-ubuntu16.04 runtime-debian9 runtime-centos7 runtime-amzn2 runtime-amzn1
+runtime: runtime-ubuntu18.04 runtime-ubuntu16.04 runtime-debian9 runtime-centos7 runtime-amzn2 runtime-amzn1 runtime-opensuse-leap15.1
 
-toolkit: toolkit-ubuntu18.04 toolkit-ubuntu16.04 toolkit-debian9 toolkit-centos7 toolkit-amzn2 toolkit-amzn1
+toolkit: toolkit-ubuntu18.04 toolkit-ubuntu16.04 toolkit-debian9 toolkit-centos7 toolkit-amzn2 toolkit-amzn1 toolkit-opensuse-leap15.1
 
 # Build all packages for a specific distribution.
 ubuntu18.04: runtime-ubuntu18.04 toolkit-ubuntu18.04
@@ -40,6 +40,8 @@ centos7: runtime-centos7 toolkit-centos7
 amzn2: runtime-amzn2 toolkit-amzn2
 
 amzn1: runtime-amzn1 toolkit-amzn1
+
+opensuse-leap15.1: runtime-opensuse-leap15.1 toolkit-opensuse-leap15.1
 
 base:
 	make -C $(CURDIR)/base BASE=${BASE}
@@ -77,3 +79,6 @@ runtime-%:
 
 %-runtime-amzn1: base-amzn1
 	make -C $(CURDIR)/runtime $*-amzn1
+
+%-runtime-opensuse-leap15.1: base-opensuse-leap15.1
+	make -C $(CURDIR)/runtime $*-opensuse-leap15.1
