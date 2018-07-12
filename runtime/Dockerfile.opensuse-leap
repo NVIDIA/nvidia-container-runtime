@@ -1,0 +1,38 @@
+ARG BASE
+ARG VERSION_ID
+FROM nvidia/base/opensuse-leap:${VERSION_ID}
+
+RUN zypper install -y curl make && \
+    rm -rf /var/cache/zypp/*
+
+WORKDIR $GOPATH/src/gitlab.com/nvidia/container-toolkit/nvidia-container-runtime
+RUN mkdir -p ${GOPATH}/bin
+
+RUN curl https://raw.githubusercontent.com/golang/dep/master/install.sh | sh
+
+COPY src .
+RUN make
+
+# packaging
+ARG PKG_VERS
+ARG PKG_REV
+
+ENV VERSION $PKG_VERS
+ENV RELEASE $PKG_REV
+
+# output directory
+ENV DIST_DIR=/tmp/nvidia-container-runtime-$PKG_VERS/SOURCES
+RUN mkdir -p $DIST_DIR /dist
+
+RUN mv nvidia-container-runtime $DIST_DIR/nvidia-container-runtime
+
+WORKDIR $DIST_DIR/..
+COPY rpm .
+
+CMD arch=$(uname -m) && \
+    rpmbuild --clean --target=$arch -bb \
+             -D "_topdir $PWD" \
+             -D "version $VERSION" \
+             -D "release $RELEASE" \
+             SPECS/nvidia-container-runtime.spec && \
+    mv RPMS/$arch/*.rpm /dist
