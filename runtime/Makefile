@@ -13,7 +13,7 @@ BASE := nvidia/base
 .NOTPARALLEL:
 .PHONY: all
 
-all: ubuntu18.04 ubuntu16.04 debian10 debian9 centos7 amzn2 amzn1
+all: ubuntu18.04 ubuntu16.04 debian10 debian9 centos7 amzn2 amzn1 opensuse-leap15.1
 
 ubuntu%: ARCH := amd64
 ubuntu%:
@@ -61,4 +61,16 @@ amzn%:
 	$(MKDIR) -p "$(DIST_DIR)/amzn$*/$(ARCH)"
 	$(DOCKER) run --cidfile $@.cid "nvidia/runtime/amzn:$*"
 	$(DOCKER) cp $$(cat $@.cid):/dist/. "$(DIST_DIR)/amzn$*/$(ARCH)/"
+	$(DOCKER) rm $$(cat $@.cid) && rm $@.cid
+
+opensuse-leap%: ARCH := x86_64
+opensuse-leap%:
+	$(DOCKER) build --build-arg VERSION_ID="$*" \
+                        --build-arg PKG_VERS="$(VERSION)" \
+                        --build-arg PKG_REV="$(PKG_REV)" \
+                        --build-arg BASE="$(BASE)" \
+                        -t "nvidia/runtime/opensuse-leap:$*" -f Dockerfile.opensuse-leap .
+	$(MKDIR) -p $(DIST_DIR)/opensuse-leap$*/$(ARCH)
+	$(DOCKER) run --cidfile $@.cid "nvidia/runtime/opensuse-leap:$*"
+	$(DOCKER) cp $$(cat $@.cid):/dist/. $(DIST_DIR)/opensuse-leap$*/$(ARCH)/
 	$(DOCKER) rm $$(cat $@.cid) && rm $@.cid
