@@ -33,11 +33,13 @@ install -m 755 -t %{buildroot}%{_bindir} nvidia-container-toolkit
 mkdir -p %{buildroot}/etc/nvidia-container-runtime
 install -m 644 -t %{buildroot}/etc/nvidia-container-runtime config.toml
 
+%if 0%{?fedora} || 0%{?rhel_version} || 0%{?centos_version}
 mkdir -p %{buildroot}/usr/libexec/oci/hooks.d
 install -m 755 -t %{buildroot}/usr/libexec/oci/hooks.d oci-nvidia-hook
 
 mkdir -p %{buildroot}/usr/share/containers/oci/hooks.d
 install -m 644 -t %{buildroot}/usr/share/containers/oci/hooks.d oci-nvidia-hook.json
+%endif
 
 %posttrans
 ln -sf %{_bindir}/nvidia-container-toolkit %{_bindir}/nvidia-container-runtime-hook
@@ -49,7 +51,9 @@ rm -f %{_bindir}/nvidia-container-runtime-hook
 %license LICENSE
 %{_bindir}/nvidia-container-toolkit
 /etc/nvidia-container-runtime/config.toml
+%if 0%{?fedora} || 0%{?rhel_version} || 0%{?centos_version}
 /usr/libexec/oci/hooks.d/oci-nvidia-hook
 /usr/share/containers/oci/hooks.d/oci-nvidia-hook.json
+%endif
 
 %changelog
