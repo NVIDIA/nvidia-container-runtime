@@ -39,6 +39,8 @@ sudo yum install nvidia-container-runtime
 
 ## Docker Engine setup
 
+**Do not follow this section if you installed the `nvidia-docker2` package, it already registers the runtime.**
+
 To register the `nvidia` runtime, use the method below that is best suited to your environment.  
 You might need to merge the new argument with your existing configuration.
 
