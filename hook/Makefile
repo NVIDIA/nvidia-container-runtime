@@ -3,7 +3,7 @@
 DOCKER ?= docker
 
 VERSION := 1.4.0
-PKG_REV := 1
+PKG_REV := 2
 
 DIST_DIR  := $(CURDIR)/../dist
 
