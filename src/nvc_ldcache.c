@@ -212,7 +212,7 @@ limit_resources(struct error *err)
         limit = (struct rlimit){10, 10};
         if (setrlimit(RLIMIT_CPU, &limit) < 0)
                 goto fail;
-        limit = (struct rlimit){512*1024*1024, 512*1024*1024};
+        limit = (struct rlimit){2ull*1024*1024*1024, 2ull*1024*1024*1024};
         if (setrlimit(RLIMIT_AS, &limit) < 0)
                 goto fail;
         limit = (struct rlimit){64, 64};
