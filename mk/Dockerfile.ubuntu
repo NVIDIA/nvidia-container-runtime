@@ -2,22 +2,11 @@ ARG IMAGESPEC=ubuntu:16.04
 FROM ${IMAGESPEC}
 ARG IMAGESPEC=ubuntu:16.04
 
-SHELL ["/bin/bash", "-c"]
-
-RUN distrib=${IMAGESPEC//[.:]} && \
-    arch=$(uname -m); arch=${arch/le/el} && \
-    apt-get update && apt-get install -y --no-install-recommends gnupg2 curl ca-certificates && \
-    curl -fsSL https://developer.download.nvidia.com/compute/cuda/repos/${distrib/1804/1604}/${arch}/7fa2af80.pub | apt-key add - && \
-    echo "deb http://developer.download.nvidia.com/compute/cuda/repos/${distrib/1804/1604}/${arch} /" > /etc/apt/sources.list.d/cuda.list && \
-    rm -rf /var/lib/apt/lists/*
-
 RUN apt-get update && apt-get install -y --no-install-recommends \
         apt-utils \
         bmake \
         build-essential \
         bzip2 \
-        cuda-misc-headers-8-0=8.0.61-1 \
-        cuda-nvml-dev-8-0=8.0.61-1 \
         devscripts \
         dh-make \
         fakeroot \

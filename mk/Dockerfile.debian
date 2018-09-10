@@ -2,23 +2,11 @@ ARG IMAGESPEC=debian:9.2
 FROM ${IMAGESPEC}
 ARG IMAGESPEC=debian:9.2
 
-SHELL ["/bin/bash", "-c"]
-
-# XXX: CUDA doesn't officially support debian, we just need the driver headers though
-RUN distrib=ubuntu1604 && \
-    arch=$(uname -m); arch=${arch/le/el} && \
-    apt-get update && apt-get install -y --no-install-recommends curl ca-certificates gnupg2 && \
-    curl -fsSL https://developer.download.nvidia.com/compute/cuda/repos/${distrib}/${arch}/7fa2af80.pub | apt-key add - && \
-    echo "deb http://developer.download.nvidia.com/compute/cuda/repos/${distrib}/${arch} /" > /etc/apt/sources.list.d/cuda.list && \
-    rm -rf /var/lib/apt/lists/*
-
 RUN apt-get update && apt-get install -y --no-install-recommends \
         apt-utils \
         bmake \
         build-essential \
         bzip2 \
-        cuda-misc-headers-8-0=8.0.61-1 \
-        cuda-nvml-dev-8-0=8.0.61-1 \
         devscripts \
         dh-make \
         fakeroot \

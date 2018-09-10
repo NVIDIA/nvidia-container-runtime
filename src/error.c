@@ -7,9 +7,10 @@
 #include <dlfcn.h>
 #include <errno.h>
 
-#include <cuda.h>
 #include <libelf.h>
-#include <nvml.h>
+
+#include "cuda.h"
+#include "nvml.h"
 
 #include "error.h"
 

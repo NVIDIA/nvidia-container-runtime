@@ -2,19 +2,9 @@ ARG IMAGESPEC=centos:7
 FROM ${IMAGESPEC}
 ARG IMAGESPEC=centos:7
 
-SHELL ["/bin/bash", "-c"]
-
-COPY mk/cuda.repo /etc/yum.repos.d/
-
-RUN distrib=rhel${IMAGESPEC##*:} && \
-    arch=$(uname -m) && \
-    echo $distrib > /etc/yum/vars/distrib && \
-    curl -fsSL https://developer.download.nvidia.com/compute/cuda/repos/${distrib}/${arch}/7fa2af80.pub > /etc/pki/rpm-gpg/RPM-GPG-KEY-NVIDIA && \
-    yum install -y \
+RUN yum install -y \
         bzip2 \
         createrepo \
-        cuda-misc-headers-8-0-8.0.61-1 \
-        cuda-nvml-dev-8-0-8.0.61-1 \
         elfutils-libelf-devel \
         gcc \
         git \

@@ -17,8 +17,8 @@
 #include <string.h>
 #include <unistd.h>
 
-#include <cuda.h>
-#include <nvml.h>
+#include "cuda.h"
+#include "nvml.h"
 
 #pragma GCC diagnostic push
 #include "driver_rpc.h"
