@@ -297,15 +297,22 @@ mount_procfs_gpu(struct error *err, const char *root, const struct nvc_container
         char *mnt = NULL;
         mode_t mode;
 
-        /* XXX The driver procfs uses 16-bit PCI domain */
-        if (xasprintf(err, &gpu, "%s/gpus/%s", NV_PROC_DRIVER, busid + 4) < 0)
-                return (NULL);
-        if (path_join(err, src, root, gpu) < 0)
-                goto fail;
-        if (path_resolve_full(err, dst, cnt->cfg.rootfs, gpu) < 0)
-                goto fail;
-        if (file_mode(err, src, &mode) < 0)
-                goto fail;
+        for (int off = 0;; off += 4) {
+                /* XXX Check if the driver procfs uses 32-bit or 16-bit PCI domain */
+                if (xasprintf(err, &gpu, "%s/gpus/%s", NV_PROC_DRIVER, busid + off) < 0)
+                        return (NULL);
+                if (path_join(err, src, root, gpu) < 0)
+                        goto fail;
+                if (path_resolve_full(err, dst, cnt->cfg.rootfs, gpu) < 0)
+                        goto fail;
+                if (file_mode(err, src, &mode) == 0)
+                        break;
+                if (err->code != ENOENT || off != 0)
+                        goto fail;
+                *dst = '\0';
+                free(gpu);
+                gpu = NULL;
+        }
         if (file_create(err, dst, NULL, cnt->uid, cnt->gid, mode) < 0)
                 goto fail;
 
