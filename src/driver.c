@@ -634,6 +634,65 @@ driver_get_device_model_1_svc(ptr_t ctxptr, ptr_t dev, driver_get_device_model_r
 }
 
 int
+driver_get_device_brand(struct driver *ctx, struct driver_device *dev, char **brand)
+{
+        struct driver_get_device_brand_res res = {0};
+        int rv = -1;
+
+        if (call_rpc(ctx, &res, driver_get_device_brand_1, (ptr_t)dev) < 0)
+                goto fail;
+        if ((*brand = xstrdup(ctx->err, res.driver_get_device_brand_res_u.brand)) == NULL)
+                goto fail;
+        rv = 0;
+
+ fail:
+        xdr_free((xdrproc_t)xdr_driver_get_device_brand_res, (caddr_t)&res);
+        return (rv);
+}
+
+bool_t
+driver_get_device_brand_1_svc(ptr_t ctxptr, ptr_t dev, driver_get_device_brand_res *res, maybe_unused struct svc_req *req)
+{
+        struct driver *ctx = (struct driver *)ctxptr;
+        struct driver_device *handle = (struct driver_device *)dev;
+        nvmlBrandType_t brand;
+        const char *buf;
+
+        memset(res, 0, sizeof(*res));
+        if (call_nvml(ctx, nvmlDeviceGetBrand, handle->nvml, &brand) < 0)
+                goto fail;
+        switch (brand) {
+        case NVML_BRAND_QUADRO:
+                buf = "Quadro";
+                break;
+        case NVML_BRAND_TESLA:
+                buf = "Tesla";
+                break;
+        case NVML_BRAND_NVS:
+                buf = "NVS";
+                break;
+        case NVML_BRAND_GRID:
+                buf = "GRID";
+                break;
+        case NVML_BRAND_GEFORCE:
+                buf = "GeForce";
+                break;
+        case NVML_BRAND_TITAN:
+                buf = "TITAN";
+                break;
+        default:
+                buf = "Unknown";
+        }
+        if ((res->driver_get_device_brand_res_u.brand = xstrdup(ctx->err, buf)) == NULL)
+                goto fail;
+        return (true);
+
+ fail:
+        error_to_xdr(ctx->err, res);
+        return (true);
+}
+
+int
 driver_get_device_arch(struct driver *ctx, struct driver_device *dev, char **arch)
 {
         struct driver_get_device_arch_res res = {0};

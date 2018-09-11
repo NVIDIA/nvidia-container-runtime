@@ -62,6 +62,7 @@ struct nvc_device {
         char *uuid;
         char *busid;
         char *arch;
+        char *brand;
         struct nvc_device_node node;
 };
 

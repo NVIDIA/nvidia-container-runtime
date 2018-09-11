@@ -76,6 +76,16 @@ dsl_compare_version(const char *v1, enum dsl_comparator cmp, const char *v2)
         return (-1);
 }
 
+int
+dsl_compare_string(const char *s1, enum dsl_comparator cmp, const char *s2)
+{
+        if (cmp == EQUAL)
+                return (str_case_equal(s1, s2));
+        else if (cmp == NOT_EQUAL)
+                return (!str_case_equal(s1, s2));
+        return (-1);
+}
+
 static int
 evaluate_rule(char *buf, char *expr, void *ctx, const struct dsl_rule rules[], size_t size)
 {

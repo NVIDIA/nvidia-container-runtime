@@ -508,6 +508,8 @@ nvc_device_info_new(struct nvc_context *ctx, const char *opts)
                         goto fail;
                 if (driver_get_device_arch(&ctx->drv, dev, &gpu->arch) < 0)
                         goto fail;
+                if (driver_get_device_brand(&ctx->drv, dev, &gpu->brand) < 0)
+                        goto fail;
                 if (driver_get_device_minor(&ctx->drv, dev, &minor) < 0)
                         goto fail;
                 if (xasprintf(&ctx->err, &gpu->node.path, NV_DEVICE_PATH, minor) < 0)
@@ -533,6 +535,7 @@ nvc_device_info_free(struct nvc_device_info *info)
                 free(info->gpus[i].uuid);
                 free(info->gpus[i].busid);
                 free(info->gpus[i].arch);
+                free(info->gpus[i].brand);
                 free(info->gpus[i].node.path);
         }
         free(info->gpus);

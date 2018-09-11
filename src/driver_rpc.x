@@ -95,6 +95,13 @@ union driver_get_device_model_res switch (int errcode) {
                 string errmsg<>;
 };
 
+union driver_get_device_brand_res switch (int errcode) {
+        case 0:
+                string brand<>;
+        default:
+                string errmsg<>;
+};
+
 program DRIVER_PROGRAM {
         version DRIVER_VERSION {
                 driver_init_res DRIVER_INIT(ptr_t) = 1;
@@ -108,5 +115,6 @@ program DRIVER_PROGRAM {
                 driver_get_device_uuid_res DRIVER_GET_DEVICE_UUID(ptr_t, ptr_t) = 9;
                 driver_get_device_arch_res DRIVER_GET_DEVICE_ARCH(ptr_t, ptr_t) = 10;
                 driver_get_device_model_res DRIVER_GET_DEVICE_MODEL(ptr_t, ptr_t) = 11;
+                driver_get_device_brand_res DRIVER_GET_DEVICE_BRAND(ptr_t, ptr_t) = 12;
         } = 1;
 } = 0x1;

@@ -29,6 +29,7 @@ struct dsl_rule {
 };
 
 int dsl_compare_version(const char *, enum dsl_comparator, const char *);
+int dsl_compare_string(const char *, enum dsl_comparator, const char *);
 int dsl_evaluate(struct error *, const char *, void *, const struct dsl_rule [], size_t);
 
 #endif /* HEADER_DSL_H */

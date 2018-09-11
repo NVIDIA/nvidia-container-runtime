@@ -13,6 +13,7 @@ static error_t configure_parser(int, char *, struct argp_state *);
 static int check_cuda_version(const struct dsl_data *, enum dsl_comparator, const char *);
 static int check_driver_version(const struct dsl_data *, enum dsl_comparator, const char *);
 static int check_device_arch(const struct dsl_data *, enum dsl_comparator, const char *);
+static int check_device_brand(const struct dsl_data *, enum dsl_comparator, const char *);
 
 const struct argp configure_usage = {
         (const struct argp_option[]){
@@ -46,6 +47,7 @@ static const struct dsl_rule rules[] = {
         {"cuda", &check_cuda_version},
         {"driver", &check_driver_version},
         {"arch", &check_device_arch},
+        {"brand", &check_device_brand},
 };
 
 static error_t
@@ -157,6 +159,15 @@ check_device_arch(const struct dsl_data *data, enum dsl_comparator cmp, const ch
         if (data->dev == NULL)
                 return (true);
         return (dsl_compare_version(data->dev->arch, cmp, arch));
+}
+
+static int
+check_device_brand(const struct dsl_data *data, enum dsl_comparator cmp, const char *brand)
+{
+        /* XXX No device is visible, assume the brand is ok. */
+        if (data->dev == NULL)
+                return (true);
+        return (dsl_compare_string(data->dev->brand, cmp, brand));
 }
 
 int
