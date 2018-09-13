@@ -36,6 +36,8 @@
 #define NV_UVM_PROC_DRIVER       "/proc/driver/nvidia-uvm"
 #define NV_APP_PROFILE_DIR       "/etc/nvidia/nvidia-application-profiles-rc.d"
 
+#define CUDA_RUNTIME_DIR         "/usr/local/cuda"
+
 struct nvc_context {
         bool initialized;
         struct error err;
@@ -51,6 +53,8 @@ struct nvc_container {
         gid_t gid;
         char *mnt_ns;
         char *dev_cg;
+        char **libs;
+        size_t nlibs;
 };
 
 enum {

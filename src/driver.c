@@ -29,9 +29,6 @@
 #include "utils.h"
 #include "xfuncs.h"
 
-#define SONAME_LIBCUDA "libcuda.so.1"
-#define SONAME_LIBNVML "libnvidia-ml.so.1"
-
 #define MAX_DEVICES     64
 #define REAP_TIMEOUT_MS 10
 

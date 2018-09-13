@@ -26,6 +26,7 @@ static char *cgroup_root(char *, char *, const char *);
 static char *parse_proc_file(struct error *, const char *, parse_fn, char *, const char *);
 static char *find_cgroup_path(struct error *, const struct nvc_container *, const char *);
 static char *find_namespace_path(struct error *, const struct nvc_container *, const char *);
+static int  find_library_paths(struct error *, struct nvc_container *);
 static int  lookup_owner(struct error *, struct nvc_container *);
 static int  copy_config(struct error *, struct nvc_container *, const struct nvc_container_config *);
 
@@ -181,6 +182,48 @@ find_namespace_path(struct error *err, const struct nvc_container *cnt, const ch
 }
 
 static int
+find_library_paths(struct error *err, struct nvc_container *cnt)
+{
+        char path[PATH_MAX];
+        glob_t gl;
+        int rv = -1;
+        char **ptr;
+
+        if (!(cnt->flags & OPT_COMPUTE_LIBS))
+                return (0);
+
+        if (path_join(err, path, cnt->cfg.rootfs, cnt->cfg.cudart_dir) < 0)
+                return (-1);
+        if (path_append(err, path, "compat/lib*.so.*") < 0)
+                return (-1);
+
+        if (xglob(err, path, GLOB_ERR, NULL, &gl) < 0)
+                goto fail;
+        if (gl.gl_pathc > 0) {
+                cnt->nlibs = gl.gl_pathc;
+                cnt->libs = ptr = array_new(err, gl.gl_pathc);
+                if (cnt->libs == NULL)
+                        goto fail;
+
+                for (size_t i = 0; i < gl.gl_pathc; ++i) {
+                        if (path_resolve(err, path, cnt->cfg.rootfs, gl.gl_pathv[i] + strlen(cnt->cfg.rootfs)) < 0)
+                                goto fail;
+                        if (!str_array_match(path, (const char * const *)cnt->libs, (size_t)(ptr - cnt->libs))) {
+                                log_infof("selecting %s%s", cnt->cfg.rootfs, path);
+                                if ((*ptr++ = xstrdup(err, path)) == NULL)
+                                        goto fail;
+                        }
+                }
+                array_pack(cnt->libs, &cnt->nlibs);
+        }
+        rv = 0;
+
+ fail:
+        globfree(&gl);
+        return (rv);
+}
+
+static int
 lookup_owner(struct error *err, struct nvc_container *cnt)
 {
         const char *prefix;
@@ -205,6 +248,7 @@ copy_config(struct error *err, struct nvc_container *cnt, const struct nvc_conta
         const char *bins_dir = cfg->bins_dir;
         const char *libs_dir = cfg->libs_dir;
         const char *libs32_dir = cfg->libs32_dir;
+        const char *cudart_dir = cfg->cudart_dir;
         const char *ldconfig = cfg->ldconfig;
         char *rootfs;
         int multiarch, ret;
@@ -266,6 +310,8 @@ copy_config(struct error *err, struct nvc_container *cnt, const struct nvc_conta
                         }
                 }
         }
+        if (cudart_dir == NULL)
+                cudart_dir = CUDA_RUNTIME_DIR;
         if (ldconfig == NULL) {
                 /*
                  * Some distributions have a wrapper script around ldconfig to reduce package install time.
@@ -283,6 +329,8 @@ copy_config(struct error *err, struct nvc_container *cnt, const struct nvc_conta
         if ((cnt->cfg.libs_dir = xstrdup(err, libs_dir)) == NULL)
                 goto fail;
         if ((cnt->cfg.libs32_dir = xstrdup(err, libs32_dir)) == NULL)
+                goto fail;
+        if ((cnt->cfg.cudart_dir = xstrdup(err, cudart_dir)) == NULL)
                 goto fail;
         if ((cnt->cfg.ldconfig = xstrdup(err, ldconfig)) == NULL)
                 goto fail;
@@ -302,7 +350,7 @@ nvc_container_new(struct nvc_context *ctx, const struct nvc_container_config *cf
         if (validate_context(ctx) < 0)
                 return (NULL);
         if (validate_args(ctx, cfg != NULL && cfg->pid > 0 && cfg->rootfs != NULL && !str_empty(cfg->rootfs) && cfg->rootfs[0] == '/' &&
-            !str_empty(cfg->bins_dir) && !str_empty(cfg->libs_dir) && !str_empty(cfg->libs32_dir) && !str_empty(cfg->ldconfig)) < 0)
+            !str_empty(cfg->bins_dir) && !str_empty(cfg->libs_dir) && !str_empty(cfg->libs32_dir) && !str_empty(cfg->cudart_dir) && !str_empty(cfg->ldconfig)) < 0)
                 return (NULL);
         if (opts == NULL)
                 opts = default_container_opts;
@@ -322,6 +370,10 @@ nvc_container_new(struct nvc_context *ctx, const struct nvc_container_config *cf
                 goto fail;
         if (lookup_owner(&ctx->err, cnt) < 0)
                 goto fail;
+        if (!(flags & OPT_NO_CNTLIBS)) {
+                if (find_library_paths(&ctx->err, cnt) < 0)
+                        goto fail;
+        }
         if ((cnt->mnt_ns = find_namespace_path(&ctx->err, cnt, "mnt")) == NULL)
                 goto fail;
         if (!(flags & OPT_NO_CGROUPS)) {
@@ -335,6 +387,7 @@ nvc_container_new(struct nvc_context *ctx, const struct nvc_container_config *cf
         log_infof("setting bins directory to %s", cnt->cfg.bins_dir);
         log_infof("setting libs directory to %s", cnt->cfg.libs_dir);
         log_infof("setting libs32 directory to %s", cnt->cfg.libs32_dir);
+        log_infof("setting cudart directory to %s", cnt->cfg.cudart_dir);
         log_infof("setting ldconfig to %s%s", cnt->cfg.ldconfig, (cnt->cfg.ldconfig[0] == '@') ? " (host relative)" : "");
         log_infof("setting mount namespace to %s", cnt->mnt_ns);
         if (!(flags & OPT_NO_CGROUPS))
@@ -355,8 +408,10 @@ nvc_container_free(struct nvc_container *cnt)
         free(cnt->cfg.bins_dir);
         free(cnt->cfg.libs_dir);
         free(cnt->cfg.libs32_dir);
+        free(cnt->cfg.cudart_dir);
         free(cnt->cfg.ldconfig);
         free(cnt->mnt_ns);
         free(cnt->dev_cg);
+        array_free(cnt->libs, cnt->nlibs);
         free(cnt);
 }

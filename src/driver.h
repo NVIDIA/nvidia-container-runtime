@@ -18,6 +18,9 @@ SVCXPRT *svcunixfd_create(int, u_int, u_int);
 
 #include "error.h"
 
+#define SONAME_LIBCUDA "libcuda.so.1"
+#define SONAME_LIBNVML "libnvidia-ml.so.1"
+
 #define SOCK_CLT 0
 #define SOCK_SVC 1
 

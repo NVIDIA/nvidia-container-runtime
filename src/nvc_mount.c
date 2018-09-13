@@ -33,6 +33,7 @@ static void unmount(const char *);
 static int  setup_cgroup(struct error *, const char *, dev_t);
 static int  symlink_library(struct error *, const char *, const char *, const char *, uid_t, gid_t);
 static int  symlink_libraries(struct error *, const struct nvc_container *, const char * const [], size_t);
+static void filter_libraries(const struct nvc_driver_info *, char * [], size_t *);
 
 static char **
 mount_files(struct error *err, const char *root, const struct nvc_container *cnt, const char *dir, char *paths[], size_t size)
@@ -397,7 +398,7 @@ symlink_libraries(struct error *err, const struct nvc_container *cnt, const char
                 lib = basename(paths[i]);
                 if (str_has_prefix(lib, "libcuda.so")) {
                         /* XXX Many applications wrongly assume that libcuda.so exists (e.g. with dlopen). */
-                        if (symlink_library(err, paths[i], lib, "libcuda.so", cnt->uid, cnt->gid) < 0)
+                        if (symlink_library(err, paths[i], SONAME_LIBCUDA, "libcuda.so", cnt->uid, cnt->gid) < 0)
                                 return (-1);
                 } else if (str_has_prefix(lib, "libGLX_nvidia.so")) {
                         /* XXX GLVND requires this symlink for indirect GLX support. */
@@ -406,6 +407,27 @@ symlink_libraries(struct error *err, const struct nvc_container *cnt, const char
                 }
         }
         return (0);
+}
+
+static void
+filter_libraries(const struct nvc_driver_info *info, char * paths[], size_t *size)
+{
+        char *lib, *maj;
+
+        /*
+         * XXX Filter out any library that matches the major version of RM to prevent us from
+         * running into an unsupported configurations (e.g. CUDA compat on Geforce or non-LTS drivers).
+         */
+        for (size_t i = 0; i < *size; ++i) {
+                lib = basename(paths[i]);
+                if ((maj = strstr(lib, ".so.")) != NULL) {
+                        maj += strlen(".so.");
+                        if (strncmp(info->nvrm_version, maj, strspn(maj, "0123456789")))
+                                continue;
+                }
+                paths[i] = NULL;
+        }
+        array_pack(paths, size);
 }
 
 int
@@ -423,7 +445,7 @@ nvc_driver_mount(struct nvc_context *ctx, const struct nvc_container *cnt, const
         if (ns_enter(&ctx->err, cnt->mnt_ns, CLONE_NEWNS) < 0)
                 return (-1);
 
-        nmnt = 2 + info->nbins + info->nlibs + info->nlibs32 + info->nipcs + info->ndevs;
+        nmnt = 2 + info->nbins + info->nlibs + cnt->nlibs + info->nlibs32 + info->nipcs + info->ndevs;
         mnt = ptr = (const char **)array_new(&ctx->err, nmnt);
         if (mnt == NULL)
                 goto fail;
@@ -431,12 +453,14 @@ nvc_driver_mount(struct nvc_context *ctx, const struct nvc_container *cnt, const
         /* Procfs mount */
         if ((*ptr++ = mount_procfs(&ctx->err, ctx->cfg.root, cnt)) == NULL)
                 goto fail;
+
         /* Application profile mount */
         if (cnt->flags & OPT_GRAPHICS_LIBS) {
                 if ((*ptr++ = mount_app_profile(&ctx->err, cnt)) == NULL)
                         goto fail;
         }
-        /* Binary and library mounts */
+
+        /* Host binary and library mounts */
         if (info->bins != NULL && info->nbins > 0) {
                 if ((tmp = (const char **)mount_files(&ctx->err, ctx->cfg.root, cnt, cnt->cfg.bins_dir, info->bins, info->nbins)) == NULL)
                         goto fail;
@@ -457,6 +481,24 @@ nvc_driver_mount(struct nvc_context *ctx, const struct nvc_container *cnt, const
         }
         if (symlink_libraries(&ctx->err, cnt, mnt, (size_t)(ptr - mnt)) < 0)
                 goto fail;
+
+        /* Container library mounts */
+        if (cnt->libs != NULL && cnt->nlibs > 0) {
+                size_t nlibs = cnt->nlibs;
+                char **libs = array_copy(&ctx->err, (const char * const *)cnt->libs, cnt->nlibs);
+                if (libs == NULL)
+                        goto fail;
+
+                filter_libraries(info, libs, &nlibs);
+                if ((tmp = (const char **)mount_files(&ctx->err, cnt->cfg.rootfs, cnt, cnt->cfg.libs_dir, libs, nlibs)) == NULL) {
+                        free(libs);
+                        goto fail;
+                }
+                ptr = array_append(ptr, tmp, array_size(tmp));
+                free(tmp);
+                free(libs);
+        }
+
         /* IPC mounts */
         for (size_t i = 0; i < info->nipcs; ++i) {
                 /* XXX Only utility libraries require persistenced IPC, everything else is compute only. */
@@ -468,6 +510,7 @@ nvc_driver_mount(struct nvc_context *ctx, const struct nvc_container *cnt, const
                 if ((*ptr++ = mount_ipc(&ctx->err, ctx->cfg.root, cnt, info->ipcs[i])) == NULL)
                         goto fail;
         }
+
         /* Device mounts */
         for (size_t i = 0; i < info->ndevs; ++i) {
                 /* XXX Only compute libraries require specific devices (e.g. UVM). */

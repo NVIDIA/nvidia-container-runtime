@@ -10,7 +10,9 @@
 #include <sys/types.h>
 
 #include <dlfcn.h>
+#include <errno.h>
 #include <fcntl.h>
+#include <glob.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -30,6 +32,7 @@ static inline void *xdlopen(struct error *, const char *, int);
 static inline int  xdlclose(struct error *, void *);
 static inline int  xmount(struct error *, const char *, const char *,
     const char *, unsigned long, const void *);
+static inline int  xglob(struct error *, const char *, int, int (*)(const char *, int), glob_t *);
 
 #include "error.h"
 
@@ -152,6 +155,23 @@ xmount(struct error *err, const char *source, const char *target,
         if ((rv = mount(source, target, filesystemtype, mountflags, data)) < 0)
                 error_set(err, "mount operation failed: %s", (source != NULL && *source == '/') ? source : target);
         return (rv);
+}
+
+static inline int
+xglob(struct error *err, const char *pattern, int flags, int (*errfn)(const char *, int), glob_t *pglob)
+{
+        int rv;
+
+        rv = glob(pattern, flags, errfn, pglob);
+        if (rv != 0 && rv != GLOB_NOMATCH && errno != ENOENT) {
+            error_set(err, "glob search failed: %s", pattern);
+            return (-1);
+        }
+        if (rv != 0) {
+            pglob->gl_pathc = 0;
+            pglob->gl_pathv = NULL;
+        }
+        return (0);
 }
 
 #endif /* HEADER_XFUNCS_H */

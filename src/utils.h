@@ -49,6 +49,7 @@ bool str_case_equal(const char *, const char *);
 bool str_has_prefix(const char *, const char *);
 bool str_has_suffix(const char *, const char *);
 bool str_empty(const char *);
+bool str_array_match_prefix(const char *, const char * const [], size_t);
 bool str_array_match(const char *, const char * const [], size_t);
 int  str_to_pid(struct error *, const char *, pid_t *);
 int  str_to_ugid(struct error *, char *, uid_t *, gid_t *);
@@ -60,6 +61,7 @@ int ns_enter(struct error *, const char *, int);
 char **array_new(struct error *, size_t);
 void array_free(char *[], size_t);
 void array_pack(char *[], size_t *);
+char **array_copy(struct error *, const char * const [], size_t);
 size_t array_size(const char * const []);
 const char **array_append(const char **, const char * const [], size_t);
 

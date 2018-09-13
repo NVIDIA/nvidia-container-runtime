@@ -172,10 +172,20 @@ str_empty(const char *str)
 }
 
 bool
-str_array_match(const char *str, const char * const arr[], size_t size)
+str_array_match_prefix(const char *str, const char * const arr[], size_t size)
 {
         for (size_t i = 0; i < size; ++i) {
                 if (str_has_prefix(str, arr[i]))
+                        return (true);
+        }
+        return (false);
+}
+
+bool
+str_array_match(const char *str, const char * const arr[], size_t size)
+{
+        for (size_t i = 0; i < size; ++i) {
+                if (str_equal(str, arr[i]))
                         return (true);
         }
         return (false);
@@ -327,7 +337,7 @@ ns_enter(struct error *err, const char *path, int nstype)
 char **
 array_new(struct error *err, size_t size)
 {
-        char **arr = NULL;
+        char **arr;
 
         arr = xcalloc(err, size, sizeof(*arr));
         return (arr);
@@ -348,6 +358,17 @@ array_append(const char **ptr, const char * const arr[], size_t size)
 {
         memcpy(ptr, arr, size * sizeof(*arr));
         return (ptr + size);
+}
+
+char **
+array_copy(struct error *err, const char * const arr[], size_t size)
+{
+        char **ptr;
+
+        if ((ptr = array_new(err, size)) == NULL)
+                return (NULL);
+        array_append((const char **)ptr, arr, size);
+        return (ptr);
 }
 
 void
