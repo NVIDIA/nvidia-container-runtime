@@ -5,7 +5,7 @@ Packager: NVIDIA CORPORATION <cudatools@nvidia.com>
 URL: https://github.com/NVIDIA/libnvidia-container
 BuildRequires: make
 Version: %{_version}
-Release: 0.1%{?_tag:.%_tag}
+Release: 1%{?_tag:.%_tag}
 Summary: NVIDIA container runtime library
 %description
 The nvidia-container library provides an interface to configure GNU/Linux
@@ -72,7 +72,7 @@ This package contains the debugging symbols for the library.
 %{_prefix}/lib/debug%{_libdir}/lib*.so.*
 
 %package tools
-Requires: %{name}%{_major}%{?_isa} >= %{version}-%{release}
+Requires: %{name}%{_major}%{?_isa} >= %{version}-1, %{name}%{_major}%{?_isa} >= %{version}-%{release}
 Summary: NVIDIA container runtime library (command-line tools)
 %description tools
 The nvidia-container library provides an interface to configure GNU/Linux
@@ -85,6 +85,15 @@ This package contains command-line tools that facilitate using the library.
 %{_bindir}/*
 
 %changelog
+* Thu Sep 20 2018 NVIDIA CORPORATION <cudatools@nvidia.com> 1.0.0-1
+- 35a9f27 Add support for CUDA forward compatibility
+- ebed710 Add device brand to the device informations and requirements
+- a141a7a Handle 32-bit PCI domains in procfs
+- 391c4b6 Preload glibc libraries before switching root
+- bcf69c6 Bump libtirpc to 1.1.4
+- 30aec17 Bump nvidia-modprobe-utils to 396.51
+- d05745f Bump the address space limits for ldconfig
+
 * Mon Jun 11 2018 NVIDIA CORPORATION <cudatools@nvidia.com> 1.0.0-0.1.rc.2
 - 7ea554a Rework capabilities to support more unprivileged use-cases
 - f06cbbb Fix driver process DEATHSIG teardown

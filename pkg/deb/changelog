@@ -1,3 +1,15 @@
+libnvidia-container (1.0.0-1) UNRELEASED; urgency=medium
+
+  * 35a9f27 Add support for CUDA forward compatibility
+  * ebed710 Add device brand to the device informations and requirements
+  * a141a7a Handle 32-bit PCI domains in procfs
+  * 391c4b6 Preload glibc libraries before switching root
+  * bcf69c6 Bump libtirpc to 1.1.4
+  * 30aec17 Bump nvidia-modprobe-utils to 396.51
+  * d05745f Bump the address space limits for ldconfig
+
+ -- NVIDIA CORPORATION <cudatools@nvidia.com>  Thu, 20 Sep 2018 11:52:52 -0700
+
 libnvidia-container (1.0.0~rc.2-1) UNRELEASED; urgency=medium
 
   * 7ea554a Rework capabilities to support more unprivileged use-cases
