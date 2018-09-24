@@ -119,6 +119,7 @@ A logical expression to define constraints on the configurations supported by th
 * `cuda`: constraint on the CUDA driver version.
 * `driver`: constraint on the driver version.
 * `arch`: constraint on the compute architectures of the selected GPUs.
+* `brand`: constraint on the brand of the selected GPUs (e.g. GeForce, Tesla, GRID).
 
 #### Expressions
 Multiple constraints can be expressed in a single environment variable: space-separated constraints are ORed, comma-separated constraints are ANDed.  
