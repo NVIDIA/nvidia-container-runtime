@@ -5,6 +5,7 @@
 [![Package repository](https://img.shields.io/badge/packages-repository-b956e8.svg?style=flat-square)](https://nvidia.github.io/libnvidia-container)
 [![Travis](https://img.shields.io/travis/NVIDIA/libnvidia-container.svg?style=flat-square)](https://travis-ci.org/NVIDIA/libnvidia-container)
 [![Coverity Scan](https://img.shields.io/coverity/scan/12444.svg?style=flat-square)](https://scan.coverity.com/projects/nvidia-libnvidia-container)
+[![LGTM](https://img.shields.io/lgtm/grade/cpp/g/NVIDIA/libnvidia-container.svg?style=flat-square)](https://lgtm.com/projects/g/NVIDIA/libnvidia-container/alerts/)
 
 This repository provides a library and a simple CLI utility to automatically configure GNU/Linux containers leveraging NVIDIA hardware.\
 The implementation relies on kernel primitives and is designed to be agnostic of the container runtime.
