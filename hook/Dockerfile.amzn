@@ -20,6 +20,14 @@ RUN go get -ldflags "-s -w" -v nvidia-container-runtime-hook && \
 
 COPY config.toml.amzn $DIST_DIR/config.toml
 
+# Hook for Project Atomic's fork of Docker: https://github.com/projectatomic/docker/tree/docker-1.13.1-rhel#add-dockerhooks-exec-custom-hooks-for-prestartpoststop-containerspatch
+# This might not be useful on Amazon Linux, but it's simpler to keep the RHEL
+# and Amazon Linux packages identical.
+COPY oci-nvidia-hook $DIST_DIR/oci-nvidia-hook
+
+# Hook for libpod/CRI-O: https://github.com/containers/libpod/blob/v0.8.5/pkg/hooks/docs/oci-hooks.5.md
+COPY oci-nvidia-hook.json $DIST_DIR/oci-nvidia-hook.json
+
 WORKDIR $DIST_DIR/..
 COPY rpm .
 
