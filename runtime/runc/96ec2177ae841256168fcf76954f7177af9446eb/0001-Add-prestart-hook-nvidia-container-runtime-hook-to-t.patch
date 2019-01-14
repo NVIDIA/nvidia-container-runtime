@@ -1,0 +1,64 @@
+From e2f8af42d9d0f8d7afc236323994a9ebe6bb0c3b Mon Sep 17 00:00:00 2001
+From: Felix Abecassis <fabecassis@nvidia.com>
+Date: Wed, 3 Jan 2018 11:50:02 -0800
+Subject: [PATCH] Add prestart hook nvidia-container-runtime-hook to the config
+
+Signed-off-by: Felix Abecassis <fabecassis@nvidia.com>
+---
+ utils.go | 26 ++++++++++++++++++++++++++
+ 1 file changed, 26 insertions(+)
+
+diff --git a/utils.go b/utils.go
+index 5165336..5cdd11e 100644
+--- a/utils.go
++++ b/utils.go
+@@ -3,6 +3,7 @@ package main
+ import (
+ 	"fmt"
+ 	"os"
++	"os/exec"
+ 	"path/filepath"
+ 	"strconv"
+ 	"strings"
+@@ -54,6 +55,26 @@ func fatal(err error) {
+ 	os.Exit(1)
+ }
+ 
++func addNVIDIAHook(context *cli.Context, spec *specs.Spec) error {
++	path, err := exec.LookPath("nvidia-container-runtime-hook")
++	if err != nil {
++		return err
++	}
++	args := []string{path}
++	if context.GlobalBool("debug") {
++		args = append(args, "-debug")
++	}
++	if spec.Hooks == nil {
++		spec.Hooks = &specs.Hooks{}
++	}
++	spec.Hooks.Prestart = append(spec.Hooks.Prestart, specs.Hook{
++		Path: path,
++		Args: append(args, "prestart"),
++	})
++
++	return nil
++}
++
+ // setupSpec performs initial setup based on the cli.Context for the container
+ func setupSpec(context *cli.Context) (*specs.Spec, error) {
+ 	bundle := context.String("bundle")
+@@ -66,6 +87,11 @@ func setupSpec(context *cli.Context) (*specs.Spec, error) {
+ 	if err != nil {
+ 		return nil, err
+ 	}
++
++	if err = addNVIDIAHook(context, spec); err != nil {
++		return nil, err
++	}
++
+ 	return spec, nil
+ }
+ 
+-- 
+2.7.4
+
