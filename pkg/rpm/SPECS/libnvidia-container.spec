@@ -85,6 +85,9 @@ This package contains command-line tools that facilitate using the library.
 %{_bindir}/*
 
 %changelog
+* Mon Jan 14 2019 NVIDIA CORPORATION <cudatools@nvidia.com> 1.0.1-1
+- deccb28 Allow yet more syscalls in ldconfig
+
 * Thu Sep 20 2018 NVIDIA CORPORATION <cudatools@nvidia.com> 1.0.0-1
 - 35a9f27 Add support for CUDA forward compatibility
 - ebed710 Add device brand to the device informations and requirements

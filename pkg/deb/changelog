@@ -1,3 +1,9 @@
+libnvidia-container (1.0.1-1) UNRELEASED; urgency=medium
+
+  * deccb28 Allow yet more syscalls in ldconfig
+
+ -- NVIDIA CORPORATION <cudatools@nvidia.com>  Mon, 14 Jan 2019 17:52:52 -0700
+
 libnvidia-container (1.0.0-1) UNRELEASED; urgency=medium
 
   * 35a9f27 Add support for CUDA forward compatibility
