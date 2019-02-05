@@ -1,3 +1,9 @@
+libnvidia-container (1.0.2-1) UNRELEASED; urgency=medium
+
+  * 4045013 Adds support for libnvidia-opticalflow
+
+ -- NVIDIA CORPORATION <cudatools@nvidia.com>  Mon, 04 Feb 2019 15:24:12 -0700
+
 libnvidia-container (1.0.1-1) UNRELEASED; urgency=medium
 
   * deccb28 Allow yet more syscalls in ldconfig
