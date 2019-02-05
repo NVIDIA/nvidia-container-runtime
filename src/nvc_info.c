@@ -80,6 +80,7 @@ static const char * const compute_libs[] = {
 static const char * const video_libs[] = {
         "libvdpau_nvidia.so",               /* NVIDIA VDPAU ICD */
         "libnvidia-encode.so",              /* Video encoder */
+        "libnvidia-opticalflow.so",         /* NVIDIA Opticalflow library */
         "libnvcuvid.so",                    /* Video decoder */
 };
 
