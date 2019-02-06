@@ -36,9 +36,11 @@ Refer to the [nvidia-container-runtime](https://github.com/NVIDIA/nvidia-contain
 ### Command line example
 
 ```bash
-# Setup a rootfs based on Ubuntu 16.04 inside new namespaces
+# Setup a new set of namespaces
 cd $(mktemp -d) && mkdir rootfs
 sudo unshare --mount --pid --fork
+
+# Setup a rootfs based on Ubuntu 16.04 inside the new namespaces
 curl http://cdimage.ubuntu.com/ubuntu-base/releases/16.04/release/ubuntu-base-16.04-core-amd64.tar.gz | tar -C rootfs -xz
 useradd -R $(realpath rootfs) -U -u 1000 -s /bin/bash nvidia
 mount --bind rootfs rootfs
@@ -52,7 +54,7 @@ mount -t tmpfs none tmp
 mount -t tmpfs none run
 
 # Isolate the first GPU device along with basic utilities
-nvidia-container-cli --load-kmods configure --no-cgroups --utility --device 0 .
+nvidia-container-cli --load-kmods configure --ldconfig=@/sbin/ldconfig.real --no-cgroups --utility --device 0 $(pwd)
 
 # Change into the new rootfs
 pivot_root . mnt
