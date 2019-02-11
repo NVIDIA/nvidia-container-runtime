@@ -28,7 +28,7 @@ COPY oci-nvidia-hook $DIST_DIR/oci-nvidia-hook
 # Hook for libpod/CRI-O: https://github.com/containers/libpod/blob/v0.8.5/pkg/hooks/docs/oci-hooks.5.md
 COPY oci-nvidia-hook.json $DIST_DIR/oci-nvidia-hook.json
 
-WORKDIR $DIST_DIR/..
+WORKDIR $DIST_DIR/.. /dist
 COPY rpm .
 
 CMD arch=$(uname -m) && \

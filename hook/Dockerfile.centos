@@ -10,7 +10,7 @@ ENV RELEASE $PKG_REV
 
 # output directory
 ENV DIST_DIR=/tmp/nvidia-container-runtime-hook-$PKG_VERS/SOURCES
-RUN mkdir -p $DIST_DIR
+RUN mkdir -p $DIST_DIR /dist
 
 # nvidia-container-runtime-hook
 COPY nvidia-container-runtime-hook/ $GOPATH/src/nvidia-container-runtime-hook

@@ -45,7 +45,7 @@ ENV RELEASE $PKG_REV
 
 # output directory
 ENV DIST_DIR=/tmp/nvidia-container-runtime-$PKG_VERS/SOURCES
-RUN mkdir -p $DIST_DIR
+RUN mkdir -p $DIST_DIR /dist
 
 ARG RUNC_COMMIT
 COPY runc/$RUNC_COMMIT/ /tmp/patches/runc

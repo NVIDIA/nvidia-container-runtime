@@ -1,6 +1,7 @@
 # Copyright (c) 2017-2018, NVIDIA CORPORATION. All rights reserved.
 
 DOCKER ?= docker
+MKDIR  ?= mkdir
 
 VERSION := 2.0.0
 PKG_REV := 1
@@ -67,6 +68,7 @@ amzn1: $(addsuffix -amzn1, 18.06.1 18.03.1 17.12.1 17.09.1 17.06.2 17.03.2)
 1.12.6-%-runc:
 	echo "50a19c6ff828c58e5dab13830bd3dacde268afe5"
 
+%-ubuntu18.04: ARCH := amd64
 %-ubuntu18.04:
 	runc="$(shell $(MAKE) -s $@-runc)" && \
 	$(DOCKER) build --build-arg VERSION_ID="18.04" \
@@ -74,8 +76,12 @@ amzn1: $(addsuffix -amzn1, 18.06.1 18.03.1 17.12.1 17.09.1 17.06.2 17.03.2)
                         --build-arg PKG_VERS="$(VERSION)+docker$*" \
                         --build-arg PKG_REV="$(PKG_REV)" \
                         -t "nvidia/runtime/ubuntu:18.04-docker$*" -f Dockerfile.ubuntu .
-	$(DOCKER) run --rm -v $(DIST_DIR)/ubuntu18.04:/dist:Z "nvidia/runtime/ubuntu:18.04-docker$*"
+	$(MKDIR) -p $(DIST_DIR)/ubuntu18.04/$(ARCH)
+	$(DOCKER) run --cidfile $@.cid "nvidia/runtime/ubuntu:18.04-docker$*"
+	$(DOCKER) cp $$(cat $@.cid):/dist/. $(DIST_DIR)/ubuntu18.04/$(ARCH)/
+	$(DOCKER) rm $$(cat $@.cid) && rm $@.cid
 
+%-ubuntu16.04: ARCH := amd64
 %-ubuntu16.04:
 	runc="$(shell $(MAKE) -s $@-runc)" && \
 	$(DOCKER) build --build-arg VERSION_ID="16.04" \
@@ -83,8 +89,12 @@ amzn1: $(addsuffix -amzn1, 18.06.1 18.03.1 17.12.1 17.09.1 17.06.2 17.03.2)
                         --build-arg PKG_VERS="$(VERSION)+docker$*" \
                         --build-arg PKG_REV="$(PKG_REV)" \
                         -t "nvidia/runtime/ubuntu:16.04-docker$*" -f Dockerfile.ubuntu .
-	$(DOCKER) run --rm -v $(DIST_DIR)/ubuntu16.04:/dist:Z "nvidia/runtime/ubuntu:16.04-docker$*"
+	$(MKDIR) -p $(DIST_DIR)/ubuntu16.04/$(ARCH)
+	$(DOCKER) run --cidfile $@.cid "nvidia/runtime/ubuntu:16.04-docker$*"
+	$(DOCKER) cp $$(cat $@.cid):/dist/. $(DIST_DIR)/ubuntu16.04/$(ARCH)/
+	$(DOCKER) rm $$(cat $@.cid) && rm $@.cid
 
+%-ubuntu14.04: ARCH := amd64
 %-ubuntu14.04:
 	runc="$(shell $(MAKE) -s $@-runc)" && \
 	$(DOCKER) build --build-arg VERSION_ID="14.04" \
@@ -92,8 +102,12 @@ amzn1: $(addsuffix -amzn1, 18.06.1 18.03.1 17.12.1 17.09.1 17.06.2 17.03.2)
                         --build-arg PKG_VERS="$(VERSION)+docker$*" \
                         --build-arg PKG_REV="$(PKG_REV)" \
                         -t "nvidia/runtime/ubuntu:14.04-docker$*" -f Dockerfile.ubuntu .
-	$(DOCKER) run --rm -v $(DIST_DIR)/ubuntu14.04:/dist:Z "nvidia/runtime/ubuntu:14.04-docker$*"
+	$(MKDIR) -p $(DIST_DIR)/ubuntu14.04/$(ARCH)
+	$(DOCKER) run --cidfile $@.cid "nvidia/runtime/ubuntu:14.04-docker$*"
+	$(DOCKER) cp $$(cat $@.cid):/dist/. $(DIST_DIR)/ubuntu14.04/$(ARCH)/
+	$(DOCKER) rm $$(cat $@.cid) && rm $@.cid
 
+%-debian9: ARCH := amd64
 %-debian9:
 	runc="$(shell $(MAKE) -s $@-runc)" && \
 	$(DOCKER) build --build-arg VERSION_ID="9" \
@@ -101,8 +115,12 @@ amzn1: $(addsuffix -amzn1, 18.06.1 18.03.1 17.12.1 17.09.1 17.06.2 17.03.2)
                         --build-arg PKG_VERS="$(VERSION)+docker$*" \
                         --build-arg PKG_REV="$(PKG_REV)" \
                         -t "nvidia/runtime/debian:9-docker$*" -f Dockerfile.debian .
-	$(DOCKER) run --rm -v $(DIST_DIR)/debian9:/dist:Z "nvidia/runtime/debian:9-docker$*"
+	$(MKDIR) -p $(DIST_DIR)/debian9/$(ARCH)
+	$(DOCKER) run --cidfile $@.cid "nvidia/runtime/debian:9-docker$*"
+	$(DOCKER) cp $$(cat $@.cid):/dist/. $(DIST_DIR)/debian9/$(ARCH)/
+	$(DOCKER) rm $$(cat $@.cid) && rm $@.cid
 
+%-debian8: ARCH := amd64
 %-debian8:
 	runc="$(shell $(MAKE) -s $@-runc)" && \
 	$(DOCKER) build --build-arg VERSION_ID="8" \
@@ -110,8 +128,12 @@ amzn1: $(addsuffix -amzn1, 18.06.1 18.03.1 17.12.1 17.09.1 17.06.2 17.03.2)
                         --build-arg PKG_VERS="$(VERSION)+docker$*" \
                         --build-arg PKG_REV="$(PKG_REV)" \
                         -t "nvidia/runtime/debian:8-docker$*" -f Dockerfile.debian .
-	$(DOCKER) run --rm -v $(DIST_DIR)/debian8:/dist:Z "nvidia/runtime/debian:8-docker$*"
+	$(MKDIR) -p $(DIST_DIR)/debian8/$(ARCH)
+	$(DOCKER) run --cidfile $@.cid "nvidia/runtime/debian:8-docker$*"
+	$(DOCKER) cp $$(cat $@.cid):/dist/. $(DIST_DIR)/debian8/$(ARCH)/
+	$(DOCKER) rm $$(cat $@.cid) && rm $@.cid
 
+%-centos7: ARCH := x86_64
 %-centos7:
 	runc="$(shell $(MAKE) -s $@-runc)" && \
 	$(DOCKER) build --build-arg VERSION_ID="7" \
@@ -119,8 +141,12 @@ amzn1: $(addsuffix -amzn1, 18.06.1 18.03.1 17.12.1 17.09.1 17.06.2 17.03.2)
                         --build-arg PKG_VERS="$(VERSION)" \
                         --build-arg PKG_REV="$(PKG_REV).docker$*" \
                         -t "nvidia/runtime/centos:7-docker$*" -f Dockerfile.centos .
-	$(DOCKER) run --rm -v $(DIST_DIR)/centos7:/dist:Z "nvidia/runtime/centos:7-docker$*"
+	$(MKDIR) -p $(DIST_DIR)/centos7/$(ARCH)
+	$(DOCKER) run --cidfile $@.cid "nvidia/runtime/centos:7-docker$*"
+	$(DOCKER) cp $$(cat $@.cid):/dist/. $(DIST_DIR)/centos7/$(ARCH)/
+	$(DOCKER) rm $$(cat $@.cid) && rm $@.cid
 
+%-amzn2: ARCH := x86_64
 %-amzn2:
 	runc="$(shell $(MAKE) -s $@-runc)" && \
 	$(DOCKER) build --build-arg VERSION_ID="2" \
@@ -128,8 +154,12 @@ amzn1: $(addsuffix -amzn1, 18.06.1 18.03.1 17.12.1 17.09.1 17.06.2 17.03.2)
                         --build-arg PKG_VERS="$(VERSION)" \
                         --build-arg PKG_REV="$(PKG_REV).docker$*.amzn2" \
                         -t "nvidia/runtime/amzn:2-docker$*" -f Dockerfile.amzn .
-	$(DOCKER) run --rm -v $(DIST_DIR)/amzn2:/dist:Z "nvidia/runtime/amzn:2-docker$*"
+	$(MKDIR) -p $(DIST_DIR)/amzn2/$(ARCH)
+	$(DOCKER) run --cidfile $@.cid "nvidia/runtime/amzn:2-docker$*"
+	$(DOCKER) cp $$(cat $@.cid):/dist/. $(DIST_DIR)/amzn2/$(ARCH)/
+	$(DOCKER) rm $$(cat $@.cid) && rm $@.cid
 
+%-amzn1: ARCH := x86_64
 %-amzn1:
 	runc="$(shell $(MAKE) -s $@-runc)" && \
 	$(DOCKER) build --build-arg VERSION_ID="1" \
@@ -137,4 +167,7 @@ amzn1: $(addsuffix -amzn1, 18.06.1 18.03.1 17.12.1 17.09.1 17.06.2 17.03.2)
                         --build-arg PKG_VERS="$(VERSION)" \
                         --build-arg PKG_REV="$(PKG_REV).docker$*.amzn1" \
                         -t "nvidia/runtime/amzn:1-docker$*" -f Dockerfile.amzn .
-	$(DOCKER) run --rm -v $(DIST_DIR)/amzn1:/dist:Z "nvidia/runtime/amzn:1-docker$*"
+	$(MKDIR) -p $(DIST_DIR)/amzn1/$(ARCH)
+	$(DOCKER) run --cidfile $@.cid "nvidia/runtime/amzn:1-docker$*"
+	$(DOCKER) cp $$(cat $@.cid):/dist/. $(DIST_DIR)/amzn1/$(ARCH)/
+	$(DOCKER) rm $$(cat $@.cid) && rm $@.cid
