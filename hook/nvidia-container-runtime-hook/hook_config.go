@@ -8,16 +8,6 @@ import (
 	"github.com/BurntSushi/toml"
 )
 
-const (
-	configPath = "/etc/nvidia-container-runtime/config.toml"
-	driverPath = "/run/nvidia/driver"
-)
-
-var defaultPaths = [...]string{
-	path.Join(driverPath, configPath),
-	configPath,
-}
-
 // CLIConfig: options for nvidia-container-cli.
 type CLIConfig struct {
 	Root        *string  `toml:"root"`
@@ -56,6 +46,22 @@ func getDefaultHookConfig() (config HookConfig) {
 	}
 }
 
+func defaultPaths() []string {
+	var paths []string
+	const c = "nvidia-container-runtime/config.toml"
+	if e := os.Getenv("XDG_RUNTIME_DIR"); e != "" {
+		paths = append(paths, path.Join(e, "nvidia/driver/etc", c))
+	}
+	if e := os.Getenv("XDG_CONFIG_HOME"); e != "" {
+		paths = append(paths, path.Join(e, c))
+	}
+	if e := os.Getenv("HOME"); e != "" {
+		paths = append(paths, path.Join(e, ".config", c))
+	}
+	paths = append(paths, []string{path.Join("/run/nvidia/driver/etc", c), path.Join("/etc", c)}...)
+	return paths
+}
+
 func getHookConfig() (config HookConfig) {
 	var err error
 
@@ -66,7 +72,7 @@ func getHookConfig() (config HookConfig) {
 			log.Panicln("couldn't open configuration file:", err)
 		}
 	} else {
-		for _, p := range defaultPaths {
+		for _, p := range defaultPaths() {
 			config = getDefaultHookConfig()
 			_, err = toml.DecodeFile(p, &config)
 			if err == nil {
