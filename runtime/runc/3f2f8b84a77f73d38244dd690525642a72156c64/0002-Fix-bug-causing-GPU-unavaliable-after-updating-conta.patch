@@ -1,0 +1,43 @@
+From 6c699197de157e08e26a6c7ef4329f050fdbe1bd Mon Sep 17 00:00:00 2001
+From: tkanng <tkanng@gmail.com>
+Date: Wed, 1 May 2019 11:47:33 +0800
+Subject: [PATCH 2/2] Fix bug causing GPU unavaliable after updating container
+ resources
+
+---
+ libcontainer/cgroups/fs/devices.go | 12 ++++++++++++
+ 1 file changed, 12 insertions(+)
+
+diff --git a/libcontainer/cgroups/fs/devices.go b/libcontainer/cgroups/fs/devices.go
+index 0ac5b4e..30d85de 100644
+--- a/libcontainer/cgroups/fs/devices.go
++++ b/libcontainer/cgroups/fs/devices.go
+@@ -3,6 +3,8 @@
+ package fs
+ 
+ import (
++	"strings"
++
+ 	"github.com/opencontainers/runc/libcontainer/cgroups"
+ 	"github.com/opencontainers/runc/libcontainer/configs"
+ 	"github.com/opencontainers/runc/libcontainer/system"
+@@ -29,6 +31,16 @@ func (s *DevicesGroup) Set(path string, cgroup *configs.Cgroup) error {
+ 	if system.RunningInUserNS() {
+ 		return nil
+ 	}
++	devList, err := readFile(path, "devices.list")
++	if err != nil {
++		return err
++	}
++	// "a *:* rwm" is devices.list's initial value
++	// if devList starts with "a *:* rwm", it means that it's the first time to set devices cgroup
++	// if it doesn't, it means that devices cgroup has been updated, so just return.
++	if !strings.HasPrefix(devList, "a *:* rwm") {
++		return nil
++	}
+ 
+ 	devices := cgroup.Resources.Devices
+ 	if len(devices) > 0 {
+-- 
+2.7.4
+
