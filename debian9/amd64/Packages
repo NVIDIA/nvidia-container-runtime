@@ -628,3 +628,22 @@ Description: NVIDIA container runtime
  Provides a modified version of runc allowing users to run GPU enabled
  containers.
 
+Package: nvidia-container-runtime
+Architecture: amd64
+Version: 2.0.0+docker18.09.7-3
+Priority: optional
+Section: utils
+Maintainer: NVIDIA CORPORATION <cudatools@nvidia.com>
+Installed-Size: 7482
+Depends: libc6 (>= 2.14), libseccomp2 (>= 2.3.0), nvidia-container-runtime-hook (<< 2.0.0)
+Filename: ./nvidia-container-runtime_2.0.0+docker18.09.7-3_amd64.deb
+Size: 1760172
+MD5sum: 3c18e2cb89b5dff23701cf5430f8d864
+SHA1: 1bc24a71d0552b01721a0332fc21f9816a667c43
+SHA256: cd102cdac78e36532928c4e546c85fd739384487b760caecc46ed8e36263f4dc
+SHA512: de950c94786f3b482bc9c03e90dee9df8a5964fddd433b60c5b8bdf6dd3aa329198085319e5c51b3af9df82f5f390dbb7cd8996ab0228afb87ee38c5276c284c
+Homepage: https://github.com/NVIDIA/nvidia-container-runtime/wiki
+Description: NVIDIA container runtime
+ Provides a modified version of runc allowing users to run GPU enabled
+ containers.
+
