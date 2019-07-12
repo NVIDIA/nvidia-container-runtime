@@ -14,8 +14,8 @@ License: ASL 2.0
 Source0: nvidia-container-runtime
 Source1: LICENSE
 
-Obsoletes: nvidia-container-runtime < 3.0.0
-Requires: nvidia-container-runtime-hook < 2.0.0
+Obsoletes: nvidia-container-runtime < 2.0.0
+Requires: nvidia-container-toolkit < 2.0.0
 Requires: libseccomp
 
 %description

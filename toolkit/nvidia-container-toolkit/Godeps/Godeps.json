@@ -1,5 +1,5 @@
 {
-	"ImportPath": "github.com/nvidia/nvidia-container-runtime/hook/nvidia-container-runtime-hook",
+	"ImportPath": "github.com/nvidia/nvidia-container-runtime/toolkit/nvidia-container-toolkit",
 	"GoVersion": "go1.9",
 	"GodepVersion": "v80",
 	"Deps": [
