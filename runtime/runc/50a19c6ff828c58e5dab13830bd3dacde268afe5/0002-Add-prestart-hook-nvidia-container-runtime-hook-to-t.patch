@@ -1,7 +1,7 @@
 From 5bbacdd06e1725e4a93a9d7b08c9c510c38cb548 Mon Sep 17 00:00:00 2001
 From: Felix Abecassis <fabecassis@nvidia.com>
 Date: Wed, 3 Jan 2018 13:01:26 -0800
-Subject: [PATCH 2/2] Add prestart hook nvidia-container-runtime-hook to the
+Subject: [PATCH 2/2] Add prestart hook nvidia-container-toolkit to the
  config
 
 Signed-off-by: Felix Abecassis <fabecassis@nvidia.com>
@@ -26,7 +26,7 @@ index 55a7e9d..d6f9739 100644
  }
  
 +func addNVIDIAHook(context *cli.Context, spec *specs.Spec) error {
-+	path, err := exec.LookPath("nvidia-container-runtime-hook")
++	path, err := exec.LookPath("nvidia-container-toolkit")
 +	if err != nil {
 +		return err
 +	}

@@ -9,14 +9,14 @@ ENV VERSION $PKG_VERS
 ENV RELEASE $PKG_REV
 
 # output directory
-ENV DIST_DIR=/tmp/nvidia-container-runtime-hook-$PKG_VERS/SOURCES
+ENV DIST_DIR=/tmp/nvidia-container-toolkit-$PKG_VERS/SOURCES
 RUN mkdir -p $DIST_DIR
 
-# nvidia-container-runtime-hook
-COPY nvidia-container-runtime-hook/ $GOPATH/src/nvidia-container-runtime-hook
+# nvidia-container-toolkit
+COPY nvidia-container-toolkit/ $GOPATH/src/nvidia-container-toolkit
 
-RUN go get -ldflags "-s -w" -v nvidia-container-runtime-hook && \
-    mv $GOPATH/bin/nvidia-container-runtime-hook $DIST_DIR/nvidia-container-runtime-hook
+RUN go get -ldflags "-s -w" -v nvidia-container-toolkit && \
+    mv $GOPATH/bin/nvidia-container-toolkit $DIST_DIR/nvidia-container-toolkit
 
 COPY config.toml.amzn $DIST_DIR/config.toml
 
@@ -36,5 +36,5 @@ CMD arch=$(uname -m) && \
              -D "_topdir $PWD" \
              -D "version $VERSION" \
              -D "release $RELEASE" \
-             SPECS/nvidia-container-runtime-hook.spec && \
+             SPECS/nvidia-container-toolkit.spec && \
     mv RPMS/$arch/*.rpm /dist
