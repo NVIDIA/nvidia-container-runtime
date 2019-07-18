@@ -1,0 +1,27 @@
+services:
+  - docker:stable-dind
+
+variables:
+  LICENSE_TAG: $CI_REGISTRY_IMAGE:license
+
+stages:
+  - build
+  - unit
+
+license-builder:
+  image: docker:stable
+  stage: build
+  only:
+#    changes:
+#     - license/Dockerfile
+  script:
+    - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
+    - docker build -t $LICENSE_TAG ./license
+    - docker push $LICENSE_TAG
+
+license:
+  stage: unit
+  image:
+    name: $LICENSE_TAG
+  script:
+    - ./license/check.sh
