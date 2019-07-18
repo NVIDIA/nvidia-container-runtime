@@ -1,4 +1,4 @@
-nvidia-container-runtime (2.0.0+@VERSION@) UNRELEASED; urgency=medium
+nvidia-container-runtime (@VERSION@) UNRELEASED; urgency=medium
 
   * Split into nvidia-container-runtime and nvidia-container-runtime-hook
 
