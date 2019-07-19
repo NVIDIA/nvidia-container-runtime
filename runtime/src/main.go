@@ -7,6 +7,7 @@ import (
 	"log"
 	"os"
 	"os/exec"
+	"strings"
 	"syscall"
 
 	"github.com/opencontainers/runtime-spec/specs-go"
@@ -93,13 +94,24 @@ func addNVIDIAHook(spec *specs.Spec) error {
 	}
 
 	if fileLogger != nil {
-		fileLogger.Printf("Prestart hook path: %s\n", path)
+		fileLogger.Printf("prestart hook path: %s\n", path)
 	}
 
 	args := []string{path}
 	if spec.Hooks == nil {
 		spec.Hooks = &specs.Hooks{}
+	} else if len(spec.Hooks.Prestart) != 0 {
+		for _, hook := range spec.Hooks.Prestart {
+			if !strings.Contains(hook.Path, "nvidia-container-runtime-hook") {
+				continue
+			}
+			if fileLogger != nil {
+				fileLogger.Println("existing nvidia prestart hook in OCI spec file")
+			}
+			return nil
+		}
 	}
+
 	spec.Hooks.Prestart = append(spec.Hooks.Prestart, specs.Hook{
 		Path: path,
 		Args: append(args, "prestart"),
