@@ -11,7 +11,7 @@ DIST_DIR  := $(CURDIR)/../dist
 .NOTPARALLEL:
 .PHONY: all
 
-all: ubuntu18.04 ubuntu16.04 ubuntu14.04 debian9 centos7 amzn2 amzn1
+all: ubuntu18.04 ubuntu16.04 debian9 centos7 amzn2 amzn1
 
 ubuntu%: ARCH := amd64
 ubuntu%:
