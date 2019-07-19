@@ -4,6 +4,8 @@
 
 all: ubuntu18.04 ubuntu16.04 debian9 centos7 amzn2 amzn1
 
+runtime: runtime-ubuntu18.04 runtime-ubuntu16.04 runtime-debian9 runtime-centos7 runtime-amzn2 runtime-amzn1
+
 # Build all packages for a specific distribution.
 ubuntu18.04: runtime-ubuntu18.04 hook-ubuntu18.04
 
