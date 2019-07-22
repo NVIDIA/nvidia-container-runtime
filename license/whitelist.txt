@@ -2,3 +2,4 @@ Apache-2.0
 BSD-3-Clause
 MIT
 ISC
+./runtime/src/vendor/github.com/pmezard/go-difflib/LICENSE, BSD
