@@ -7,6 +7,7 @@ variables:
 stages:
   - builder
   - unit
+  - integration
   - build
 
 # A hack to make Go in Gitlab work
@@ -55,6 +56,17 @@ lint:
   script:
     - golint -set_exit_status $(go list ./... | grep -v "vendor")
 
+shim-test:
+  stage: integration
+  image: golang:latest
+  before_script:
+    - *inject-gopath
+    - mkdir /etc/nvidia-container-runtime && echo "" > /etc/nvidia-container-runtime/config.toml # config for test
+    - echo "" > /usr/bin/nvidia-container-runtime-hook # hook for test
+    - chmod +x /usr/bin/nvidia-container-runtime-hook
+    - cd runtime/src
+  script:
+    - make test
 
 builder:
   stage: builder

@@ -42,10 +42,12 @@ func TestMain(m *testing.M) {
 	}
 
 	// RUN TESTS
-	m.Run()
+	exitCode := m.Run()
 
 	// TEST CLEANUP
 	os.Remove(specFile)
+
+	os.Exit(exitCode)
 }
 
 // case 1) nvidia-container-runtime run --bundle
