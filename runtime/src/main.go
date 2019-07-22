@@ -75,8 +75,15 @@ func exitOnError(err error, msg string) {
 }
 
 func execRunc() {
-	runcPath, err := exec.LookPath("runc")
-	exitOnError(err, "find runc path")
+	fileLogger.Println("Looking for \"docker-runc\" binary")
+	runcPath, err := exec.LookPath("docker-runc")
+	if err != nil {
+		fileLogger.Println("\"docker-runc\" binary not found")
+		fileLogger.Println("Looking for \"runc\" binary")
+		runcPath, err = exec.LookPath("runc")
+		exitOnError(err, "find runc path")
+	}
+
 	fileLogger.Printf("Runc path: %s\n", runcPath)
 
 	err = syscall.Exec(runcPath, append([]string{runcPath}, os.Args[1:]...), os.Environ())
