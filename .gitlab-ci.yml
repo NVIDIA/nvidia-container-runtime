@@ -1,16 +1,26 @@
-services:
-  - docker:stable-dind
-
 variables:
   LICENSE_TAG: $CI_REGISTRY_IMAGE:license
+  PACKAGE_PATH: /go/src/gitlab.com/nvidia/container-toolkit/nvidia-container-runtime
+  BUILDER: ${CI_REGISTRY_IMAGE}/builder:${CI_COMMIT_REF_NAME}
+  DOCKER_HOST: tcp://docker:2375
 
 stages:
-  - build
+  - builder
   - unit
+  - build
+
+# A hack to make Go in Gitlab work
+.anchors:
+  - &inject-gopath
+      mkdir -p $(dirname ${PACKAGE_PATH})
+      && ln -s ${CI_PROJECT_DIR} ${PACKAGE_PATH}
+      && cd ${PACKAGE_PATH}
 
 license-builder:
   image: docker:stable
-  stage: build
+  stage: builder
+  services:
+  - docker:stable-dind
   only:
     changes:
       - license/Dockerfile
@@ -25,3 +35,67 @@ license:
     name: $LICENSE_TAG
   script:
     - ./license/check.sh
+
+vet:
+  stage: unit
+  image: golang:latest
+  before_script:
+    - *inject-gopath
+  script:
+    - go vet $(go list ./... | grep -v "vendor")
+
+lint:
+  stage: unit
+  image: golang:latest
+  allow_failure: true
+  before_script:
+    - *inject-gopath
+    - mkdir /go/bin && export PATH=$PATH:/go/bin
+    - go get -u golang.org/x/lint/golint
+  script:
+    - golint -set_exit_status $(go list ./... | grep -v "vendor")
+
+
+builder:
+  stage: builder
+  image: docker:stable
+  services:
+    - docker:stable-dind
+  before_script:
+    - docker login -u "${CI_REGISTRY_USER}" -p "${CI_REGISTRY_PASSWORD}" "${CI_REGISTRY}"
+  
+  script:
+  - |-
+    cat <<EOF > ./builder.Dockerfile
+    FROM ubuntu:18.04
+
+    RUN apt-get update && apt-get install -y --no-install-recommends \
+        build-essential \
+        apt-transport-https \
+        ca-certificates \
+        curl \
+        git \
+        jq
+
+    RUN curl -fsSL https://get.docker.com -o get-docker.sh && sh ./get-docker.sh
+
+    CMD bash
+    EOF
+
+  - docker build -t ${BUILDER} -f ./builder.Dockerfile .
+  - docker push ${BUILDER}
+
+build:
+  stage: build
+  image: ${BUILDER}
+  services:
+    - docker:stable-dind
+  before_script:
+    - *inject-gopath
+  script:
+  - make runtime # this will build all platforms listed in the makefile
+
+  artifacts:
+    expire_in: 1 week
+    paths:
+      - dist/
