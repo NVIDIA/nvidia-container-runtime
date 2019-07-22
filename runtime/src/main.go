@@ -86,7 +86,7 @@ func execRunc() {
 func addNVIDIAHook(spec *specs.Spec) error {
 	path, err := exec.LookPath("nvidia-container-runtime-hook")
 	if err != nil {
-		path := hookDefaultFilePath
+		path = hookDefaultFilePath
 		_, err = os.Stat(path)
 		if err != nil {
 			return err
