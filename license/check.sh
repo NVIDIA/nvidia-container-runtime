@@ -17,10 +17,19 @@ for path in `cat /tmp/LICENSES.list`; do
 		tr -s ' ' | grep -E '^ Confidence:' | awk '{print $2}')
 
 	echo "Inspecting License ${license} (${confidence}) at ${path}" | tee -a /tmp/LICENSE.result
-	if ! grep -Fxq "${license}" ./license/whitelist.txt; then
-		echo "Found unexpected license at ${path}"
-		exit 1
+	if grep -Fxq "${license}" ./license/whitelist.txt; then
+		continue
 	fi
+
+	echo "Found unexpected license at ${path}" | tee -a /tmp/LICENSE.result
+
+	if grep -Fq "${path}" ./license/whitelist.txt; then
+		echo -e "There was a manual inspection for this license\n" | tee -a /tmp/LICENSE.result
+		continue
+	fi
+
+	cat /tmp/LICENSE.result
+	exit 1
 done
 
 cat /tmp/LICENSE.result
