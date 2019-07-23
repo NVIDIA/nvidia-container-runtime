@@ -4,7 +4,7 @@ DOCKER ?= docker
 
 MKDIR ?= mkdir
 
-VERSION := 1.0.0
+VERSION := 1.0.1
 
 DIST_DIR  := $(CURDIR)/../dist
 

@@ -3,7 +3,7 @@
 DOCKER ?= docker
 MKDIR  ?= mkdir
 
-VERSION := 3.0.1
+VERSION := 3.1.0
 PKG_REV := 1
 
 DIST_DIR  := $(CURDIR)/../dist
