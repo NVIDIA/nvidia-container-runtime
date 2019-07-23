@@ -1,4 +1,4 @@
-nvidia-container-toolkit (1.0.0-1) UNRELEASED; urgency=medium
+nvidia-container-toolkit (@VERSION@) UNRELEASED; urgency=medium
 
   * Initial release. Replaces older package nvidia-container-runtime-hook. (Closes: #XXXXXX)
 

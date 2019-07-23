@@ -25,7 +25,8 @@ COPY config.toml.ubuntu $DIST_DIR/config.toml
 WORKDIR $DIST_DIR
 COPY debian ./debian
 
-RUN if [ "$REVISION" != "$(dpkg-parsechangelog --show-field=Version)" ]; then exit 1; fi
+RUN sed -i "s;@VERSION@;${REVISION};" debian/changelog && \
+    if [ "$REVISION" != "$(dpkg-parsechangelog --show-field=Version)" ]; then exit 1; fi
 
 CMD export DISTRIB="$(lsb_release -cs)" && \
     debuild -eDISTRIB -eSECTION --dpkg-buildpackage-hook='sh debian/prepare' -i -us -uc -b && \

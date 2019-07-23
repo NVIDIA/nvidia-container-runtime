@@ -30,7 +30,8 @@ RUN if [ "$(lsb_release -cs)" = "jessie" ]; then \
 WORKDIR $DIST_DIR
 COPY debian ./debian
 
-RUN if [ "$REVISION" != "$(dpkg-parsechangelog --show-field=Version)" ]; then exit 1; fi
+RUN sed -i "s;@VERSION@;${REVISION};" debian/changelog && \
+    if [ "$REVISION" != "$(dpkg-parsechangelog --show-field=Version)" ]; then exit 1; fi
 
 CMD export DISTRIB="unstable" && \
     debuild -eDISTRIB -eSECTION --dpkg-buildpackage-hook='sh debian/prepare' -i -us -uc -b && \
