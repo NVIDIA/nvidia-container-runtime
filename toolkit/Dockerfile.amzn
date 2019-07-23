@@ -9,14 +9,14 @@ ENV VERSION $PKG_VERS
 ENV RELEASE $PKG_REV
 
 # output directory
-ENV DIST_DIR=/tmp/nvidia-container-runtime-hook-$PKG_VERS/SOURCES
-RUN mkdir -p $DIST_DIR
+ENV DIST_DIR=/tmp/nvidia-container-toolkit-$PKG_VERS/SOURCES
+RUN mkdir -p $DIST_DIR /dist
 
-# nvidia-container-runtime-hook
-COPY nvidia-container-runtime-hook/ $GOPATH/src/nvidia-container-runtime-hook
+# nvidia-container-toolkit
+COPY nvidia-container-toolkit/ $GOPATH/src/nvidia-container-toolkit
 
-RUN go get -ldflags "-s -w" -v nvidia-container-runtime-hook && \
-    mv $GOPATH/bin/nvidia-container-runtime-hook $DIST_DIR/nvidia-container-runtime-hook
+RUN go get -ldflags "-s -w" -v nvidia-container-toolkit && \
+    mv $GOPATH/bin/nvidia-container-toolkit $DIST_DIR/nvidia-container-toolkit
 
 COPY config.toml.amzn $DIST_DIR/config.toml
 
@@ -28,7 +28,7 @@ COPY oci-nvidia-hook $DIST_DIR/oci-nvidia-hook
 # Hook for libpod/CRI-O: https://github.com/containers/libpod/blob/v0.8.5/pkg/hooks/docs/oci-hooks.5.md
 COPY oci-nvidia-hook.json $DIST_DIR/oci-nvidia-hook.json
 
-WORKDIR $DIST_DIR/.. /dist
+WORKDIR $DIST_DIR/..
 COPY rpm .
 
 CMD arch=$(uname -m) && \
@@ -36,5 +36,5 @@ CMD arch=$(uname -m) && \
              -D "_topdir $PWD" \
              -D "version $VERSION" \
              -D "release $RELEASE" \
-             SPECS/nvidia-container-runtime-hook.spec && \
+             SPECS/nvidia-container-toolkit.spec && \
     mv RPMS/$arch/*.rpm /dist

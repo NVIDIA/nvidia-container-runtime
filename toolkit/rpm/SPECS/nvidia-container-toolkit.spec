@@ -1,4 +1,4 @@
-Name: nvidia-container-runtime-hook
+Name: nvidia-container-toolkit
 Version: %{version}
 Release: %{release}
 Group: Development Tools
@@ -10,13 +10,13 @@ Summary: NVIDIA container runtime hook
 URL: https://github.com/NVIDIA/nvidia-container-runtime
 License: BSD
 
-Source0: nvidia-container-runtime-hook
+Source0: nvidia-container-toolkit
 Source1: config.toml
 Source2: oci-nvidia-hook
 Source3: oci-nvidia-hook.json
 Source4: LICENSE
 
-Obsoletes: nvidia-container-runtime < 2.0.0
+Obsoletes: nvidia-container-runtime < 2.0.0, nvidia-container-runtime-hook
 Requires: libnvidia-container-tools >= 0.1.0, libnvidia-container-tools < 2.0.0
 
 %description
@@ -27,7 +27,7 @@ cp %{SOURCE0} %{SOURCE1} %{SOURCE2} %{SOURCE3} %{SOURCE4} .
 
 %install
 mkdir -p %{buildroot}%{_bindir}
-install -m 755 -t %{buildroot}%{_bindir} nvidia-container-runtime-hook
+install -m 755 -t %{buildroot}%{_bindir} nvidia-container-toolkit
 
 mkdir -p %{buildroot}/etc/nvidia-container-runtime
 install -m 644 -t %{buildroot}/etc/nvidia-container-runtime config.toml
@@ -38,9 +38,15 @@ install -m 755 -t %{buildroot}/usr/libexec/oci/hooks.d oci-nvidia-hook
 mkdir -p %{buildroot}/usr/share/containers/oci/hooks.d
 install -m 644 -t %{buildroot}/usr/share/containers/oci/hooks.d oci-nvidia-hook.json
 
+%post
+ln -sf %{_bindir}/nvidia-container-toolkit %{_bindir}/nvidia-container-runtime-hook
+
+%postun
+rm -f %{_bindir}/nvidia-container-runtime-hook
+
 %files
 %license LICENSE
-%{_bindir}/nvidia-container-runtime-hook
+%{_bindir}/nvidia-container-toolkit
 /etc/nvidia-container-runtime/config.toml
 /usr/libexec/oci/hooks.d/oci-nvidia-hook
 /usr/share/containers/oci/hooks.d/oci-nvidia-hook.json

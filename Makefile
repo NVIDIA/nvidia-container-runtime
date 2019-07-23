@@ -7,27 +7,27 @@ all: ubuntu18.04 ubuntu16.04 debian9 centos7 amzn2 amzn1
 runtime: runtime-ubuntu18.04 runtime-ubuntu16.04 runtime-debian9 runtime-centos7 runtime-amzn2 runtime-amzn1
 
 # Build all packages for a specific distribution.
-ubuntu18.04: runtime-ubuntu18.04 hook-ubuntu18.04
+ubuntu18.04: runtime-ubuntu18.04 toolkit-ubuntu18.04
 
-ubuntu16.04: runtime-ubuntu16.04 hook-ubuntu16.04
+ubuntu16.04: runtime-ubuntu16.04 toolkit-ubuntu16.04
 
-ubuntu14.04: runtime-ubuntu14.04 hook-ubuntu14.04
+ubuntu14.04: runtime-ubuntu14.04 toolkit-ubuntu14.04
 
-debian9: runtime-debian9 hook-debian9
+debian9: runtime-debian9 toolkit-debian9
 
-debian8: runtime-debian8 hook-debian8
+debian8: runtime-debian8 toolkit-debian8
 
-centos7: runtime-centos7 hook-centos7
+centos7: runtime-centos7 toolkit-centos7
 
-amzn2: runtime-amzn2 hook-amzn2
+amzn2: runtime-amzn2 toolkit-amzn2
 
-amzn1: runtime-amzn1 hook-amzn1
+amzn1: runtime-amzn1 toolkit-amzn1
 
 base-%:
 	make -C $(CURDIR)/base $*
 
-hook-%: base-%
-	make -C $(CURDIR)/hook $*
+toolkit-%: base-%
+	make -C $(CURDIR)/toolkit $*
 
 runtime-%: base-%
 	make -C $(CURDIR)/runtime $*
