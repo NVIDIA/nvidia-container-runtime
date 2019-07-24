@@ -2,10 +2,12 @@ variables:
   LICENSE_TAG: $CI_REGISTRY_IMAGE:license
   PACKAGE_PATH: /go/src/gitlab.com/nvidia/container-toolkit/nvidia-container-runtime
   BUILDER: ${CI_REGISTRY_IMAGE}/builder:${CI_COMMIT_REF_NAME}
+  BASE: ${CI_REGISTRY_IMAGE}/base
   DOCKER_HOST: tcp://docker:2375
 
 stages:
   - builder
+  - images
   - unit
   - integration
   - build
@@ -97,17 +99,30 @@ builder:
   - docker build -t ${BUILDER} -f ./builder.Dockerfile .
   - docker push ${BUILDER}
 
+# Build the base images and store in gitlab registry
+base:
+  stage: images
+  image: ${BUILDER}
+  services:
+    - docker:stable-dind
+  before_script:
+    - docker login -u "${CI_REGISTRY_USER}" -p "${CI_REGISTRY_PASSWORD}" "${CI_REGISTRY}"
+    - *inject-gopath
+  script:
+    - make -C base base-push BASE=${BASE}
+
 build:
   stage: build
   image: ${BUILDER}
   services:
     - docker:stable-dind
   before_script:
-    - *inject-gopath
+   - docker login -u "${CI_REGISTRY_USER}" -p "${CI_REGISTRY_PASSWORD}" "${CI_REGISTRY}"
+   - *inject-gopath
   script:
-  - make runtime # this will build all platforms listed in the makefile
-
+   - make runtime BASE=${BASE} # build all runtime packages
+   - make toolkit BASE=${BASE} # build all toolkit packages
   artifacts:
-    expire_in: 1 week
-    paths:
-      - dist/
+   expire_in: 1 week
+   paths:
+     - dist/
