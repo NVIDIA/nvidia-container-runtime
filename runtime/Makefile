@@ -8,6 +8,8 @@ PKG_REV := 1
 
 DIST_DIR  := $(CURDIR)/../dist
 
+BASE := nvidia/base
+
 .NOTPARALLEL:
 .PHONY: all
 
@@ -18,6 +20,7 @@ ubuntu%:
 	$(DOCKER) build --build-arg VERSION_ID="$*" \
                         --build-arg PKG_VERS="$(VERSION)" \
 			--build-arg PKG_REV="$(PKG_REV)" \
+			--build-arg BASE="$(BASE)" \
                         -t "nvidia/runtime/ubuntu:$*" -f Dockerfile.ubuntu .
 	$(MKDIR) -p "$(DIST_DIR)/ubuntu$*/$(ARCH)"
 	$(DOCKER) run --cidfile $@.cid "nvidia/runtime/ubuntu:$*"
@@ -29,6 +32,7 @@ debian%:
 	$(DOCKER) build --build-arg VERSION_ID="$*" \
                         --build-arg PKG_VERS="$(VERSION)" \
 			--build-arg PKG_REV="$(PKG_REV)" \
+			--build-arg BASE="$(BASE)" \
                         -t "nvidia/runtime/debian:$*" -f Dockerfile.debian .
 	$(MKDIR) -p "$(DIST_DIR)/debian$*/$(ARCH)"
 	$(DOCKER) run --cidfile $@.cid "nvidia/runtime/debian:$*"
@@ -40,6 +44,7 @@ centos%:
 	$(DOCKER) build --build-arg VERSION_ID="$*" \
                         --build-arg PKG_VERS="$(VERSION)" \
 			--build-arg PKG_REV="$(PKG_REV)" \
+			--build-arg BASE="$(BASE)" \
                         -t "nvidia/runtime/centos:$*" -f Dockerfile.centos .
 	$(MKDIR) -p "$(DIST_DIR)/centos$*/$(ARCH)"
 	$(DOCKER) run --cidfile $@.cid "nvidia/runtime/centos:$*"
@@ -51,6 +56,7 @@ amzn%:
 	$(DOCKER) build --build-arg VERSION_ID="$*" \
                         --build-arg PKG_VERS="$(VERSION)" \
 			--build-arg PKG_REV="$(PKG_REV)" \
+			--build-arg BASE="$(BASE)" \
                         -t "nvidia/runtime/amzn:$*" -f Dockerfile.amzn .
 	$(MKDIR) -p "$(DIST_DIR)/amzn$*/$(ARCH)"
 	$(DOCKER) run --cidfile $@.cid "nvidia/runtime/amzn:$*"

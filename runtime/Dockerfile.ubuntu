@@ -1,5 +1,6 @@
+ARG BASE
 ARG VERSION_ID
-FROM nvidia/base/ubuntu:${VERSION_ID}
+FROM ${BASE}/ubuntu:${VERSION_ID}
 
 RUN apt-get update && \
     apt-get install -y curl && \
