@@ -1,4 +1,8 @@
-libnvidia-container (1.0.2-1) UNRELEASED; urgency=medium
+libnvidia-container (1.0.3-1) UNRELEASED; urgency=medium
+
+  * b9545d7 Add support for Vulkan
+
+ -- NVIDIA CORPORATION <cudatools@nvidia.com>  Thu, Jul 18 2019 13:34:30 -0700
 
   * 4045013 Adds support for libnvidia-opticalflow
 

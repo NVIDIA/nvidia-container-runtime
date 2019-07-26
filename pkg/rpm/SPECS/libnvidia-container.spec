@@ -85,6 +85,9 @@ This package contains command-line tools that facilitate using the library.
 %{_bindir}/*
 
 %changelog
+* Thu Jul 18 2019 NVIDIA CORPORATION <cudatools@nvidia.com> 1.0.3-1
+- b9545d7 Add support for Vulkan
+
 * Tue Feb 05 2019 NVIDIA CORPORATION <cudatools@nvidia.com> 1.0.2-1
 - 4045013 Adds support for libnvidia-opticalflow
 
