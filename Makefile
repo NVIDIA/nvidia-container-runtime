@@ -7,6 +7,19 @@ BASE_DEPENDENCY := base-%
 
 all: base ubuntu18.04 ubuntu16.04 debian9 centos7 amzn2 amzn1
 
+verify: fmt lint vet
+
+fmt:
+	find . -not \( \( -wholename './.*' -o -wholename '*/vendor/*' \) -prune \) -name '*.go' \
+		| sort -u | xargs gofmt -s -l
+
+lint:
+	find . -not \( \( -wholename './.*' -o -wholename '*/vendor/*' \) -prune \) -name '*.go' \
+		| sort -u | xargs golint
+
+vet:
+	go list ./... | grep -v "vendor" | xargs go vet
+
 runtime: runtime-ubuntu18.04 runtime-ubuntu16.04 runtime-debian9 runtime-centos7 runtime-amzn2 runtime-amzn1
 
 toolkit: toolkit-ubuntu18.04 toolkit-ubuntu16.04 toolkit-debian9 toolkit-centos7 toolkit-amzn2 toolkit-amzn1

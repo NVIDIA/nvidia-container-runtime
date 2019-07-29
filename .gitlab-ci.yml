@@ -54,20 +54,12 @@ license:
   script:
     - ./license/check.sh
 
-vet:
+code-check:
   stage: unit
   image: ${BUILDER}
   script:
     - cd ${PACKAGE_PATH}
-    - go vet $(go list ./... | grep -v "vendor")
-
-lint:
-  stage: unit
-  image: ${BUILDER}
-  allow_failure: true
-  script:
-    - cd ${PACKAGE_PATH}
-    - golint -set_exit_status $(go list ./... | grep -v "vendor")
+    - make verify
 
 shim-test:
   stage: integration
@@ -76,7 +68,7 @@ shim-test:
     - mkdir /etc/nvidia-container-runtime && echo "" > /etc/nvidia-container-runtime/config.toml # config for test
     - echo "" > /usr/bin/nvidia-container-runtime-hook # hook for test
     - chmod +x /usr/bin/nvidia-container-runtime-hook
-    - cd ${PACKAGE_PATH}/untime/src
+    - cd ${PACKAGE_PATH}/runtime/src
   script:
     - make test
 
