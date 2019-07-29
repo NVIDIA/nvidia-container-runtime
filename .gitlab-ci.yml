@@ -1,27 +1,19 @@
 variables:
   LICENSE_TAG: $CI_REGISTRY_IMAGE:license
-  PACKAGE_PATH: /go/src/gitlab.com/nvidia/container-toolkit/nvidia-container-runtime
+  PACKAGE_PATH: /go/src/gitlab.com/${CI_PROJECT_PATH}
   BUILDER: ${CI_REGISTRY_IMAGE}/builder:${CI_COMMIT_REF_NAME}
   BASE: ${CI_REGISTRY_IMAGE}/base
   DOCKER_HOST: tcp://docker:2375
 
 stages:
-  - builder
-  - images
+  - docker_images
   - unit
   - integration
   - build
 
-# A hack to make Go in Gitlab work
-.anchors:
-  - &inject-gopath
-      mkdir -p $(dirname ${PACKAGE_PATH})
-      && ln -s ${CI_PROJECT_DIR} ${PACKAGE_PATH}
-      && cd ${PACKAGE_PATH}
-
 license-builder:
   image: docker:stable
-  stage: builder
+  stage: docker_images
   services:
   - docker:stable-dind
   only:
@@ -32,6 +24,29 @@ license-builder:
     - docker build -t $LICENSE_TAG ./license
     - docker push $LICENSE_TAG
 
+# Build the base images and store in gitlab registry
+base-builder:
+  stage: docker_images
+  image: docker:stable
+  services:
+    - docker:stable-dind
+  before_script:
+    - docker login -u "${CI_REGISTRY_USER}" -p "${CI_REGISTRY_PASSWORD}" "${CI_REGISTRY}"
+    - apk add --update make
+  script:
+    - make -C base base-push BASE=${BASE}
+
+gitlab-builder:
+  stage: docker_images
+  image: docker:stable
+  services:
+    - docker:stable-dind
+  before_script:
+    - docker login -u "${CI_REGISTRY_USER}" -p "${CI_REGISTRY_PASSWORD}" "${CI_REGISTRY}"
+  script:
+    - docker build --build-arg PKG_PATH="${PACKAGE_PATH}" -t ${BUILDER} -f ./builder.Dockerfile .
+    - docker push ${BUILDER}
+
 license:
   stage: unit
   image:
@@ -41,84 +56,38 @@ license:
 
 vet:
   stage: unit
-  image: golang:latest
-  before_script:
-    - *inject-gopath
+  image: ${BUILDER}
   script:
+    - cd ${PACKAGE_PATH}
     - go vet $(go list ./... | grep -v "vendor")
 
 lint:
   stage: unit
-  image: golang:latest
+  image: ${BUILDER}
   allow_failure: true
-  before_script:
-    - *inject-gopath
-    - mkdir /go/bin && export PATH=$PATH:/go/bin
-    - go get -u golang.org/x/lint/golint
   script:
+    - cd ${PACKAGE_PATH}
     - golint -set_exit_status $(go list ./... | grep -v "vendor")
 
 shim-test:
   stage: integration
-  image: golang:latest
+  image: ${BUILDER}
   before_script:
-    - *inject-gopath
     - mkdir /etc/nvidia-container-runtime && echo "" > /etc/nvidia-container-runtime/config.toml # config for test
     - echo "" > /usr/bin/nvidia-container-runtime-hook # hook for test
     - chmod +x /usr/bin/nvidia-container-runtime-hook
-    - cd runtime/src
+    - cd ${PACKAGE_PATH}/untime/src
   script:
     - make test
 
-builder:
-  stage: builder
+build:
+  stage: build
   image: docker:stable
   services:
     - docker:stable-dind
   before_script:
-    - docker login -u "${CI_REGISTRY_USER}" -p "${CI_REGISTRY_PASSWORD}" "${CI_REGISTRY}"
-  
-  script:
-  - |-
-    cat <<EOF > ./builder.Dockerfile
-    FROM ubuntu:18.04
-
-    RUN apt-get update && apt-get install -y --no-install-recommends \
-        build-essential \
-        apt-transport-https \
-        ca-certificates \
-        curl \
-        git \
-        jq
-
-    RUN curl -fsSL https://get.docker.com -o get-docker.sh && sh ./get-docker.sh
-
-    CMD bash
-    EOF
-
-  - docker build -t ${BUILDER} -f ./builder.Dockerfile .
-  - docker push ${BUILDER}
-
-# Build the base images and store in gitlab registry
-base:
-  stage: images
-  image: ${BUILDER}
-  services:
-    - docker:stable-dind
-  before_script:
-    - docker login -u "${CI_REGISTRY_USER}" -p "${CI_REGISTRY_PASSWORD}" "${CI_REGISTRY}"
-    - *inject-gopath
-  script:
-    - make -C base base-push BASE=${BASE}
-
-build:
-  stage: build
-  image: ${BUILDER}
-  services:
-    - docker:stable-dind
-  before_script:
    - docker login -u "${CI_REGISTRY_USER}" -p "${CI_REGISTRY_PASSWORD}" "${CI_REGISTRY}"
-   - *inject-gopath
+   - apk add --update make
   script:
    - make runtime BASE=${BASE} # build all runtime packages
    - make toolkit BASE=${BASE} # build all toolkit packages
