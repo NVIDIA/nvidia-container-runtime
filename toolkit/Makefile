@@ -8,6 +8,8 @@ VERSION := 1.0.1
 
 DIST_DIR  := $(CURDIR)/../dist
 
+BASE := nvidia/base
+
 .NOTPARALLEL:
 .PHONY: all
 
@@ -18,6 +20,7 @@ ubuntu%: $(CURDIR)/Dockerfile.ubuntu
 	$(DOCKER) build --build-arg VERSION_ID="$*" \
 	                --build-arg PKG_VERS="$(VERSION)" \
 	                --build-arg PKG_REV="1" \
+			--build-arg BASE="$(BASE)" \
 	                -t "nvidia/toolkit/ubuntu:$*" -f Dockerfile.ubuntu .
 	$(MKDIR) -p $(DIST_DIR)/$@/$(ARCH)
 	$(DOCKER) run --cidfile $@.cid "nvidia/toolkit/ubuntu:$*"
@@ -29,6 +32,7 @@ debian%: $(CURDIR)/Dockerfile.debian
 	$(DOCKER) build --build-arg VERSION_ID="$*" \
 	                --build-arg PKG_VERS="$(VERSION)" \
 	                --build-arg PKG_REV="1" \
+			--build-arg BASE="$(BASE)" \
 	                -t "nvidia/toolkit/debian:$*" -f Dockerfile.debian .
 	$(MKDIR) -p $(DIST_DIR)/$@/$(ARCH)
 	$(DOCKER) run --cidfile $@.cid "nvidia/toolkit/debian:$*"
@@ -40,6 +44,7 @@ centos%: $(CURDIR)/Dockerfile.centos
 	$(DOCKER) build --build-arg VERSION_ID="$*" \
 	                --build-arg PKG_VERS="$(VERSION)" \
 	                --build-arg PKG_REV="2" \
+			--build-arg BASE="$(BASE)" \
 	                -t "nvidia/toolkit/centos:$*" -f Dockerfile.centos .
 	$(MKDIR) -p $(DIST_DIR)/$@/$(ARCH)
 	$(DOCKER) run --cidfile $@.cid "nvidia/toolkit/centos:$*"
@@ -51,6 +56,7 @@ amzn%: $(CURDIR)/Dockerfile.amzn
 	$(DOCKER) build --build-arg VERSION_ID="$*" \
 	                --build-arg PKG_VERS="$(VERSION)" \
 	                --build-arg PKG_REV="2.amzn$*" \
+			--build-arg BASE="$(BASE)" \
 	                -t "nvidia/toolkit/amzn:$*" -f Dockerfile.amzn .
 	$(MKDIR) -p $(DIST_DIR)/$@/$(ARCH)
 	$(DOCKER) run --cidfile $@.cid "nvidia/toolkit/amzn:$*"

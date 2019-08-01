@@ -1,16 +1,21 @@
-services:
-  - docker:stable-dind
-
 variables:
   LICENSE_TAG: $CI_REGISTRY_IMAGE:license
+  PACKAGE_PATH: /go/src/gitlab.com/${CI_PROJECT_PATH}
+  BUILDER: ${CI_REGISTRY_IMAGE}/builder:${CI_COMMIT_REF_NAME}
+  BASE: ${CI_REGISTRY_IMAGE}/base
+  DOCKER_HOST: tcp://docker:2375
 
 stages:
-  - build
+  - docker_images
   - unit
+  - integration
+  - build
 
 license-builder:
   image: docker:stable
-  stage: build
+  stage: docker_images
+  services:
+  - docker:stable-dind
   only:
     changes:
       - license/Dockerfile
@@ -19,9 +24,66 @@ license-builder:
     - docker build -t $LICENSE_TAG ./license
     - docker push $LICENSE_TAG
 
+# Build the base images and store in gitlab registry
+base-builder:
+  stage: docker_images
+  image: docker:stable
+  services:
+    - docker:stable-dind
+  before_script:
+    - docker login -u "${CI_REGISTRY_USER}" -p "${CI_REGISTRY_PASSWORD}" "${CI_REGISTRY}"
+    - apk add --update make
+  script:
+    - make -C base base-push BASE=${BASE}
+
+gitlab-builder:
+  stage: docker_images
+  image: docker:stable
+  services:
+    - docker:stable-dind
+  before_script:
+    - docker login -u "${CI_REGISTRY_USER}" -p "${CI_REGISTRY_PASSWORD}" "${CI_REGISTRY}"
+  script:
+    - docker build --build-arg PKG_PATH="${PACKAGE_PATH}" -t ${BUILDER} -f ./builder.Dockerfile .
+    - docker push ${BUILDER}
+
 license:
   stage: unit
   image:
     name: $LICENSE_TAG
   script:
     - ./license/check.sh
+
+code-check:
+  stage: unit
+  image: ${BUILDER}
+  script:
+    - cd ${PACKAGE_PATH}
+    - make verify
+
+shim-test:
+  stage: integration
+  image: ${BUILDER}
+  before_script:
+    - mkdir /etc/nvidia-container-runtime && echo "" > /etc/nvidia-container-runtime/config.toml # config for test
+    - echo "" > /usr/bin/nvidia-container-runtime-hook # hook for test
+    - chmod +x /usr/bin/nvidia-container-runtime-hook
+    - cd ${PACKAGE_PATH}/runtime/src
+  script:
+    - make test
+
+build:
+  stage: build
+  image: docker:stable
+  services:
+    - docker:stable-dind
+  before_script:
+   - docker login -u "${CI_REGISTRY_USER}" -p "${CI_REGISTRY_PASSWORD}" "${CI_REGISTRY}"
+   - apk add --update make
+  script:
+   - make runtime BASE=${BASE} # build all runtime packages
+   - make toolkit BASE=${BASE} # build all toolkit packages
+  artifacts:
+   expire_in: 1 week
+   paths:
+     - dist/
