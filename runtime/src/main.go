@@ -7,6 +7,7 @@ import (
 	"log"
 	"os"
 	"os/exec"
+	"path"
 	"strings"
 	"syscall"
 
@@ -15,8 +16,14 @@ import (
 )
 
 const (
-	configFilePath      = "/etc/nvidia-container-runtime/config.toml"
+	configOverride      = "XDG_CONFIG_HOME"
+	configFilePath      = "nvidia-container-runtime/config.toml"
+
 	hookDefaultFilePath = "/usr/bin/nvidia-container-runtime-hook"
+)
+
+var (
+	configDir           = "/etc/"
 )
 
 var fileLogger *log.Logger = nil
@@ -32,6 +39,12 @@ type config struct {
 
 func getConfig() (*config, error) {
 	cfg := &config{}
+
+	if XDGConfigDir := os.Getenv(configOverride); len(XDGConfigDir) != 0 {
+		configDir = XDGConfigDir
+	}
+
+	configFilePath := path.Join(configDir, configFilePath)
 
 	tomlContent, err := ioutil.ReadFile(configFilePath)
 	if err != nil {
@@ -128,7 +141,6 @@ func addNVIDIAHook(spec *specs.Spec) error {
 }
 
 func main() {
-
 	cfg, err := getConfig()
 	exitOnError(err, "fail to get config")
 
