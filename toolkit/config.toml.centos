@@ -11,3 +11,6 @@ load-kmods = true
 #no-cgroups = false
 #user = "root:video"
 ldconfig = "@/sbin/ldconfig"
+
+[nvidia-container-runtime]
+#debug = "/var/log/nvidia-container-runtime.log"
