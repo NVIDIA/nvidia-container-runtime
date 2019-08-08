@@ -1,0 +1,37 @@
+{
+    "variables": {
+	"region": "us-east-2"
+    },
+    "builders": [
+	{
+	    "ami_name": "QA-nvDocker-centos7",
+	    "instance_type": "t2.micro",
+	    "region": "{{user `region`}}",
+	    "source_ami_filter": {
+		"filters": {
+		    "virtualization-type": "hvm",
+		    "name": "CentOS Linux 7 x86_64 HVM EBS ENA*",
+		    "root-device-type": "ebs"
+		},
+		"owners": ["679593333241"],
+		"most_recent": true
+	    },
+	    "ssh_username": "centos",
+	    "ssh_timeout": "3m",
+	    "type": "amazon-ebs",
+	    "force_deregister": "true",
+	    "force_delete_snapshot": "true"
+	}
+    ],
+    "provisioners": [
+	{
+	    "type": "file",
+	    "source": "./driver_install.sh",
+	    "destination": "/tmp/driver_install.sh"
+	},
+	{
+	    "type": "shell",
+	    "inline":["chmod +x /tmp/driver_install.sh && sudo /tmp/driver_install.sh"]
+	}
+    ]
+}

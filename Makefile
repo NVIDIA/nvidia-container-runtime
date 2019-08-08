@@ -7,11 +7,14 @@ BASE_DEPENDENCY := base-%
 
 all: base ubuntu18.04 ubuntu16.04 debian10 debian9 centos7 amzn2 amzn1
 
-verify: fmt lint vet
+verify: fmt tf-fmt lint vet
 
 fmt:
 	find . -not \( \( -wholename './.*' -o -wholename '*/vendor/*' \) -prune \) -name '*.go' \
 		| sort -u | xargs gofmt -s -l
+
+tf-fmt:
+	terraform fmt -recursive -diff
 
 lint:
 	find . -not \( \( -wholename './.*' -o -wholename '*/vendor/*' \) -prune \) -name '*.go' \
