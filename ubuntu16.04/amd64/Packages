@@ -875,3 +875,42 @@ Description: NVIDIA container runtime
  Provides a modified version of runc allowing users to run GPU enabled
  containers.
 
+Package: nvidia-container-runtime
+Architecture: amd64
+Version: 3.1.1-1
+Priority: optional
+Section: utils
+Maintainer: NVIDIA CORPORATION <cudatools@nvidia.com>
+Installed-Size: 1974
+Depends: nvidia-container-toolkit (>= 1.0.2), nvidia-container-toolkit (<< 2.0.0), libseccomp2
+Filename: ./nvidia-container-runtime_3.1.1-1_amd64.deb
+Size: 611308
+MD5sum: 09dabe899c5753b425de05cd9a2f65d4
+SHA1: c907f72d9539291100f9730d1f5e493988139ca6
+SHA256: 87561f051eac05cb702501bf839b41a45b179ad4472be1ed34e2650cb5fbccf1
+SHA512: f41f722e9ab52767d95114a3e2c80299fe939bc3d655715bc0d0992464d5f1e8b4679913d9c537ec96bc06334dfc8199e7ea6158dbe67ef66733e5c029cf102e
+Homepage: https://github.com/NVIDIA/nvidia-container-runtime/wiki
+Description: NVIDIA container runtime
+ Provides a modified version of runc allowing users to run GPU enabled
+ containers.
+
+Package: nvidia-container-toolkit
+Architecture: amd64
+Version: 1.0.2-1
+Priority: optional
+Section: utils
+Maintainer: NVIDIA CORPORATION <cudatools@nvidia.com>
+Installed-Size: 1847
+Depends: libnvidia-container-tools (>= 0.1.0), libnvidia-container-tools (<< 2.0.0)
+Breaks: nvidia-container-runtime (<< 2.0.0), nvidia-container-runtime-hook
+Replaces: nvidia-container-runtime (<< 2.0.0), nvidia-container-runtime-hook
+Filename: ./nvidia-container-toolkit_1.0.2-1_amd64.deb
+Size: 574992
+MD5sum: 0c913c3b2c9784a23b801cedc89fa3e6
+SHA1: ec7d75da403bc3f500ae8f3222da12bf88c5c059
+SHA256: 571937aa590adf4878d9cba3d4a05f813288fab97bbba69888cb2cf1e220bee2
+SHA512: 612b3eb5565917609fc19f2d2e48dbb361075774e03b6a8adba2ff98bceb5e82ed3bb52cbe2ee077305083ca82e12435b2deee2c963b489be8ee610198012716
+Homepage: https://github.com/NVIDIA/nvidia-container-runtime/wiki
+Description: NVIDIA container runtime hook
+ Provides a OCI hook to enable GPU support in containers.
+
