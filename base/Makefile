@@ -9,7 +9,7 @@ BASE := nvidia/base
 .NOTPARALLEL:
 .PHONY: all
 
-all: ubuntu18.04 ubuntu16.04 ubuntu14.04 debian9 debian8 centos7 amzn2 amzn1
+all: ubuntu18.04 ubuntu16.04 ubuntu14.04 debian10 debian9 debian8 centos7 amzn2 amzn1
 
 # Build and push base images to gitlab registry. Used in CI
 base-push: all
