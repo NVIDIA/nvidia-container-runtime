@@ -140,7 +140,6 @@ func doPrestart() {
 	args = append(args, fmt.Sprintf("--pid=%s", strconv.FormatUint(uint64(container.Pid), 10)))
 	args = append(args, rootfs)
 
-	log.Printf("exec command: %v", args)
 	env := append(os.Environ(), cli.Environment...)
 	err = syscall.Exec(args[0], args, env)
 	log.Panicln("exec failed:", err)
