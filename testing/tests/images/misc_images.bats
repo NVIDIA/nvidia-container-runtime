@@ -17,7 +17,3 @@ function setup() {
 @test "mysql nvidia-smi" {
     run_nvidia_smi "mysql"
 }
-
-@test "logstash nvidia-smi" {
-    run_nvidia_smi "logstash"
-}
