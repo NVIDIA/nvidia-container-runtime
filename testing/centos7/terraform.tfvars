@@ -1,6 +1,6 @@
 instance_name = "QA-nvidia-docker 2.0"
 instance_type = "g3s.xlarge"
-ami_name      = "QA-nvDocker-ubuntu16.04"
-key_name      = "nvidia-docker-2.0-ubuntu"
+ami_name      = "QA-nvDocker-centos7"
+key_name      = "nvidia-docker-2.0-centos7"
 pubkey_path   = "../keys/aws_terraform.pub"
 privkey_path  = "../keys/aws_terraform"

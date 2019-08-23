@@ -7,12 +7,12 @@ variable "instance_type" {
 }
 
 variable "ami_name" {
-  description = "nvidia-docker 2.0 test AMI based on Ubuntu16.04 AMI"
+  description = "nvidia-docker 2.0 test AMI based on Centos7 AMI"
 }
 
 variable "aws_region" {
   default     = "us-east-2"
-  description = "AMI location in US"
+  description = "AMI Location in US"
 }
 
 variable "key_name" {
@@ -35,5 +35,5 @@ variable "artifacts" {
 
 variable "artifacts_path" {
   description = "Path to the CICD build artifacts."
-  default     = "../../dist/ubuntu16.04/amd64"
+  default     = "../../dist/centos7/x86_64"
 }
