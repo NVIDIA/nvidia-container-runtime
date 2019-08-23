@@ -1,0 +1,26 @@
+-----BEGIN PGP SIGNED MESSAGE-----
+Hash: SHA512
+
+Architectures: amd64
+Codename: buster
+Components: main
+Date: Fri, 23 Aug 2019 14:50:00 +0000
+Description: NVIDIA container runtime repository
+Label: NVIDIA CORPORATION <cudatools@nvidia.com>
+Origin: https://nvidia.github.io/nvidia-container-runtime
+Suite: buster
+Version: 1.0
+SHA512:
+ 92c2f363c3a6346ee5d03dd7845248b976c188e8b4b1bcf3d1b270ca6b7bd39d1f37d2e3b96872315bd2f436e994107b137228037cedba440ab1276d2a35ae9f             1780 Packages
+ 863d83d07a423a7085f5567dd180834425965199ea9e5b9056f2a349a58f90343af71dd0bfee8b97daa221d8bd5f9d6da51d687e88b15511bc2eec087d731de1              884 Packages.xz
+-----BEGIN PGP SIGNATURE-----
+
+iQEzBAEBCgAdFiEEiLH4d5Jo/+sbd9/gxFsWdqBOpVIFAl1gbxgACgkQxFsWdqBO
+pVIsuwf/da4nLmTg+aTurdUUVZy7mOQrApqAT5HmE0XAAr7EONI8qG/O3ZYbHa3A
+RDjItRy0a0y3PFYOI5FTw0erUBBcOnZP4wyoXXpfStFPeW5PEKkvtUNVc+WlIU21
+N4YtzANNuEFQ6CrTpIwzeBILyF9Y8Y00Fea4pb9amE3AT9pQGKp4cJNEjMxE0Ooq
+/PwEJLKZD+WzRO3NU6C2jU9C1l2+SC7qUmUAJieRaodpwBKyj8YMReP19wk8uC93
+OVthWR6tXtYAtkKobe2LhapFjN20Z30mkFwfMimyEmgKkbwF59stTn8Z2uDXipa2
+Kuxxt4WMcXeazuYwnyCqw3o5sGuaIg==
+=quPX
+-----END PGP SIGNATURE-----
