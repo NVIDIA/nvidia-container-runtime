@@ -16,7 +16,13 @@ Source1: LICENSE
 
 Obsoletes: nvidia-container-runtime < 2.0.0
 Requires: nvidia-container-toolkit >= 1.0.2, nvidia-container-toolkit < 2.0.0
+
+%if 0%{?suse_version}
+Requires: libseccomp2
+Requires: libapparmor1
+%else
 Requires: libseccomp
+%endif
 
 %description
 Provides a modified version of runc allowing users to run GPU enabled
