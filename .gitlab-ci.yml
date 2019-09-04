@@ -6,30 +6,10 @@ variables:
   DOCKER_HOST: tcp://docker:2375
 
 stages:
-  - build_ami
   - docker_images
   - unit
   - integration
   - build
-  - e2e_tests
-
-.build_ami: &build_ami
-  stage: build_ami
-  image:
-    name: hashicorp/packer:1.4.2
-    entrypoint: ["usr/bin/env"]
-  script:
-    - cd testing/${CI_JOB_NAME%-ami} && packer build packer.json
-  only:
-    changes:
-      - testing/${CI_JOB_NAME%-ami}/packer.json
-      - testing/${CI_JOB_NAME%-ami}/driver_install.sh
-
-ubuntu16.04-ami:
-  <<: *build_ami
-
-centos7-ami:
-  <<: *build_ami
 
 license-builder:
   image: docker:stable
@@ -110,26 +90,3 @@ build:
    expire_in: 1 week
    paths:
      - dist/
-
-.e2e_tests: &e2e_tests
-  stage: e2e_tests
-  allow_failure: false
-  image:
-    name: hashicorp/terraform:0.12.6
-    entrypoint: ["usr/bin/env"]
-  before_script:
-    - cd testing && mkdir keys
-    - ssh-keygen -t rsa -f keys/aws_terraform
-  script:
-    - cd ${CI_JOB_NAME%-e2e}
-    - terraform init
-    - terraform apply -auto-approve -var 'artifacts=true' || (terraform destroy -auto-approve && exit 1) # spawn infra
-    - (ssh -i ../keys/aws_terraform -o StrictHostKeyChecking=no "$(terraform output instance_login)" "sudo ~/run_tests.sh") || rc=$? # run tests
-    - terraform destroy -auto-approve
-    - if [ "$rc" ]; then exit $rc; else exit 0; fi # fail job if not all tests pass
-
-ubuntu16.04-e2e:
-  <<: *e2e_tests
-
-centos7-e2e:
-  <<: *e2e_tests
