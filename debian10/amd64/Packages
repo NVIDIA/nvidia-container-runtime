@@ -17,6 +17,25 @@ Description: NVIDIA container runtime
  Provides a modified version of runc allowing users to run GPU enabled
  containers.
 
+Package: nvidia-container-runtime
+Architecture: amd64
+Version: 3.1.3-1
+Priority: optional
+Section: utils
+Maintainer: NVIDIA CORPORATION <cudatools@nvidia.com>
+Installed-Size: 1974
+Depends: nvidia-container-toolkit (>= 1.0.2), nvidia-container-toolkit (<< 2.0.0), libseccomp2
+Filename: ./nvidia-container-runtime_3.1.3-1_amd64.deb
+Size: 611788
+MD5sum: 1bfd2efa0e8f635aa46f0ae3a1a578cd
+SHA1: 14bbeadc26d54a61734ab363ee05887fa58a720b
+SHA256: d967f314f3ad740ceceba8cb8065471242756759e0952400300ccb6c97058e53
+SHA512: de721ca664f328d413e7dbe6cdf05908eaf4aab34f90b44199bba9a3f4fa32ce701e98d6fbceb35dede6c1925e715e46319597fb1bd0a681b4813f81446104fd
+Homepage: https://github.com/NVIDIA/nvidia-container-runtime/wiki
+Description: NVIDIA container runtime
+ Provides a modified version of runc allowing users to run GPU enabled
+ containers.
+
 Package: nvidia-container-toolkit
 Architecture: amd64
 Version: 1.0.3-1
@@ -33,6 +52,26 @@ MD5sum: d64a0f14b2f12afbddeefb022a042248
 SHA1: 1619b91f88880012cb8d34e1b58a26cedc5ebce8
 SHA256: 7ef77faa8c1ce3cf7df9c4d7435d31fc2f1fd395badf71195d144f3b2315aae7
 SHA512: 738cb5da4398f3f70c7ed84370c1856185c27716a03ca7d4d7d8215ab7d9f1e91d527a6a2ec82b20025c068d8efdf24c586ab0039306cf5d3f64841757355b2f
+Homepage: https://github.com/NVIDIA/nvidia-container-runtime/wiki
+Description: NVIDIA container runtime hook
+ Provides a OCI hook to enable GPU support in containers.
+
+Package: nvidia-container-toolkit
+Architecture: amd64
+Version: 1.0.4-1
+Priority: optional
+Section: utils
+Maintainer: NVIDIA CORPORATION <cudatools@nvidia.com>
+Installed-Size: 1847
+Depends: libnvidia-container-tools (>= 0.1.0), libnvidia-container-tools (<< 2.0.0)
+Breaks: nvidia-container-runtime (<< 2.0.0), nvidia-container-runtime-hook
+Replaces: nvidia-container-runtime (<< 2.0.0), nvidia-container-runtime-hook
+Filename: ./nvidia-container-toolkit_1.0.4-1_amd64.deb
+Size: 575548
+MD5sum: 1d47055469c01642e49d4b4009820883
+SHA1: 2d6ffa41e9696f399f27285af2bae914eea06ec7
+SHA256: 9007bbae5b571d19bf3d769c93288c436f31f0df32eb836dde41432a914b7bad
+SHA512: e838c8de7ae5b1d445004c663d56233322e3549254b7564c486baf520541c5982e9fa0981a2c3f699d404dfeae24593729461c1aea837f2b1e01d387b3291cf9
 Homepage: https://github.com/NVIDIA/nvidia-container-runtime/wiki
 Description: NVIDIA container runtime hook
  Provides a OCI hook to enable GPU support in containers.
