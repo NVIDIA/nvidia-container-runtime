@@ -16,9 +16,11 @@ RUN make
 # packaging
 ARG PKG_VERS
 ARG PKG_REV
+ARG TOOLKIT_VERSION
 
 ENV VERSION $PKG_VERS
 ENV RELEASE $PKG_REV
+ENV TOOLKIT_VERSION $TOOLKIT_VERSION
 
 # output directory
 ENV DIST_DIR=/tmp/nvidia-container-runtime-$PKG_VERS/SOURCES
@@ -34,5 +36,6 @@ CMD arch=$(uname -m) && \
              -D "_topdir $PWD" \
              -D "version $VERSION" \
              -D "release $RELEASE" \
+             -D "toolkit_version $TOOLKIT_VERSION" \
              SPECS/nvidia-container-runtime.spec && \
     mv RPMS/$arch/*.rpm /dist
