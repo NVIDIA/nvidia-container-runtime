@@ -17,10 +17,12 @@ RUN make
 # packaging
 ARG PKG_VERS
 ARG PKG_REV
+ARG TOOLKIT_VERSION
 
 ENV DEBFULLNAME "NVIDIA CORPORATION"
 ENV DEBEMAIL "cudatools@nvidia.com"
 ENV REVISION "$PKG_VERS-$PKG_REV"
+ENV TOOLKIT_VERSION $TOOLKIT_VERSION
 ENV SECTION ""
 
 # output directory
@@ -33,6 +35,7 @@ WORKDIR $DIST_DIR
 COPY debian ./debian
 
 RUN sed -i "s;@VERSION@;${REVISION};" debian/changelog && \
+    sed -i "s;@TOOLKIT_VERSION@;${TOOLKIT_VERSION};" debian/control && \
     if [ "$REVISION" != "$(dpkg-parsechangelog --show-field=Version)" ]; then exit 1; fi
 
 CMD export DISTRIB="$(lsb_release -cs)" && \

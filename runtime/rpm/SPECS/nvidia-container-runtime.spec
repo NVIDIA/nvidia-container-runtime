@@ -15,7 +15,7 @@ Source0: nvidia-container-runtime
 Source1: LICENSE
 
 Obsoletes: nvidia-container-runtime < 2.0.0
-Requires: nvidia-container-toolkit >= 1.0.2, nvidia-container-toolkit < 2.0.0
+Requires: nvidia-container-toolkit >= %{toolkit_version}, nvidia-container-toolkit < 2.0.0
 
 %if 0%{?suse_version}
 Requires: libseccomp2
