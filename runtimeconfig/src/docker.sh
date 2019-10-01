@@ -1,54 +1,14 @@
 #! /bin/bash
 # Copyright (c) 2018-2019, NVIDIA CORPORATION. All rights reserved.
 
+readonly DOCKER_CONFIG="/etc/docker/daemon.json"
+
 docker::info() {
-	local -r docker_socket="${1:-unix:///var/run/docker.socket}"
-
-	# Docker in Docker has a startup race
-	for i in $(seq 1 5); do
-		# Calling in a subshell so that we can recover from a failure
-		if [[ ! $(docker -H "${docker_socket}" info -f '{{json .Runtimes}}') ]]; then
-			sleep 2
-			continue
-		fi
-
-		docker -H "${docker_socket}" info -f '{{json .Runtimes}}' | jq '.nvidia.path'
-		return
-	done
-	exit 1
+	local -r docker_socket="${1:-/var/run/docker.sock}"
+	curl --unix-socket "${docker_socket}" 'http://v1.40/info' | jq '.Runtimes.nvidia.path'
 }
 
-# Echo an empty config if the config file doesn't exist
-docker::daemon_config() {
-	local -r daemon_file="${1:-"/etc/docker/daemon.json"}"
-	([[ -f "${daemon_file}" ]] && cat "${daemon_file}") || echo {}
-}
-
-docker::refresh_configuration() {
-	log INFO "Refreshing the docker daemon configuration"
-	pkill -SIGHUP dockerd
-}
-
-docker::update_config_file() {
-	local -r destination="${1:-/run/nvidia}"
-	local -r nvcr="${destination}/nvidia-container-runtime"
-
-	local config_json
-	IFS='' read -r config_json
-
-	echo "${config_json}" | \
-		jq -r ".runtimes += {\"nvidia\": {\"path\": \"${nvcr}\"}}" | \
-		jq -r '. += {"default-runtime": "nvidia"}'
-}
-
-docker::ensure_prerequisites() {
-	# Ensure that the docker config path exists
-	if [[ ! -d "/etc/docker" ]]; then
-		log ERROR "Docker directory doesn't exist in container"
-		log ERROR "Ensure that you have correctly mounted the docker directoy"
-		exit 1
-	fi
-
+docker::ensure::mounted() {
 	mount | grep /etc/docker
 	if [[ ! $? ]]; then
 		log ERROR "Docker directory isn't mounted in container"
@@ -57,19 +17,82 @@ docker::ensure_prerequisites() {
 	fi
 }
 
-docker::setup() {
+docker::ensure::config_dir() {
+	# Ensure that the docker config path exists
+	if [[ ! -d "/etc/docker" ]]; then
+		log ERROR "Docker directory doesn't exist in container"
+		log ERROR "Ensure that you have correctly mounted the docker directoy"
+		exit 1
+	fi
+
+}
+
+docker::config::backup() {
+	if [[ -f "${DOCKER_CONFIG}" ]]; then
+		mv "${DOCKER_CONFIG}" "${DOCKER_CONFIG}.bak"
+	fi
+}
+
+docker::config::restore() {
+	if [[ -f "${DOCKER_CONFIG}" ]]; then
+		mv "${DOCKER_CONFIG}.bak" "${DOCKER_CONFIG}"
+	fi
+}
+
+docker::config::add_runtime() {
 	local -r destination="${1:-/run/nvidia}"
+	local -r nvcr="${destination}/nvidia-container-runtime"
+
+	cat - | \
+		jq -r ".runtimes = {}" | \
+		jq -r ".runtimes += {\"nvidia\": {\"path\": \"${nvcr}\"}}" | \
+		jq -r '. += {"default-runtime": "nvidia"}'
+}
+
+docker::config() {
+	([[ -f "${DOCKER_CONFIG}" ]] && cat "${DOCKER_CONFIG}") || echo {}
+}
+
+docker::config::refresh() {
+	log INFO "Refreshing the docker daemon configuration"
+	pkill -SIGHUP dockerd
+}
+
+docker::config::get_nvidia_runtime() {
+	cat - | jq -r '.runtimes | keys[0]'
+}
+
+docker::setup() {
+	docker::ensure::mounted
+	docker::ensure::config_dir
+
 	log INFO "Setting up the configuration for the docker daemon"
 
-	docker::ensure_prerequisites
+	local -r destination="${1:-/run/nvidia}"
+	local -r docker_socket="${2:-"/var/run/docker.socket"}"
 
-	log INFO "current config: $(docker::daemon_config)"
+	local config=$(docker::config)
+
+	log INFO "current config: ${config}"
+
+	local -r nvidia_runtime="$(with_retry 5 2s docker::info "${docker_socket}")"
+
+	if [[ "${nvidia_runtime}" = "${destination}/nvidia-container-runtime" ]]; then
+		return
+	fi
 
 	# Append the nvidia runtime to the docker daemon's configuration
-	# We use sponge here because the input file is the output file
-	config=$(docker::daemon_config | docker::update_config_file "${destination}")
-	echo "${config}" > /etc/docker/daemon.json
+	local updated_config=$(echo "${config}" | docker::config::add_runtime "${destination}")
+	local -r config_runtime=$(echo "${updated_config}" | docker::config::get_nvidia_runtime)
 
-	log INFO "after: $(docker::daemon_config | jq .)"
-	docker::refresh_configuration
+	# If there was an error while parsing the file catch it here
+	if [[ "${config_runtime}" != "nvidia" ]]; then
+		config=$(echo "{}" | docker::config::add_runtime "${destination}")
+	fi
+
+	docker::config::backup
+	echo "${updated_config}" > /etc/docker/daemon.json
+
+	log INFO "after: $(docker::config | jq .)"
+	docker::config::refresh
 }
