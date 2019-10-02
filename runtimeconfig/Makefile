@@ -8,11 +8,14 @@
 
 DOCKERFILE  ?= $(CURDIR)/docker/Dockerfile
 DOCKERDEVEL ?= $(CURDIR)/docker/Dockerfile.builder
-IMAGE       ?= nvidia/container-toolkit:docker19.03
-BUILDER     ?= nvidia/container-toolkit:builder
+
+REGISTRY    ?= nvidia
+IMAGE       ?= $(REGISTRY)/container-toolkit:docker19.03
+BUILDER     ?= $(REGISTRY)/container-toolkit:builder
 
 
 ##### Public rules #####
+
 all: build
 
 build:

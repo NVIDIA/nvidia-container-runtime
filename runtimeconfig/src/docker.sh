@@ -5,7 +5,7 @@ readonly DOCKER_CONFIG="/etc/docker/daemon.json"
 
 docker::info() {
 	local -r docker_socket="${1:-/var/run/docker.sock}"
-	curl --unix-socket "${docker_socket}" 'http://v1.40/info' | jq '.Runtimes.nvidia.path'
+	curl --unix-socket "${docker_socket}" 'http://v1.40/info' | jq -r '.Runtimes.nvidia.path'
 }
 
 docker::ensure::mounted() {
@@ -34,8 +34,10 @@ docker::config::backup() {
 }
 
 docker::config::restore() {
-	if [[ -f "${DOCKER_CONFIG}" ]]; then
+	if [[ -f "${DOCKER_CONFIG}.bak" ]]; then
 		mv "${DOCKER_CONFIG}.bak" "${DOCKER_CONFIG}"
+	else
+		rm "${DOCKER_CONFIG}"
 	fi
 }
 
@@ -58,6 +60,11 @@ docker::config::refresh() {
 	pkill -SIGHUP dockerd
 }
 
+docker::config::restart() {
+	log INFO "restarting the docker daemon"
+	pkill -SIGTERM dockerd
+}
+
 docker::config::get_nvidia_runtime() {
 	cat - | jq -r '.runtimes | keys[0]'
 }
@@ -72,12 +79,13 @@ docker::setup() {
 	local -r docker_socket="${2:-"/var/run/docker.socket"}"
 
 	local config=$(docker::config)
-
 	log INFO "current config: ${config}"
 
 	local -r nvidia_runtime="$(with_retry 5 2s docker::info "${docker_socket}")"
 
+	# This is a no-op
 	if [[ "${nvidia_runtime}" = "${destination}/nvidia-container-runtime" ]]; then
+		log INFO "Noop, docker is arlready setup with the runtime container"
 		return
 	fi
 
@@ -95,4 +103,12 @@ docker::setup() {
 
 	log INFO "after: $(docker::config | jq .)"
 	docker::config::refresh
+}
+
+docker::uninstall() {
+	docker::config::restore
+
+	# Restart docker: this is because docker has a bug where when you
+	# remove a runtime it doesn't see it until the next restart
+	docker::config::restart
 }
