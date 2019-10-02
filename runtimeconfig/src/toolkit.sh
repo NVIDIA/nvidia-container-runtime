@@ -31,7 +31,7 @@ toolkit::uninstall() {
 	log INFO "${FUNCNAME[0]} $*"
 
 	if findmnt -r -o TARGET | grep "${destination}" > /dev/null; then
-		umount -l -R "${destination}"
+		umount -l -R $(findmnt -r -o TARGET | grep "${destination}")
 	fi
 }
 
