@@ -37,7 +37,9 @@ docker::config::restore() {
 	if [[ -f "${DOCKER_CONFIG}.bak" ]]; then
 		mv "${DOCKER_CONFIG}.bak" "${DOCKER_CONFIG}"
 	else
-		rm "${DOCKER_CONFIG}"
+		if [[ -f "${DOCKER_CONFIG}" ]]; then
+			rm "${DOCKER_CONFIG}"
+		fi
 	fi
 }
 
@@ -106,9 +108,6 @@ docker::setup() {
 }
 
 docker::uninstall() {
+	local -r docker_socket="${1:-"/var/run/docker.socket"}"
 	docker::config::restore
-
-	# Restart docker: this is because docker has a bug where when you
-	# remove a runtime it doesn't see it until the next restart
-	docker::config::restart
 }

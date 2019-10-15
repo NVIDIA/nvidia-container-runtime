@@ -13,6 +13,10 @@ toolkit::install() {
 
 	mkdir -p "/nvidia" "${destination}"
 	mount --rbind "/nvidia" "${destination}"
+	mount --make-private "${destination}"
+	mount --make-runbindable "${destination}"
+
+	log INFO "Mount point ${destination} contains : $(ls -la ${destination})"
 
 	mkdir -p "${destination}"
 	mkdir -p "${destination}/.config/nvidia-container-runtime"
@@ -31,7 +35,7 @@ toolkit::uninstall() {
 	log INFO "${FUNCNAME[0]} $*"
 
 	if findmnt -r -o TARGET | grep "${destination}" > /dev/null; then
-		umount -l -R $(findmnt -r -o TARGET | grep "${destination}")
+		umount -l -R "${destination}" || true
 	fi
 }
 
@@ -60,7 +64,7 @@ toolkit::setup::cli_binary() {
 		LD_LIBRARY_PATH="${destination}" \
 		PATH="\$PATH:${destination}" \
 		${destination}/nvidia-container-cli.real \
-			\$@
+			"\$@"
 	EOF
 
 	# Make sure that the alias files are executable
@@ -79,7 +83,7 @@ toolkit::setup::toolkit_binary() {
 		PATH="\$PATH:${destination}" \
 		${destination}/nvidia-container-toolkit.real \
 			-config "${destination}/.config/nvidia-container-runtime/config.toml" \
-			\$@
+			"\$@"
 	EOF
 
 	chmod +x "${destination}/nvidia-container-toolkit"
@@ -97,7 +101,7 @@ toolkit::setup::runtime_binary() {
 		PATH="\$PATH:${destination}" \
 		XDG_CONFIG_HOME="${destination}/.config" \
 		${destination}/nvidia-container-runtime.real \
-			\$@
+			"\$@"
 	EOF
 
 	chmod +x "${destination}/nvidia-container-runtime"
@@ -107,9 +111,6 @@ toolkit::setup() {
 	local -r destination="${1:-"${TOOLKIT_DIR}"}"
 	log INFO "Installing the NVIDIA Container Toolkit"
 
-	# shellcheck disable=SC2064
-	# We want the expand to happen now rather than at trap time
-	trap "echo 'Caught signal'; toolkit::uninstall ${destination}" EXIT
 	toolkit::install "${destination}"
 
 	toolkit::setup::config "${destination}"

@@ -48,7 +48,7 @@ testing::dind() {
 }
 
 testing::dind::alpine() {
-	docker exec -it "${dind_name}" sh -c "docker run -it alpine echo foo"
+	docker exec -it "${dind_name}" sh -c "$*"
 }
 
 testing::toolkit() {
@@ -66,24 +66,18 @@ testing::main() {
 
 	testing::setup
 
-
 	testing::dind
 	testing::toolkit --no-uninstall --no-daemon
 
 	# Ensure that we haven't broken non GPU containers
-	testing::dind::alpine
+	testing::dind::alpine docker run -it alpine echo foo
 
 	# Uninstall
 	testing::toolkit --no-daemon
+	testing::dind::alpine test ! -f /etc/docker/daemon.json
 
-	# ensure that uninstall killed the daemon
-	sleep 3
-	[[ "$(docker inspect -f '{{.State.Running}}' $dind_name)" = "false" ]]
-	docker rm "${dind_name}" || true &> /dev/null
-
-	# Restart dind with the backed up configuration
-	testing::dind
-	with_retry 5 3s testing::dind::alpine
+	toolkit_files="$(ls -A "${shared_dir}"/run/nvidia/toolkit)"
+	test ! -z "${toolkit_files}"
 
 	testing::cleanup
 }
