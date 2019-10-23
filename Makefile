@@ -24,7 +24,7 @@ ubuntu%:
 			--build-arg PKG_REV="$(PKG_REV)" \
 			--build-arg TOOLKIT_VERSION="$(TOOLKIT_VERSION)" \
 			--build-arg BASE="$(BASE)" \
-			-t "nvidia/runtime/ubuntu:$*" -f Dockerfile.ubuntu .
+			-t "nvidia/runtime/ubuntu:$*" -f docker/Dockerfile.ubuntu .
 	$(MKDIR) -p "$(DIST_DIR)/ubuntu$*/$(ARCH)"
 	$(DOCKER) run --cidfile $@.cid "nvidia/runtime/ubuntu:$*"
 	$(DOCKER) cp $$(cat $@.cid):/dist/. "$(DIST_DIR)/ubuntu$*/$(ARCH)/"
@@ -37,7 +37,7 @@ debian%:
 			--build-arg PKG_REV="$(PKG_REV)" \
 			--build-arg TOOLKIT_VERSION="$(TOOLKIT_VERSION)" \
 			--build-arg BASE="$(BASE)" \
-			-t "nvidia/runtime/debian:$*" -f Dockerfile.debian .
+			-t "nvidia/runtime/debian:$*" -f docker/Dockerfile.debian .
 	$(MKDIR) -p "$(DIST_DIR)/debian$*/$(ARCH)"
 	$(DOCKER) run --cidfile $@.cid "nvidia/runtime/debian:$*"
 	$(DOCKER) cp $$(cat $@.cid):/dist/. "$(DIST_DIR)/debian$*/$(ARCH)/"
@@ -50,7 +50,7 @@ centos%:
 			--build-arg PKG_REV="$(PKG_REV)" \
 			--build-arg TOOLKIT_VERSION="$(TOOLKIT_VERSION)" \
 			--build-arg BASE="$(BASE)" \
-			-t "nvidia/runtime/centos:$*" -f Dockerfile.centos .
+			-t "nvidia/runtime/centos:$*" -f docker/Dockerfile.centos .
 	$(MKDIR) -p "$(DIST_DIR)/centos$*/$(ARCH)"
 	$(DOCKER) run --cidfile $@.cid "nvidia/runtime/centos:$*"
 	$(DOCKER) cp $$(cat $@.cid):/dist/. "$(DIST_DIR)/centos$*/$(ARCH)/"
@@ -63,7 +63,7 @@ amzn%:
 			--build-arg PKG_REV="$(PKG_REV)" \
 			--build-arg TOOLKIT_VERSION="$(TOOLKIT_VERSION)" \
 			--build-arg BASE="$(BASE)" \
-			-t "nvidia/runtime/amzn:$*" -f Dockerfile.amzn .
+			-t "nvidia/runtime/amzn:$*" -f docker/Dockerfile.amzn .
 	$(MKDIR) -p "$(DIST_DIR)/amzn$*/$(ARCH)"
 	$(DOCKER) run --cidfile $@.cid "nvidia/runtime/amzn:$*"
 	$(DOCKER) cp $$(cat $@.cid):/dist/. "$(DIST_DIR)/amzn$*/$(ARCH)/"
@@ -76,7 +76,7 @@ opensuse-leap%:
 			--build-arg PKG_REV="$(PKG_REV)" \
 			--build-arg TOOLKIT_VERSION="$(TOOLKIT_VERSION)" \
 			--build-arg BASE="$(BASE)" \
-			-t "nvidia/runtime/opensuse-leap:$*" -f Dockerfile.opensuse-leap .
+			-t "nvidia/runtime/opensuse-leap:$*" -f docker/Dockerfile.opensuse-leap .
 	$(MKDIR) -p $(DIST_DIR)/opensuse-leap$*/$(ARCH)
 	$(DOCKER) run --cidfile $@.cid "nvidia/runtime/opensuse-leap:$*"
 	$(DOCKER) cp $$(cat $@.cid):/dist/. $(DIST_DIR)/opensuse-leap$*/$(ARCH)/
