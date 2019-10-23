@@ -1,91 +1,83 @@
 # Copyright (c) 2017-2018, NVIDIA CORPORATION. All rights reserved.
 
+DOCKER ?= docker
+MKDIR  ?= mkdir
+
+VERSION := 3.1.4
+PKG_REV := 1
+
+TOOLKIT_VERSION := 1.0.5
+
+DIST_DIR  := $(CURDIR)/../dist
+
 BASE := nvidia/base
 
+.NOTPARALLEL:
 .PHONY: all
 
-all: base ubuntu18.04 ubuntu16.04 debian10 debian9 centos7 amzn2 amzn1 opensuse-leap15.1
+all: ubuntu18.04 ubuntu16.04 debian10 debian9 centos7 amzn2 amzn1 opensuse-leap15.1
 
-verify: fmt tf-fmt lint vet
+ubuntu%: ARCH := amd64
+ubuntu%:
+	$(DOCKER) build --build-arg VERSION_ID="$*" \
+			--build-arg PKG_VERS="$(VERSION)" \
+			--build-arg PKG_REV="$(PKG_REV)" \
+			--build-arg TOOLKIT_VERSION="$(TOOLKIT_VERSION)" \
+			--build-arg BASE="$(BASE)" \
+			-t "nvidia/runtime/ubuntu:$*" -f Dockerfile.ubuntu .
+	$(MKDIR) -p "$(DIST_DIR)/ubuntu$*/$(ARCH)"
+	$(DOCKER) run --cidfile $@.cid "nvidia/runtime/ubuntu:$*"
+	$(DOCKER) cp $$(cat $@.cid):/dist/. "$(DIST_DIR)/ubuntu$*/$(ARCH)/"
+	$(DOCKER) rm $$(cat $@.cid) && rm $@.cid
 
-fmt:
-	find . -not \( \( -wholename './.*' -o -wholename '*/vendor/*' \) -prune \) -name '*.go' \
-		| sort -u | xargs gofmt -s -l
+debian%: ARCH := amd64
+debian%:
+	$(DOCKER) build --build-arg VERSION_ID="$*" \
+			--build-arg PKG_VERS="$(VERSION)" \
+			--build-arg PKG_REV="$(PKG_REV)" \
+			--build-arg TOOLKIT_VERSION="$(TOOLKIT_VERSION)" \
+			--build-arg BASE="$(BASE)" \
+			-t "nvidia/runtime/debian:$*" -f Dockerfile.debian .
+	$(MKDIR) -p "$(DIST_DIR)/debian$*/$(ARCH)"
+	$(DOCKER) run --cidfile $@.cid "nvidia/runtime/debian:$*"
+	$(DOCKER) cp $$(cat $@.cid):/dist/. "$(DIST_DIR)/debian$*/$(ARCH)/"
+	$(DOCKER) rm $$(cat $@.cid) && rm $@.cid
 
-tf-fmt:
-	terraform fmt -recursive -diff
+centos%: ARCH := x86_64
+centos%:
+	$(DOCKER) build --build-arg VERSION_ID="$*" \
+			--build-arg PKG_VERS="$(VERSION)" \
+			--build-arg PKG_REV="$(PKG_REV)" \
+			--build-arg TOOLKIT_VERSION="$(TOOLKIT_VERSION)" \
+			--build-arg BASE="$(BASE)" \
+			-t "nvidia/runtime/centos:$*" -f Dockerfile.centos .
+	$(MKDIR) -p "$(DIST_DIR)/centos$*/$(ARCH)"
+	$(DOCKER) run --cidfile $@.cid "nvidia/runtime/centos:$*"
+	$(DOCKER) cp $$(cat $@.cid):/dist/. "$(DIST_DIR)/centos$*/$(ARCH)/"
+	$(DOCKER) rm $$(cat $@.cid) && rm $@.cid
 
-lint:
-	find . -not \( \( -wholename './.*' -o -wholename '*/vendor/*' \) -prune \) -name '*.go' \
-		| sort -u | xargs golint
+amzn%: ARCH := x86_64
+amzn%:
+	$(DOCKER) build --build-arg VERSION_ID="$*" \
+			--build-arg PKG_VERS="$(VERSION)" \
+			--build-arg PKG_REV="$(PKG_REV)" \
+			--build-arg TOOLKIT_VERSION="$(TOOLKIT_VERSION)" \
+			--build-arg BASE="$(BASE)" \
+			-t "nvidia/runtime/amzn:$*" -f Dockerfile.amzn .
+	$(MKDIR) -p "$(DIST_DIR)/amzn$*/$(ARCH)"
+	$(DOCKER) run --cidfile $@.cid "nvidia/runtime/amzn:$*"
+	$(DOCKER) cp $$(cat $@.cid):/dist/. "$(DIST_DIR)/amzn$*/$(ARCH)/"
+	$(DOCKER) rm $$(cat $@.cid) && rm $@.cid
 
-vet:
-	go list ./... | grep -v "vendor" | xargs go vet
-
-runtime: runtime-ubuntu18.04 runtime-ubuntu16.04 runtime-debian10 runtime-debian9 runtime-centos7 runtime-amzn2 runtime-amzn1 runtime-opensuse-leap15.1
-
-toolkit: toolkit-ubuntu18.04 toolkit-ubuntu16.04 toolkit-debian10 toolkit-debian9 toolkit-centos7 toolkit-amzn2 toolkit-amzn1 toolkit-opensuse-leap15.1
-
-# Build all packages for a specific distribution.
-ubuntu18.04: runtime-ubuntu18.04 toolkit-ubuntu18.04
-
-ubuntu16.04: runtime-ubuntu16.04 toolkit-ubuntu16.04
-
-ubuntu14.04: runtime-ubuntu14.04 toolkit-ubuntu14.04
-
-debian10: runtime-debian10 toolkit-debian10
-
-debian9: runtime-debian9 toolkit-debian9
-
-debian8: runtime-debian8 toolkit-debian8
-
-centos7: runtime-centos7 toolkit-centos7
-
-amzn2: runtime-amzn2 toolkit-amzn2
-
-amzn1: runtime-amzn1 toolkit-amzn1
-
-opensuse-leap15.1: runtime-opensuse-leap15.1 toolkit-opensuse-leap15.1
-
-base:
-	make -C $(CURDIR)/base BASE=${BASE}
-
-base-%:
-	make -C $(CURDIR)/base BASE=${BASE} $*
-
-toolkit-%: 
-	make -C $(CURDIR)/toolkit BASE=${BASE} $*
-
-runtime-%: 
-	make -C $(CURDIR)/runtime BASE=${BASE} $*
-
-# Build nvidia-container-runtime for specific versions of docker.
-%-runtime-ubuntu18.04: base-ubuntu18.04
-	make -C $(CURDIR)/runtime $*-ubuntu18.04
-
-%-runtime-ubuntu16.04: base-ubuntu16.04
-	make -C $(CURDIR)/runtime $*-ubuntu16.04
-
-%-runtime-ubuntu14.04: base-ubuntu14.04
-	make -C $(CURDIR)/runtime $*-ubuntu14.04
-
-%-runtime-debian9: base-debian9
-	make -C $(CURDIR)/runtime $*-debian9
-
-%-runtime-debian10: base-debian10
-	make -C $(CURDIR)/runtime $*-debian10
-
-%-runtime-debian8: base-debian8
-	make -C $(CURDIR)/runtime $*-debian8
-
-%-runtime-centos7: base-centos7
-	make -C $(CURDIR)/runtime $*-centos7
-
-%-runtime-amzn2: base-amzn2
-	make -C $(CURDIR)/runtime $*-amzn2
-
-%-runtime-amzn1: base-amzn1
-	make -C $(CURDIR)/runtime $*-amzn1
-
-%-runtime-opensuse-leap15.1: base-opensuse-leap15.1
-	make -C $(CURDIR)/runtime $*-opensuse-leap15.1
+opensuse-leap%: ARCH := x86_64
+opensuse-leap%:
+	$(DOCKER) build --build-arg VERSION_ID="$*" \
+			--build-arg PKG_VERS="$(VERSION)" \
+			--build-arg PKG_REV="$(PKG_REV)" \
+			--build-arg TOOLKIT_VERSION="$(TOOLKIT_VERSION)" \
+			--build-arg BASE="$(BASE)" \
+			-t "nvidia/runtime/opensuse-leap:$*" -f Dockerfile.opensuse-leap .
+	$(MKDIR) -p $(DIST_DIR)/opensuse-leap$*/$(ARCH)
+	$(DOCKER) run --cidfile $@.cid "nvidia/runtime/opensuse-leap:$*"
+	$(DOCKER) cp $$(cat $@.cid):/dist/. $(DIST_DIR)/opensuse-leap$*/$(ARCH)/
+	$(DOCKER) rm $$(cat $@.cid) && rm $@.cid
