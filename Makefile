@@ -7,6 +7,7 @@ VERSION := 3.1.4
 PKG_REV := 1
 
 TOOLKIT_VERSION := 1.0.5
+GOLANG_VERSION  := 1.10.3
 
 DIST_DIR  := $(CURDIR)/../dist
 
@@ -20,6 +21,7 @@ all: ubuntu18.04 ubuntu16.04 debian10 debian9 centos7 amzn2 amzn1 opensuse-leap1
 ubuntu%: ARCH := amd64
 ubuntu%:
 	$(DOCKER) build --build-arg VERSION_ID="$*" \
+			--build-arg GOLANG_VERSION="$(GOLANG_VERSION)" \
 			--build-arg PKG_VERS="$(VERSION)" \
 			--build-arg PKG_REV="$(PKG_REV)" \
 			--build-arg TOOLKIT_VERSION="$(TOOLKIT_VERSION)" \
@@ -33,6 +35,7 @@ ubuntu%:
 debian%: ARCH := amd64
 debian%:
 	$(DOCKER) build --build-arg VERSION_ID="$*" \
+			--build-arg GOLANG_VERSION="$(GOLANG_VERSION)" \
 			--build-arg PKG_VERS="$(VERSION)" \
 			--build-arg PKG_REV="$(PKG_REV)" \
 			--build-arg TOOLKIT_VERSION="$(TOOLKIT_VERSION)" \
@@ -46,6 +49,7 @@ debian%:
 centos%: ARCH := x86_64
 centos%:
 	$(DOCKER) build --build-arg VERSION_ID="$*" \
+			--build-arg GOLANG_VERSION="$(GOLANG_VERSION)" \
 			--build-arg PKG_VERS="$(VERSION)" \
 			--build-arg PKG_REV="$(PKG_REV)" \
 			--build-arg TOOLKIT_VERSION="$(TOOLKIT_VERSION)" \
@@ -59,6 +63,7 @@ centos%:
 amzn%: ARCH := x86_64
 amzn%:
 	$(DOCKER) build --build-arg VERSION_ID="$*" \
+			--build-arg GOLANG_VERSION="$(GOLANG_VERSION)" \
 			--build-arg PKG_VERS="$(VERSION)" \
 			--build-arg PKG_REV="$(PKG_REV)" \
 			--build-arg TOOLKIT_VERSION="$(TOOLKIT_VERSION)" \
@@ -72,6 +77,7 @@ amzn%:
 opensuse-leap%: ARCH := x86_64
 opensuse-leap%:
 	$(DOCKER) build --build-arg VERSION_ID="$*" \
+			--build-arg GOLANG_VERSION="$(GOLANG_VERSION)" \
 			--build-arg PKG_VERS="$(VERSION)" \
 			--build-arg PKG_REV="$(PKG_REV)" \
 			--build-arg TOOLKIT_VERSION="$(TOOLKIT_VERSION)" \
