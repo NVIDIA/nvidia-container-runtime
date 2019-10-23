@@ -11,8 +11,6 @@ GOLANG_VERSION  := 1.10.3
 
 DIST_DIR  := $(CURDIR)/../dist
 
-BASE := nvidia/base
-
 .NOTPARALLEL:
 .PHONY: all
 
@@ -26,7 +24,6 @@ ubuntu%:
 			--build-arg PKG_VERS="$(VERSION)" \
 			--build-arg PKG_REV="$(PKG_REV)" \
 			--build-arg TOOLKIT_VERSION="$(TOOLKIT_VERSION)" \
-			--build-arg BASE="$(BASE)" \
 			--tag "nvidia/runtime/ubuntu:$*" \
 			--file docker/Dockerfile.ubuntu .
 	$(MKDIR) -p "$(DIST_DIR)/ubuntu$*/$(ARCH)"
@@ -42,7 +39,6 @@ debian%:
 			--build-arg PKG_VERS="$(VERSION)" \
 			--build-arg PKG_REV="$(PKG_REV)" \
 			--build-arg TOOLKIT_VERSION="$(TOOLKIT_VERSION)" \
-			--build-arg BASE="$(BASE)" \
 			--tag "nvidia/runtime/debian:$*" \
 			--file docker/Dockerfile.debian .
 	$(MKDIR) -p "$(DIST_DIR)/debian$*/$(ARCH)"
@@ -58,7 +54,6 @@ centos%:
 			--build-arg PKG_VERS="$(VERSION)" \
 			--build-arg PKG_REV="$(PKG_REV)" \
 			--build-arg TOOLKIT_VERSION="$(TOOLKIT_VERSION)" \
-			--build-arg BASE="$(BASE)" \
 			--tag "nvidia/runtime/centos:$*" \
 			--file docker/Dockerfile.centos .
 	$(MKDIR) -p "$(DIST_DIR)/centos$*/$(ARCH)"
@@ -74,7 +69,6 @@ amzn%:
 			--build-arg PKG_VERS="$(VERSION)" \
 			--build-arg PKG_REV="$(PKG_REV)" \
 			--build-arg TOOLKIT_VERSION="$(TOOLKIT_VERSION)" \
-			--build-arg BASE="$(BASE)" \
 			--tag "nvidia/runtime/amzn:$*" \
 			--file docker/Dockerfile.amzn .
 	$(MKDIR) -p "$(DIST_DIR)/amzn$*/$(ARCH)"
@@ -90,7 +84,6 @@ opensuse-leap%:
 			--build-arg PKG_VERS="$(VERSION)" \
 			--build-arg PKG_REV="$(PKG_REV)" \
 			--build-arg TOOLKIT_VERSION="$(TOOLKIT_VERSION)" \
-			--build-arg BASE="$(BASE)" \
 			--tag "nvidia/runtime/opensuse-leap:$*" \
 			--file docker/Dockerfile.opensuse-leap .
 	$(MKDIR) -p $(DIST_DIR)/opensuse-leap$*/$(ARCH)
