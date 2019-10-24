@@ -60,9 +60,5 @@ shim-tests:
   stage: test
   image: ${CI_REGISTRY_IMAGE}/runtime/ubuntu18.04
   script:
-    - mkdir /etc/nvidia-container-runtime && echo "" > /etc/nvidia-container-runtime/config.toml # config for test
-    - echo "" > /usr/bin/nvidia-container-runtime-hook # hook for test
-    - chmod +x /usr/bin/nvidia-container-runtime-hook
-
     - cd ${RUNTIMEGOPATH}
     - make test
