@@ -24,6 +24,9 @@ RUN set -eux; \
 ENV GOPATH /go
 ENV PATH $GOPATH/bin:/usr/local/go/bin:$PATH
 
+RUN go get -u golang.org/x/lint/golint github.com/gordonklaus/ineffassign
+
+
 RUN yum install -y curl make
 
 WORKDIR $GOPATH/src/gitlab.com/nvidia/container-toolkit/nvidia-container-runtime
@@ -32,7 +35,7 @@ RUN mkdir -p ${GOPATH}/bin
 RUN curl https://raw.githubusercontent.com/golang/dep/master/install.sh | sh 
 
 COPY src .
-RUN make
+RUN make build
 
 # packaging
 ARG PKG_VERS

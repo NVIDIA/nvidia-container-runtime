@@ -5,6 +5,10 @@ services:
 
 stages:
   - build
+  - test
+
+variables:
+  RUNTIMEGOPATH: "/go/src/gitlab.com/nvidia/container-toolkit/nvidia-container-runtime"
 
 .build_template: &build_definition
   stage: build
@@ -13,7 +17,8 @@ stages:
     - apk add make
 
     - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
-    - make REGISTRY=${CI_REGISTRY_IMAGE} ${OS} 
+    - make REGISTRY=${CI_REGISTRY_IMAGE} pull${OS}
+    - make REGISTRY=${CI_REGISTRY_IMAGE} ${OS}
     - make REGISTRY=${CI_REGISTRY_IMAGE} push${OS}
   artifacts:
     expire_in: 1 week
@@ -43,3 +48,17 @@ amd64:ubuntu16.04:
 
 amd64:ubuntu18.04:
   <<: *build_definition
+
+unit-tests:
+  stage: test
+  image: ${CI_REGISTRY_IMAGE}/runtime/ubuntu18.04
+  script:
+    - cd ${RUNTIMEGOPATH}
+    - make verify
+
+shim-tests:
+  stage: test
+  image: ${CI_REGISTRY_IMAGE}/runtime/ubuntu18.04
+  script:
+    - cd ${RUNTIMEGOPATH}
+    - make test
