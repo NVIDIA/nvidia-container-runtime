@@ -28,6 +28,7 @@ ubuntu%:
 			--build-arg PKG_VERS="$(VERSION)" \
 			--build-arg PKG_REV="$(PKG_REV)" \
 			--build-arg TOOLKIT_VERSION="$(TOOLKIT_VERSION)" \
+			--cache-from "$(REGISTRY)/runtime/ubuntu$*" \
 			--tag "$(REGISTRY)/runtime/ubuntu$*" \
 			--file docker/Dockerfile.ubuntu .
 	$(MKDIR) -p "$(DIST_DIR)/ubuntu$*/$(ARCH)"
@@ -43,6 +44,7 @@ debian%:
 			--build-arg PKG_VERS="$(VERSION)" \
 			--build-arg PKG_REV="$(PKG_REV)" \
 			--build-arg TOOLKIT_VERSION="$(TOOLKIT_VERSION)" \
+			--cache-from "$(REGISTRY)/runtime/debian$*" \
 			--tag "$(REGISTRY)/runtime/debian$*" \
 			--file docker/Dockerfile.debian .
 	$(MKDIR) -p "$(DIST_DIR)/debian$*/$(ARCH)"
@@ -58,6 +60,7 @@ centos%:
 			--build-arg PKG_VERS="$(VERSION)" \
 			--build-arg PKG_REV="$(PKG_REV)" \
 			--build-arg TOOLKIT_VERSION="$(TOOLKIT_VERSION)" \
+			--cache-from "$(REGISTRY)/runtime/centos$*" \
 			--tag "$(REGISTRY)/runtime/centos$*" \
 			--file docker/Dockerfile.centos .
 	$(MKDIR) -p "$(DIST_DIR)/centos$*/$(ARCH)"
@@ -73,6 +76,7 @@ amzn%:
 			--build-arg PKG_VERS="$(VERSION)" \
 			--build-arg PKG_REV="$(PKG_REV)" \
 			--build-arg TOOLKIT_VERSION="$(TOOLKIT_VERSION)" \
+			--cache-from "$(REGISTRY)/runtime/amzn$*" \
 			--tag "$(REGISTRY)/runtime/amzn$*" \
 			--file docker/Dockerfile.amzn .
 	$(MKDIR) -p "$(DIST_DIR)/amzn$*/$(ARCH)"
@@ -88,6 +92,7 @@ opensuse-leap%:
 			--build-arg PKG_VERS="$(VERSION)" \
 			--build-arg PKG_REV="$(PKG_REV)" \
 			--build-arg TOOLKIT_VERSION="$(TOOLKIT_VERSION)" \
+			--cache-from "$(REGISTRY)/runtime/opensuse-leap$*" \
 			--tag "$(REGISTRY)/runtime/opensuse-leap$*" \
 			--file docker/Dockerfile.opensuse-leap .
 	$(MKDIR) -p $(DIST_DIR)/opensuse-leap$*/$(ARCH)
