@@ -17,7 +17,8 @@ variables:
     - apk add make
 
     - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
-    - make REGISTRY=${CI_REGISTRY_IMAGE} ${OS} 
+    - make REGISTRY=${CI_REGISTRY_IMAGE} pull${OS}
+    - make REGISTRY=${CI_REGISTRY_IMAGE} ${OS}
     - make REGISTRY=${CI_REGISTRY_IMAGE} push${OS}
   artifacts:
     expire_in: 1 week

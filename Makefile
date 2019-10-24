@@ -20,6 +20,9 @@ all: ubuntu18.04 ubuntu16.04 debian10 debian9 centos7 amzn2 amzn1 opensuse-leap1
 push%:
 	$(DOCKER) push "$(REGISTRY)/runtime/$*"
 
+pull%:
+	$(DOCKER) pull "$(REGISTRY)/runtime/$*"
+
 ubuntu%: ARCH := amd64
 ubuntu%:
 	$(DOCKER) build --pull \
