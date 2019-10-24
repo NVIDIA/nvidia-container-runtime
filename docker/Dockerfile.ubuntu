@@ -41,7 +41,7 @@ RUN mkdir -p ${GOPATH}/bin
 RUN curl https://raw.githubusercontent.com/golang/dep/master/install.sh | sh
 
 COPY src .
-RUN make
+RUN make build
 
 # packaging
 ARG PKG_VERS

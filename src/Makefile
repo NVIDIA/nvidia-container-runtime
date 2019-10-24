@@ -1,7 +1,7 @@
 RUNTIME=nvidia-container-runtime
 MOCK_RUNC=$(CURDIR)/runc
 
-all: build #verify test
+all: build verify test
 verify: fmt lint vet assign
 
 build:
