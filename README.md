@@ -96,6 +96,50 @@ This variable controls which GPUs will be made accessible inside the container.
 * `none`: no GPU will be accessible, but driver capabilities will be enabled.
 * `void` or *empty* or *unset*: `nvidia-container-runtime` will have the same behavior as `runc`.
 
+**Note**: When running on a MIG capable device, the following values will also be available:
+* `0:0,0:1,1:0`, `MIG-GPU-fef8089b/0/1` …: a comma-separated list of MIG Device UUID(s) or index(es).
+
+Where the MIG device indices have the form `<GPU Device Index>:<MIG Device Index>` as seen in the example output:
+```
+$ nvidia-smi -L
+GPU 0: Graphics Device (UUID: GPU-b8ea3855-276c-c9cb-b366-c6fa655957c5)
+  MIG Device 0: (UUID: MIG-GPU-b8ea3855-276c-c9cb-b366-c6fa655957c5/1/0)
+  MIG Device 1: (UUID: MIG-GPU-b8ea3855-276c-c9cb-b366-c6fa655957c5/1/1)
+  MIG Device 2: (UUID: MIG-GPU-b8ea3855-276c-c9cb-b366-c6fa655957c5/11/0)
+```
+
+### `NVIDIA_MIG_CONFIG_DEVICES`
+This variable controls which of the visible GPUs can have their MIG
+configuration managed from within the container. This includes enabling and
+disabling MIG mode, creating and destroying GPU Instances and Compute
+Instances, etc.
+
+#### Possible values
+* `all`: Allow all MIG-capable GPUs in the visible device list to have their
+  MIG configurations managed.
+
+**Note**:
+* This feature is only available on MIG capable devices (e.g. the A100).
+* To use this feature, the container must be started with `CAP_SYS_ADMIN` privileges.
+* When not running as `root`, the container user must have read access to the
+  `/proc/driver/nvidia/capabilities/mig/config` file on the host.
+
+### `NVIDIA_MIG_MONITOR_DEVICES`
+This variable controls which of the visible GPUs can have aggregate information
+about all of their MIG devices monitored from within the container. This
+includes inspecting the aggregate memory usage, listing the aggregate running
+processes, etc.
+
+#### Possible values
+* `all`: Allow all MIG-capable GPUs in the visible device list to have their
+  MIG devices monitored.
+
+**Note**:
+* This feature is only available on MIG capable devices (e.g. the A100).
+* To use this feature, the container must be started with `CAP_SYS_ADMIN` privileges.
+* When not running as `root`, the container user must have read access to the
+  `/proc/driver/nvidia/capabilities/mig/monitor` file on the host.
+
 ### `NVIDIA_DRIVER_CAPABILITIES`
 This option controls which driver libraries/binaries will be mounted inside the container.
 
