@@ -49,6 +49,10 @@ amd64:ubuntu16.04:
 amd64:ubuntu18.04:
   <<: *build_definition
 
+amd64:ubuntu20.04:
+  <<: *build_definition
+
+
 unit-tests:
   stage: test
   image: ${CI_REGISTRY_IMAGE}/runtime/ubuntu18.04

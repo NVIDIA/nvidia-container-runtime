@@ -15,7 +15,7 @@ REGISTRY := nvidia
 .NOTPARALLEL:
 .PHONY: all
 
-all: ubuntu18.04 ubuntu16.04 debian10 debian9 centos7 amzn2 amzn1 opensuse-leap15.1
+all: ubuntu20.04 ubuntu18.04 ubuntu16.04 debian10 debian9 centos7 amzn2 amzn1 opensuse-leap15.1
 
 push%:
 	$(DOCKER) push "$(REGISTRY)/runtime/$*"
