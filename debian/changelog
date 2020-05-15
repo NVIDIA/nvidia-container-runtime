@@ -1,4 +1,10 @@
-nvidia-container-runtime (@VERSION@) UNRELEASED; urgency=medium
+nvidia-container-runtime (3.2.0-1) UNRELEASED; urgency=medium
+
+  * Require new MIG changes
+
+ -- NVIDIA CORPORATION <cudatools@nvidia.com>  Fri, 15 May 2020 12:04:57 +0000
+
+nvidia-container-runtime (3.1.4-1) UNRELEASED; urgency=medium
 
   * Split into nvidia-container-runtime and nvidia-container-runtime-hook
 

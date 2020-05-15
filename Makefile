@@ -5,10 +5,10 @@ MKDIR  ?= mkdir
 DIST_DIR ?= $(CURDIR)/dist
 
 LIB_NAME := nvidia-container-runtime
-LIB_VERSION := 3.1.4
+LIB_VERSION := 3.2.0
 PKG_REV := 1
 
-TOOLKIT_VERSION := 1.0.5
+TOOLKIT_VERSION := 1.1.0
 GOLANG_VERSION  := 1.10.3
 
 # Supported OSs by architecture
