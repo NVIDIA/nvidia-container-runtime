@@ -41,4 +41,5 @@ install -m 755 -t %{buildroot}%{_bindir} nvidia-container-runtime
 
 %changelog
 * Fri May 15 2020 NVIDIA CORPORATION <cudatools@nvidia.com> 3.2.0-1
-- Require new MIG changes
+- e486a70e Update build system to support multi-arch builds
+- 854f4c48 Require new MIG changes

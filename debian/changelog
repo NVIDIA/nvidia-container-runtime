@@ -1,6 +1,7 @@
 nvidia-container-runtime (3.2.0-1) UNRELEASED; urgency=medium
 
-  * Require new MIG changes
+  * e486a70e Update build system to support multi-arch builds
+  * 854f4c48 Require new MIG changes
 
  -- NVIDIA CORPORATION <cudatools@nvidia.com>  Fri, 15 May 2020 12:04:57 +0000
 
