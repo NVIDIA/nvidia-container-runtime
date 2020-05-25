@@ -77,19 +77,19 @@ Description: NVIDIA container runtime
  containers.
 
 Package: nvidia-container-runtime
-Architecture: arm64
+Architecture: ppc64el
 Version: 3.2.0-1
 Priority: optional
 Section: utils
 Maintainer: NVIDIA CORPORATION <cudatools@nvidia.com>
-Installed-Size: 1894
+Installed-Size: 1958
 Depends: nvidia-container-toolkit (>= 1.1.0), nvidia-container-toolkit (<< 2.0.0), libseccomp2
-Filename: ./nvidia-container-runtime_3.2.0-1_arm64.deb
-Size: 534304
-MD5sum: 40e9b9dc36523ecf1a3d70c62ee6b2a9
-SHA1: e87bd2bf181d4bcc71f4265c2a76bb7dc2555eb3
-SHA256: f5f559e208b4b244094d46762d6c2dff01db3aa60e847ef9f0b37c5fbe83a644
-SHA512: 6ca786b65355081c57cc8d557fbfe20c426969e739df3282758f270310f32993061ff6d392a4b7fee1c6ea5bf614cc034c6bfcfb30728ad9a1a6a396c91dfd78
+Filename: ./nvidia-container-runtime_3.2.0-1_ppc64el.deb
+Size: 535104
+MD5sum: 8c6ad0e102128de056e7efb800717166
+SHA1: 193ffeabe29139abc9c38f9733c66e607b385431
+SHA256: 24d4a55884b22e2c355fe7bc0480e6120bf4d7792482be175780c649f00d988a
+SHA512: bc1d86621f558fc39eeb1ffa1c63349c13de7f74241ebe268f00c6232ddc6c9f7ca024958db0916df4c2d5b8f6b42c09c2788a699beba61f81820eb7d75b4ddb
 Homepage: https://github.com/NVIDIA/nvidia-container-runtime/wiki
 Description: NVIDIA container runtime
  Provides a modified version of runc allowing users to run GPU enabled
