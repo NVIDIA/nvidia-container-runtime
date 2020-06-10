@@ -1,5 +1,5 @@
 # nvidia-container-runtime
-[![GitHub license](https://img.shields.io/badge/license-New%20BSD-blue.svg?style=flat-square)](https://raw.githubusercontent.com/NVIDIA/nvidia-container-runtime/master/LICENSE)
+[![GitHub license](https://img.shields.io/badge/License-Apache%202.0-blue.svg?style=flat-square)](https://raw.githubusercontent.com/NVIDIA/nvidia-container-runtime/master/LICENSE)
 [![Package repository](https://img.shields.io/badge/packages-repository-b956e8.svg?style=flat-square)](https://nvidia.github.io/nvidia-container-runtime)
 
 A modified version of [runc](https://github.com/opencontainers/runc) adding a custom [pre-start hook](https://github.com/opencontainers/runtime-spec/blob/master/config.md#prestart) to all containers.  
@@ -152,6 +152,9 @@ If the version of the NVIDIA driver is insufficient to run this version of CUDA,
 Similar to `NVIDIA_REQUIRE_CUDA`, for legacy CUDA images.  
 In addition, if `NVIDIA_REQUIRE_CUDA` is not set, `NVIDIA_VISIBLE_DEVICES` and `NVIDIA_DRIVER_CAPABILITIES` will default to `all`.
 
-## Copyright and License
+## Issues and Contributing
 
-This project is released under the [BSD 3-clause license](https://github.com/NVIDIA/nvidia-container-runtime/blob/master/LICENSE).
+[Checkout the Contributing document!](CONTRIBUTING.md)
+
+* Please let us know by [filing a new issue](https://github.com/NVIDIA/nvidia-docker/issues/new)
+* You can contribute by opening a [pull request](https://help.github.com/articles/using-pull-requests/)
