@@ -5,7 +5,7 @@ MKDIR  ?= mkdir
 DIST_DIR ?= $(CURDIR)/dist
 
 LIB_NAME := nvidia-container-runtime
-LIB_VERSION := 3.2.0
+LIB_VERSION := 3.3.0
 PKG_REV := 1
 
 TOOLKIT_VERSION := 1.2.0
