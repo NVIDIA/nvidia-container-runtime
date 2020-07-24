@@ -1,0 +1,20 @@
+Package: nvidia-container-toolkit
+Architecture: ppc64el
+Version: 1.3.0~rc.1-1
+Priority: optional
+Section: utils
+Maintainer: NVIDIA CORPORATION <cudatools@nvidia.com>
+Installed-Size: 2301
+Depends: libnvidia-container-tools (>= 1.2.0), libnvidia-container-tools (<< 2.0.0)
+Breaks: nvidia-container-runtime (<< 2.0.0), nvidia-container-runtime-hook
+Replaces: nvidia-container-runtime (<< 2.0.0), nvidia-container-runtime-hook
+Filename: ./nvidia-container-toolkit_1.3.0~rc.1-1_ppc64el.deb
+Size: 660558
+MD5sum: 02b57975b692fd336616be2b22fc8fba
+SHA1: d4297d8ef4d2ca813cdd2167d4c3e660bdde44a9
+SHA256: f60df405bb5f6a8b600bc7f8db0e85e946b13752d4c5fd43c70681bc6ef1db91
+SHA512: a46a1ea5bb17983fc07b9786122b03829f829a2d03fe654d11aedef322b4f275750cdda62c37523c05b277deeb05b0e21a0f33695c6bbbf00a2dbbcff154a696
+Homepage: https://github.com/NVIDIA/nvidia-container-runtime/wiki
+Description: NVIDIA container runtime hook
+ Provides a OCI hook to enable GPU support in containers.
+
