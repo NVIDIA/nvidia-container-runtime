@@ -1,0 +1,2 @@
+deb https://nvidia.github.io/libnvidia-container/experimental/debian10/$(ARCH) /
+deb https://nvidia.github.io/nvidia-container-runtime/experimental/debian10/$(ARCH) /
