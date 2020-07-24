@@ -65,11 +65,13 @@ curl -s -L https://nvidia.github.io/nvidia-container-runtime/$distribution/nvidi
 For pre-releases, you need to enable the experimental repos of all dependencies:
 ```bash
 sudo yum-config-manager --enable libnvidia-container-experimental
+sudo yum-config-manager --enable nvidia-container-experimental
 ```
 
 To later disable the experimental repos of all dependencies, you can run:
 ```bash
 sudo yum-config-manager --disable libnvidia-container-experimental
+sudo yum-config-manager --disable nvidia-container-runtime-experimental
 ```
 
 # Updating repository keys
