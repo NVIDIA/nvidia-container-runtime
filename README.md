@@ -82,6 +82,71 @@ You can optionally reconfigure the default runtime by adding the following to `/
 sudo dockerd --add-runtime=nvidia=/usr/bin/nvidia-container-runtime [...]
 ```
 
+## Containerd setup
+
+This section shows how to add the container runtime into Containerd's configuration file.
+
+**Do NOT follow this section if you just use docker or if you don't understand what is it.**
+
+1. Generate default config file **if you do not have one**.
+```bash
+containerd config default > /etc/containerd/config.toml
+```
+
+2. Edit config file and add runtime describe text.
+
+    You can use any editor you like to edit your config file, for example `vim /etc/containerd/config.toml`.
+    
+    The whole toml file is too long, so text below shows part of it. 
+
+```toml
+      # Please find this title in your config file
+      [plugins."io.containerd.grpc.v1.cri".containerd.runtimes]
+
+        # This section is added by system, we can just ignore it.
+        [plugins."io.containerd.grpc.v1.cri".containerd.runtimes.runc]
+          runtime_type = "io.containerd.runc.v2"
+          runtime_engine = ""
+          runtime_root = ""
+          privileged_without_host_devices = false
+          base_runtime_spec = ""
+          [plugins."io.containerd.grpc.v1.cri".containerd.runtimes.runc.options]
+
+        # This section is not exist in default file.
+        # Here is the example for nvidia container runtime.
+        # Please add this section into your config file so that you can use nvidia-runtime.
+        [plugins."io.containerd.grpc.v1.cri".containerd.runtimes.nvidia]
+          runtime_type = "io.containerd.runc.v2"
+          runtime_engine = ""
+          runtime_root = ""
+          privileged_without_host_devices = false
+          base_runtime_spec = ""
+          [plugins."io.containerd.grpc.v1.cri".containerd.runtimes.nvidia.options]
+            BinaryName = "nvidia-container-runtime"
+```
+
+3. Change the default runtime name
+
+    If you want to use nvidia runtime as your default runtime, you can overwrite `default_runtime_name`. However, 
+    this step is optional, you may use other methods to choose runtime in dynamic way (For example, add a runtime claim in pod's spec).
+
+```toml
+    # At first, you need to find this title.
+    [plugins."io.containerd.grpc.v1.cri".containerd]
+      snapshotter = "overlayfs"
+      # Change this from "runc" to "nvidia"
+      default_runtime_name = "nvidia"
+```
+
+4. Restart containerd service
+
+    Don't forget to restart containerd service to apply your changes.
+
+```bash
+systemctl restart containerd
+```
+
+
 ## Environment variables (OCI spec)
 
 Each environment variable maps to an command-line argument for `nvidia-container-cli` from [libnvidia-container](https://github.com/NVIDIA/libnvidia-container).  
