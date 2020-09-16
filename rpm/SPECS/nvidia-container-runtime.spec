@@ -40,6 +40,10 @@ install -m 755 -t %{buildroot}%{_bindir} nvidia-container-runtime
 %{_bindir}/nvidia-container-runtime
 
 %changelog
+* Wed Sep 16 2020 NVIDIA CORPORATION <cudatools@nvidia.com> 3.4.0-1
+- Bump version to v3.4.0
+- Add dependence on nvidia-container-toolkit >= 1.3.0
+
 * Wed Jul 08 2020 NVIDIA CORPORATION <cudatools@nvidia.com> 3.3.0-1
 - e550cb15 Update package license to match source license
 - f02eef53 Update project License
