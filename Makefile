@@ -9,7 +9,7 @@ LIB_VERSION := 3.4.0
 PKG_REV := 1
 
 TOOLKIT_VERSION := 1.3.0
-GOLANG_VERSION  := 1.10.3
+GOLANG_VERSION  := 1.15.6
 
 # Supported OSs by architecture
 AMD64_TARGETS := ubuntu20.04 ubuntu18.04 ubuntu16.04 debian10 debian9
