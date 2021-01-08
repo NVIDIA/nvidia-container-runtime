@@ -39,8 +39,6 @@ RUN apt-get update && \
 WORKDIR $GOPATH/src/gitlab.com/nvidia/container-toolkit/nvidia-container-runtime
 RUN mkdir -p ${GOPATH}/bin
 
-RUN curl https://raw.githubusercontent.com/golang/dep/master/install.sh | sh
-
 COPY src .
 RUN make build
 
