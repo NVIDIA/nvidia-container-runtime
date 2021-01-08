@@ -1,4 +1,4 @@
-module gitlab.com/nvidia/container-toolkit/container-runtime/src
+module github.com/NVIDIA/container-runtime
 
 go 1.15
 
