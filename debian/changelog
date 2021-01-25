@@ -1,3 +1,12 @@
+nvidia-container-runtime (3.4.1-1) UNRELEASED; urgency=medium
+
+  * Update README to list 'compute' as part of the default capabilities
+  * Switch to gomod for vendoring
+  * Update to Go 1.15.6 for builds
+  * Add dependence on nvidia-container-toolkit >= 1.4.1
+
+ -- NVIDIA CORPORATION <cudatools@nvidia.com>  Mon, 25 Jan 2021 02:34:42 +0000
+
 nvidia-container-runtime (3.4.0-1) UNRELEASED; urgency=medium
 
   * Bump version to v3.4.0
