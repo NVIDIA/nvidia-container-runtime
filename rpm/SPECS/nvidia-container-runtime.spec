@@ -40,6 +40,9 @@ install -m 755 -t %{buildroot}%{_bindir} nvidia-container-runtime
 %{_bindir}/nvidia-container-runtime
 
 %changelog
+* Fri Feb 05 2021 NVIDIA CORPORATION <cudatools@nvidia.com> 3.4.2-1
+- Add dependence on nvidia-container-toolkit >= 1.4.2
+
 * Mon Jan 25 2021 NVIDIA CORPORATION <cudatools@nvidia.com> 3.4.1-1
 - Update README to list 'compute' as part of the default capabilities
 - Switch to gomod for vendoring
