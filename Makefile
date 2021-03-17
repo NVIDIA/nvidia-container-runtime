@@ -22,10 +22,11 @@ PKG_REV := 1
 
 TOOLKIT_VERSION := 1.4.2
 GOLANG_VERSION  := 1.15.6
+GOLANG_PKG_PATH := github.com/NVIDIA/container-runtime/pkg
 
 # By default run all native docker-based targets
 docker-native:
 include $(CURDIR)/docker/docker.mk
 
 binary:
-	cd src && go build -ldflags "-s -w" -o ../"$(LIB_NAME)" main.go
+	go build -ldflags "-s -w" -o "$(LIB_NAME)" $(GOLANG_PKG_PATH)
