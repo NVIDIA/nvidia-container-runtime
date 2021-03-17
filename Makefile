@@ -26,3 +26,6 @@ GOLANG_VERSION  := 1.15.6
 # By default run all native docker-based targets
 docker-native:
 include $(CURDIR)/docker/docker.mk
+
+binary:
+	cd src && go build -ldflags "-s -w" -o ../"$(LIB_NAME)" main.go
