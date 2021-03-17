@@ -80,3 +80,14 @@ mock-hook:
 test: build mock-runc mock-hook
 	@go test -v $(MODULE)/...
 	@${RM} $(MOCK_RUNC)
+
+.PHONY: docker-test
+docker-test:
+	$(DOCKER) run \
+		--rm \
+		-e GOCACHE=/tmp/.cache \
+		-v $(PWD):$(PWD) \
+		-w $(PWD) \
+		golang:$(GOLANG_VERSION) \
+			make test
+
