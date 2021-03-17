@@ -20,25 +20,25 @@ import (
 const (
 	nvidiaRuntime      = "nvidia-container-runtime"
 	nvidiaHook         = "nvidia-container-runtime-hook"
-	bundlePath         = "./"
+	bundlePath         = "../test/output/bundle/"
 	specFile           = "config.json"
-	unmodifiedSpecFile = "test_spec.json"
+	unmodifiedSpecFile = "../test/input/test_spec.json"
 )
-
-var workingDir string
 
 func TestMain(m *testing.M) {
 	// TEST SETUP
 	// Update PATH to execute mock runc in current directory
 	_, filename, _, _ := runtime.Caller(0)
-	workingDir = path.Dir(filename)
+	workingDir := path.Dir(filename)
+	parentDir := path.Dir(workingDir)
+
 	paths := strings.Split(os.Getenv("PATH"), ":")
-	paths = append([]string{workingDir}, paths...)
+	paths = append([]string{parentDir, workingDir}, paths...)
 	os.Setenv("PATH", strings.Join(paths, ":"))
 
 	// Confirm path setup correctly
 	runcPath, err := exec.LookPath("runc")
-	if err != nil || runcPath != (workingDir+"/runc") {
+	if err != nil || !strings.HasPrefix(runcPath, parentDir) {
 		log.Fatal("error in test setup: mock runc path set incorrectly in TestMain()")
 	}
 
@@ -87,7 +87,7 @@ func TestGoodInput(t *testing.T) {
 	require.NoError(t, err, "runtime should not return an error")
 
 	// Check config.json and confirm there are no hooks
-	spec, err := getRuntimeSpec(bundlePath + specFile)
+	spec, err := getRuntimeSpec(filepath.Join(bundlePath, specFile))
 	require.NoError(t, err, "should be no errors when reading and parsing spec from config.json")
 	require.Empty(t, spec.Hooks, "there should be no hooks in config.json")
 
@@ -97,7 +97,7 @@ func TestGoodInput(t *testing.T) {
 	require.NoError(t, err, "runtime should not return an error")
 
 	// Check config.json for NVIDIA prestart hook
-	spec, err = getRuntimeSpec(bundlePath + specFile)
+	spec, err = getRuntimeSpec(filepath.Join(bundlePath, specFile))
 	require.NoError(t, err, "should be no errors when reading and parsing spec from config.json")
 	require.NotEmpty(t, spec.Hooks, "there should be hooks in config.json")
 	require.Equal(t, 1, nvidiaHookCount(spec.Hooks), "exactly one nvidia prestart hook should be inserted correctly into config.json")
@@ -111,7 +111,7 @@ func TestDuplicateHook(t *testing.T) {
 	}
 
 	var spec specs.Spec
-	spec, err = getRuntimeSpec(bundlePath + specFile)
+	spec, err = getRuntimeSpec(filepath.Join(bundlePath, specFile))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -142,7 +142,7 @@ func TestDuplicateHook(t *testing.T) {
 	require.NoError(t, err, "runtime should not return an error")
 
 	// Check config.json for NVIDIA prestart hook
-	spec, err = getRuntimeSpec(bundlePath + specFile)
+	spec, err = getRuntimeSpec(filepath.Join(bundlePath, specFile))
 	require.NoError(t, err, "should be no errors when reading and parsing spec from config.json")
 	require.NotEmpty(t, spec.Hooks, "there should be hooks in config.json")
 	require.Equal(t, 1, nvidiaHookCount(spec.Hooks), "exactly one nvidia prestart hook should be inserted correctly into config.json")
@@ -175,8 +175,15 @@ func getRuntimeSpec(filePath string) (specs.Spec, error) {
 }
 
 func generateNewRuntimeSpec() error {
-	cmd := exec.Command("cp", unmodifiedSpecFile, specFile)
-	err := cmd.Run()
+	var err error
+
+	err = os.MkdirAll(bundlePath, 0755)
+	if err != nil {
+		return err
+	}
+
+	cmd := exec.Command("cp", unmodifiedSpecFile, filepath.Join(bundlePath, specFile))
+	err = cmd.Run()
 	if err != nil {
 		return err
 	}
