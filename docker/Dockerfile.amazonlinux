@@ -30,10 +30,9 @@ RUN go get -u golang.org/x/lint/golint github.com/gordonklaus/ineffassign
 
 RUN yum install -y curl
 
-WORKDIR $GOPATH/src/gitlab.com/nvidia/container-toolkit/nvidia-container-runtime
-RUN mkdir -p ${GOPATH}/bin
+WORKDIR /build
 
-COPY src .
+COPY . .
 RUN make build
 
 # packaging

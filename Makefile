@@ -30,3 +30,6 @@ include $(CURDIR)/docker/docker.mk
 
 binary:
 	go build -ldflags "-s -w" -o "$(LIB_NAME)" $(GOLANG_PKG_PATH)
+
+build:
+	@go build -o $(LIB_NAME) $(GOLANG_PKG_PATH)

@@ -27,10 +27,9 @@ ENV PATH $GOPATH/bin:/usr/local/go/bin:$PATH
 
 RUN go get -u golang.org/x/lint/golint github.com/gordonklaus/ineffassign
 
-WORKDIR $GOPATH/src/gitlab.com/nvidia/container-toolkit/nvidia-container-runtime
-RUN mkdir -p ${GOPATH}/bin
+WORKDIR /build
 
-COPY src .
+COPY . .
 RUN make build
 
 # packaging

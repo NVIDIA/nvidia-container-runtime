@@ -4,9 +4,6 @@ MOCK_RUNC=$(CURDIR)/runc
 all: build verify test
 verify: fmt lint vet assign
 
-build:
-	@go build  -o ${RUNTIME}
-
 mock-runc:
 	@(printf '#!/bin/bash\necho mock runc') > ${MOCK_RUNC}
 	@chmod +x ${MOCK_RUNC}
