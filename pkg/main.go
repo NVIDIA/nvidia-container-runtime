@@ -16,14 +16,14 @@ import (
 )
 
 const (
-	configOverride      = "XDG_CONFIG_HOME"
-	configFilePath      = "nvidia-container-runtime/config.toml"
+	configOverride = "XDG_CONFIG_HOME"
+	configFilePath = "nvidia-container-runtime/config.toml"
 
 	hookDefaultFilePath = "/usr/bin/nvidia-container-runtime-hook"
 )
 
 var (
-	configDir           = "/etc/"
+	configDir = "/etc/"
 )
 
 var fileLogger *log.Logger = nil
@@ -66,10 +66,10 @@ func getArgs() (*args, error) {
 
 	for i, param := range os.Args {
 		if param == "--bundle" || param == "-b" {
-			if len(os.Args) - i <= 1 {
+			if len(os.Args)-i <= 1 {
 				return nil, fmt.Errorf("bundle option needs an argument")
 			}
-			args.bundleDirPath = os.Args[i + 1]
+			args.bundleDirPath = os.Args[i+1]
 		} else if param == "create" {
 			args.cmd = param
 		}
@@ -166,8 +166,8 @@ func main() {
 		fileLogger.Printf("Bundle dirrectory path is empty, using working directory: %s\n", args.bundleDirPath)
 	}
 
-	fileLogger.Printf("Using bundle file: %s\n", args.bundleDirPath + "/config.json")
-	jsonFile, err := os.OpenFile(args.bundleDirPath + "/config.json", os.O_RDWR, 0644)
+	fileLogger.Printf("Using bundle file: %s\n", args.bundleDirPath+"/config.json")
+	jsonFile, err := os.OpenFile(args.bundleDirPath+"/config.json", os.O_RDWR, 0644)
 	exitOnError(err, "open OCI spec file")
 
 	defer jsonFile.Close()

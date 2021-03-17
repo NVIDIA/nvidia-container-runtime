@@ -18,10 +18,10 @@ import (
 )
 
 const (
-	nvidiaRuntime       = "nvidia-container-runtime"
-	nvidiaHook          = "nvidia-container-runtime-hook"
-	bundlePath          = "./"
-	specFile            = "config.json"
+	nvidiaRuntime      = "nvidia-container-runtime"
+	nvidiaHook         = "nvidia-container-runtime-hook"
+	bundlePath         = "./"
+	specFile           = "config.json"
 	unmodifiedSpecFile = "test_spec.json"
 )
 
@@ -203,14 +203,14 @@ func TestGetConfigWithCustomConfig(t *testing.T) {
 	// By default debug is disabled
 	contents := []byte("[nvidia-container-runtime]\ndebug = \"/nvidia-container-toolkit.log\"")
 	testDir := path.Join(wd, "test")
-	filename :=  path.Join(testDir, configFilePath)
+	filename := path.Join(testDir, configFilePath)
 
 	os.Setenv(configOverride, testDir)
 
 	require.NoError(t, os.MkdirAll(filepath.Dir(filename), 0766))
 	require.NoError(t, ioutil.WriteFile(filename, contents, 0766))
 
-	defer func() { require.NoError(t, os.RemoveAll(testDir)) } ()
+	defer func() { require.NoError(t, os.RemoveAll(testDir)) }()
 
 	cfg, err := getConfig()
 	require.NoError(t, err)
