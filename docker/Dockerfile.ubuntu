@@ -31,15 +31,13 @@ ENV PATH $GOPATH/bin:/usr/local/go/bin:$PATH
 
 RUN go get -u golang.org/x/lint/golint github.com/gordonklaus/ineffassign
 
-
 RUN apt-get update && \
     apt-get install -y curl && \
     rm -rf /var/lib/apt/lists/*
 
-WORKDIR $GOPATH/src/gitlab.com/nvidia/container-toolkit/nvidia-container-runtime
-RUN mkdir -p ${GOPATH}/bin
+WORKDIR /build
 
-COPY src .
+COPY . .
 RUN make build
 
 # packaging

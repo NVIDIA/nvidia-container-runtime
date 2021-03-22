@@ -30,10 +30,9 @@ RUN go get -u golang.org/x/lint/golint github.com/gordonklaus/ineffassign
 RUN zypper install -y curl make && \
     rm -rf /var/cache/zypp/*
 
-WORKDIR $GOPATH/src/gitlab.com/nvidia/container-toolkit/nvidia-container-runtime
-RUN mkdir -p ${GOPATH}/bin
+WORKDIR /build
 
-COPY src .
+COPY . .
 RUN make build
 
 # packaging
