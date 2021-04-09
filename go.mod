@@ -1,6 +1,6 @@
 module github.com/NVIDIA/container-runtime
 
-go 1.15
+go 1.16
 
 require (
 	github.com/opencontainers/runtime-spec v1.0.1
