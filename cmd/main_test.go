@@ -151,10 +151,10 @@ func TestDuplicateHook(t *testing.T) {
 func getRuntimeSpec(filePath string) (specs.Spec, error) {
 	var spec specs.Spec
 	jsonFile, err := os.OpenFile(filePath, os.O_RDWR, 0644)
-	defer jsonFile.Close()
 	if err != nil {
 		return spec, err
 	}
+	defer jsonFile.Close()
 
 	jsonContent, err := ioutil.ReadAll(jsonFile)
 	if err != nil {
