@@ -61,18 +61,47 @@ func getConfig() (*config, error) {
 	return cfg, nil
 }
 
-func getArgs() (*args, error) {
+// getArgs checks the specified slice of strings (argv) for a 'bundle' flag and a 'create'
+// command line argument as allowed by runc.
+// The following are supported:
+// --bundle{{SEP}}BUNDLE_PATH
+// -bundle{{SEP}}BUNDLE_PATH
+// -b{{SEP}}BUNDLE_PATH
+// where {{SEP}} is either ' ' or '='
+func getArgs(argv []string) (*args, error) {
 	args := &args{}
 
-	for i, param := range os.Args {
-		if param == "--bundle" || param == "-b" {
-			if len(os.Args)-i <= 1 {
-				return nil, fmt.Errorf("bundle option needs an argument")
-			}
-			args.bundleDirPath = os.Args[i+1]
-		} else if param == "create" {
+	for i := 0; i < len(argv); i++ {
+		param := argv[i]
+		if param == "create" {
 			args.cmd = param
+			continue
 		}
+
+		if !strings.HasPrefix(param, "-") {
+			continue
+		}
+
+		trimmed := strings.TrimLeft(param, "-")
+		if len(trimmed) == 0 {
+			continue
+		}
+
+		parts := strings.SplitN(trimmed, "=", 2)
+		if parts[0] != "bundle" && parts[0] != "b" {
+			continue
+		}
+
+		if len(parts) == 2 {
+			args.bundleDirPath = parts[1]
+			continue
+		}
+
+		if len(argv)-i <= 1 {
+			return nil, fmt.Errorf("bundle option needs an argument")
+		}
+		args.bundleDirPath = argv[i+1]
+		i++
 	}
 
 	return args, nil
@@ -150,7 +179,7 @@ func main() {
 
 	logger.Printf("Running %s\n", os.Args[0])
 
-	args, err := getArgs()
+	args, err := getArgs(os.Args)
 	exitOnError(err, "fail to get args")
 
 	if args.cmd != "create" {
