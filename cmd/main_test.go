@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"log"
 	"os"
@@ -222,4 +223,35 @@ func TestGetConfigWithCustomConfig(t *testing.T) {
 	cfg, err := getConfig()
 	require.NoError(t, err)
 	require.Equal(t, cfg.debugFilePath, "/nvidia-container-toolkit.log")
+}
+
+func TestArgs(t *testing.T) {
+	wd, err := os.Getwd()
+	require.NoError(t, err)
+
+	testCases := []struct {
+		args       args
+		configPath string
+	}{
+		{
+			args:       args{},
+			configPath: fmt.Sprintf("%v/config.json", wd),
+		},
+		{
+			args:       args{bundleDirPath: "/foo/bar"},
+			configPath: "/foo/bar/config.json",
+		},
+		{
+			args:       args{bundleDirPath: "/foo/bar/"},
+			configPath: "/foo/bar/config.json",
+		},
+	}
+
+	for i, tc := range testCases {
+		cp, err := tc.args.getConfigFilePath()
+
+		require.NoErrorf(t, err, "%d: %v", i, tc)
+		require.Equalf(t, tc.configPath, cp, "%d: %v", i, tc)
+	}
+
 }

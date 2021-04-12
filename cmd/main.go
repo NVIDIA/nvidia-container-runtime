@@ -7,6 +7,7 @@ import (
 	"os"
 	"os/exec"
 	"path"
+	"path/filepath"
 	"strings"
 	"syscall"
 
@@ -157,14 +158,12 @@ func main() {
 		execRuncAndExit()
 	}
 
-	if args.bundleDirPath == "" {
-		args.bundleDirPath, err = os.Getwd()
-		exitOnError(err, "get working directory")
-		logger.Printf("Bundle dirrectory path is empty, using working directory: %s\n", args.bundleDirPath)
-	}
+	configFilePath, err := args.getConfigFilePath()
+	exitOnError(err, "error getting config file path")
 
-	logger.Printf("Using bundle file: %s\n", args.bundleDirPath+"/config.json")
-	jsonFile, err := os.OpenFile(args.bundleDirPath+"/config.json", os.O_RDWR, 0644)
+	logger.Printf("Using OCI specification file path: %v", configFilePath)
+
+	jsonFile, err := os.OpenFile(configFilePath, os.O_RDWR, 0644)
 	exitOnError(err, "open OCI spec file")
 
 	defer jsonFile.Close()
@@ -187,4 +186,22 @@ func main() {
 
 	logger.Print("Prestart hook added, executing runc")
 	execRuncAndExit()
+}
+
+func (a args) getConfigFilePath() (string, error) {
+	configRoot := a.bundleDirPath
+	if configRoot == "" {
+		logger.Printf("Bundle directory path is empty, using working directory.")
+		workingDirectory, err := os.Getwd()
+		if err != nil {
+			return "", fmt.Errorf("error getting working directory: %v", err)
+		}
+		configRoot = workingDirectory
+	}
+
+	logger.Printf("Using bundle directory: %v", configRoot)
+
+	configFilePath := filepath.Join(configRoot, "config.json")
+
+	return configFilePath, nil
 }
