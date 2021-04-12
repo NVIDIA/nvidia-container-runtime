@@ -83,7 +83,9 @@ func exitOnError(err error, msg string) {
 	}
 }
 
-func execRunc() {
+// execRuncAndExit discovers the runc binary and issues an exec syscall.
+// If this is not successful, the program is exited.
+func execRuncAndExit() {
 	logger.Println("Looking for \"docker-runc\" binary")
 	runcPath, err := exec.LookPath("docker-runc")
 	if err != nil {
@@ -96,7 +98,10 @@ func execRunc() {
 	logger.Printf("Runc path: %s\n", runcPath)
 
 	err = syscall.Exec(runcPath, append([]string{runcPath}, os.Args[1:]...), os.Environ())
-	exitOnError(err, "exec runc binary")
+
+	// syscall.Exec is not expected to return. This is an error state regardless of whether
+	// err is nil or not.
+	logger.Fatalf("could not exec %v from %v: %v", runcPath, os.Args[0], err)
 }
 
 func addNVIDIAHook(spec *specs.Spec) error {
@@ -149,8 +154,7 @@ func main() {
 
 	if args.cmd != "create" {
 		logger.Println("Command is not \"create\", executing runc doing nothing")
-		execRunc()
-		logger.Fatalf("ERROR: %s: fail to execute runc binary\n", os.Args[0])
+		execRuncAndExit()
 	}
 
 	if args.bundleDirPath == "" {
@@ -182,5 +186,5 @@ func main() {
 	exitOnError(err, "write OCI spec file")
 
 	logger.Print("Prestart hook added, executing runc")
-	execRunc()
+	execRuncAndExit()
 }
