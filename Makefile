@@ -21,18 +21,18 @@ LIB_VERSION := 3.4.2
 PKG_REV := 1
 
 TOOLKIT_VERSION := 1.4.2
-GOLANG_VERSION  := 1.15.6
-GOLANG_PKG_PATH := github.com/NVIDIA/container-runtime/pkg
+GOLANG_VERSION  := 1.16.3
+MODULE := .
 
 # By default run all native docker-based targets
 docker-native:
 include $(CURDIR)/docker/docker.mk
 
 binary:
-	go build -ldflags "-s -w" -o "$(LIB_NAME)" $(GOLANG_PKG_PATH)
+	go build -ldflags "-s -w" -o "$(LIB_NAME)" $(MODULE)/cmd/...
 
 build:
-	@go build -o $(LIB_NAME) $(GOLANG_PKG_PATH)
+	@go build -o $(LIB_NAME) $(MODULE)/...
 
 # Define the check targets for the Golang codebase
 MODULE := .
@@ -58,7 +58,7 @@ ineffassign:
 	ineffassign $(MODULE)/...
 
 lint:
-	# We use `go list -f '{{.Dir}}' $(GOLANG_PKG_PATH)/...` to skip the `vendor` folder.
+	# We use `go list -f '{{.Dir}}' $(MODULE)/...` to skip the `vendor` folder.
 	go list -f '{{.Dir}}' $(MODULE)/... | xargs golint -set_exit_status
 
 misspell:
