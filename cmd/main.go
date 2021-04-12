@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
-	"log"
 	"os"
 	"os/exec"
 	"path"
@@ -26,7 +25,7 @@ var (
 	configDir = "/etc/"
 )
 
-var fileLogger *log.Logger = nil
+var logger = NewLogger()
 
 type args struct {
 	bundleDirPath string
@@ -80,24 +79,21 @@ func getArgs() (*args, error) {
 
 func exitOnError(err error, msg string) {
 	if err != nil {
-		if fileLogger != nil {
-			fileLogger.Printf("ERROR: %s: %v\n", msg, err)
-		}
-		log.Fatalf("ERROR: %s: %s: %v\n", os.Args[0], msg, err)
+		logger.Fatalf("ERROR: %s: %s: %v\n", os.Args[0], msg, err)
 	}
 }
 
 func execRunc() {
-	fileLogger.Println("Looking for \"docker-runc\" binary")
+	logger.Println("Looking for \"docker-runc\" binary")
 	runcPath, err := exec.LookPath("docker-runc")
 	if err != nil {
-		fileLogger.Println("\"docker-runc\" binary not found")
-		fileLogger.Println("Looking for \"runc\" binary")
+		logger.Println("\"docker-runc\" binary not found")
+		logger.Println("Looking for \"runc\" binary")
 		runcPath, err = exec.LookPath("runc")
 		exitOnError(err, "find runc path")
 	}
 
-	fileLogger.Printf("Runc path: %s\n", runcPath)
+	logger.Printf("Runc path: %s\n", runcPath)
 
 	err = syscall.Exec(runcPath, append([]string{runcPath}, os.Args[1:]...), os.Environ())
 	exitOnError(err, "exec runc binary")
@@ -113,9 +109,7 @@ func addNVIDIAHook(spec *specs.Spec) error {
 		}
 	}
 
-	if fileLogger != nil {
-		fileLogger.Printf("prestart hook path: %s\n", path)
-	}
+	logger.Printf("prestart hook path: %s\n", path)
 
 	args := []string{path}
 	if spec.Hooks == nil {
@@ -125,9 +119,7 @@ func addNVIDIAHook(spec *specs.Spec) error {
 			if !strings.Contains(hook.Path, "nvidia-container-runtime-hook") {
 				continue
 			}
-			if fileLogger != nil {
-				fileLogger.Println("existing nvidia prestart hook in OCI spec file")
-			}
+			logger.Println("existing nvidia prestart hook in OCI spec file")
 			return nil
 		}
 	}
@@ -148,25 +140,26 @@ func main() {
 	exitOnError(err, "fail to open debug log file")
 	defer logFile.Close()
 
-	fileLogger = log.New(logFile, "", log.LstdFlags)
-	fileLogger.Printf("Running %s\n", os.Args[0])
+	logger.SetOutput(logFile)
+
+	logger.Printf("Running %s\n", os.Args[0])
 
 	args, err := getArgs()
 	exitOnError(err, "fail to get args")
 
 	if args.cmd != "create" {
-		fileLogger.Println("Command is not \"create\", executing runc doing nothing")
+		logger.Println("Command is not \"create\", executing runc doing nothing")
 		execRunc()
-		log.Fatalf("ERROR: %s: fail to execute runc binary\n", os.Args[0])
+		logger.Fatalf("ERROR: %s: fail to execute runc binary\n", os.Args[0])
 	}
 
 	if args.bundleDirPath == "" {
 		args.bundleDirPath, err = os.Getwd()
 		exitOnError(err, "get working directory")
-		fileLogger.Printf("Bundle dirrectory path is empty, using working directory: %s\n", args.bundleDirPath)
+		logger.Printf("Bundle dirrectory path is empty, using working directory: %s\n", args.bundleDirPath)
 	}
 
-	fileLogger.Printf("Using bundle file: %s\n", args.bundleDirPath+"/config.json")
+	logger.Printf("Using bundle file: %s\n", args.bundleDirPath+"/config.json")
 	jsonFile, err := os.OpenFile(args.bundleDirPath+"/config.json", os.O_RDWR, 0644)
 	exitOnError(err, "open OCI spec file")
 
@@ -188,6 +181,6 @@ func main() {
 	_, err = jsonFile.WriteAt(jsonOutput, 0)
 	exitOnError(err, "write OCI spec file")
 
-	fileLogger.Print("Prestart hook added, executing runc")
+	logger.Print("Prestart hook added, executing runc")
 	execRunc()
 }
