@@ -18,6 +18,7 @@ package main
 
 import (
 	"fmt"
+	"io"
 	"os"
 
 	"github.com/sirupsen/logrus"
@@ -26,7 +27,8 @@ import (
 
 type Logger struct {
 	*logrus.Logger
-	logFile *os.File
+	previouOutput io.Writer
+	logFile       *os.File
 }
 
 func NewLogger() *Logger {
@@ -52,6 +54,7 @@ func (l *Logger) LogToFile(filename string) error {
 	}
 
 	l.logFile = logFile
+	l.previouOutput = l.Out
 	l.SetOutput(logFile)
 
 	return nil
@@ -61,5 +64,9 @@ func (l *Logger) CloseFile() error {
 	if l.logFile == nil {
 		return nil
 	}
-	return l.logFile.Close()
+	logFile := l.logFile
+	l.SetOutput(l.previouOutput)
+	l.logFile = nil
+
+	return logFile.Close()
 }
