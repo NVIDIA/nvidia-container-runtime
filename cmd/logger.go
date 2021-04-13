@@ -52,7 +52,7 @@ func (l *Logger) LogToFile(filename string) error {
 	}
 
 	l.logFile = logFile
-	logger.SetOutput(logFile)
+	l.SetOutput(logFile)
 
 	return nil
 }
