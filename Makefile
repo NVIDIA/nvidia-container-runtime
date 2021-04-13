@@ -77,7 +77,7 @@ mock-hook:
 	[ ! -e /etc/nvidia-container-runtime/config.toml ] && echo "" > /etc/nvidia-container-runtime/config.toml || true
 	[ ! -e /usr/bin/nvidia-container-runtime-hook ] && echo "" > /usr/bin/nvidia-container-runtime-hook && chmod +x /usr/bin/nvidia-container-runtime-hook || true
 
-test: build mock-runc mock-hook
+test: binary mock-runc mock-hook
 	@go test -v $(MODULE)/...
 	@${RM} $(MOCK_RUNC)
 

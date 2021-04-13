@@ -4,10 +4,10 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
-	"log"
 	"os"
 	"os/exec"
 	"path"
+	"path/filepath"
 	"strings"
 	"syscall"
 
@@ -26,7 +26,7 @@ var (
 	configDir = "/etc/"
 )
 
-var fileLogger *log.Logger = nil
+var logger = NewLogger()
 
 type args struct {
 	bundleDirPath string
@@ -61,46 +61,83 @@ func getConfig() (*config, error) {
 	return cfg, nil
 }
 
-func getArgs() (*args, error) {
+// getArgs checks the specified slice of strings (argv) for a 'bundle' flag and a 'create'
+// command line argument as allowed by runc.
+// The following are supported:
+// --bundle{{SEP}}BUNDLE_PATH
+// -bundle{{SEP}}BUNDLE_PATH
+// -b{{SEP}}BUNDLE_PATH
+// where {{SEP}} is either ' ' or '='
+func getArgs(argv []string) (*args, error) {
 	args := &args{}
 
-	for i, param := range os.Args {
-		if param == "--bundle" || param == "-b" {
-			if len(os.Args)-i <= 1 {
-				return nil, fmt.Errorf("bundle option needs an argument")
-			}
-			args.bundleDirPath = os.Args[i+1]
-		} else if param == "create" {
+	for i := 0; i < len(argv); i++ {
+		param := argv[i]
+		if param == "create" {
 			args.cmd = param
+			continue
 		}
+
+		if !strings.HasPrefix(param, "-") {
+			continue
+		}
+
+		trimmed := strings.TrimLeft(param, "-")
+		if len(trimmed) == 0 {
+			continue
+		}
+
+		parts := strings.SplitN(trimmed, "=", 2)
+		if parts[0] != "bundle" && parts[0] != "b" {
+			continue
+		}
+
+		if len(parts) == 2 {
+			args.bundleDirPath = parts[1]
+			continue
+		}
+
+		if len(argv)-i <= 1 {
+			return nil, fmt.Errorf("bundle option needs an argument")
+		}
+		args.bundleDirPath = argv[i+1]
+		i++
 	}
 
 	return args, nil
 }
 
-func exitOnError(err error, msg string) {
-	if err != nil {
-		if fileLogger != nil {
-			fileLogger.Printf("ERROR: %s: %v\n", msg, err)
+// execRunc discovers the runc binary and issues an exec syscall.
+func execRunc() error {
+	runcCandidates := []string{
+		"docker-runc",
+		"runc",
+	}
+
+	var err error
+	var runcPath string
+	for _, candidate := range runcCandidates {
+		logger.Printf("Looking for \"%v\" binary", candidate)
+		runcPath, err = exec.LookPath(candidate)
+		if err == nil {
+			break
 		}
-		log.Fatalf("ERROR: %s: %s: %v\n", os.Args[0], msg, err)
+		logger.Printf("\"%v\" binary not found: %v", candidate, err)
 	}
-}
-
-func execRunc() {
-	fileLogger.Println("Looking for \"docker-runc\" binary")
-	runcPath, err := exec.LookPath("docker-runc")
 	if err != nil {
-		fileLogger.Println("\"docker-runc\" binary not found")
-		fileLogger.Println("Looking for \"runc\" binary")
-		runcPath, err = exec.LookPath("runc")
-		exitOnError(err, "find runc path")
+		return fmt.Errorf("error locating runc: %v", err)
 	}
 
-	fileLogger.Printf("Runc path: %s\n", runcPath)
+	logger.Printf("Runc path: %s\n", runcPath)
 
 	err = syscall.Exec(runcPath, append([]string{runcPath}, os.Args[1:]...), os.Environ())
-	exitOnError(err, "exec runc binary")
+	if err != nil {
+		return fmt.Errorf("could not exec '%v': %v", runcPath, err)
+	}
+
+	// syscall.Exec is not expected to return. This is an error state regardless of whether
+	// err is nil or not.
+	return fmt.Errorf("unexpected return from exec '%v'", runcPath)
 }
 
 func addNVIDIAHook(spec *specs.Spec) error {
@@ -113,9 +150,7 @@ func addNVIDIAHook(spec *specs.Spec) error {
 		}
 	}
 
-	if fileLogger != nil {
-		fileLogger.Printf("prestart hook path: %s\n", path)
-	}
+	logger.Printf("prestart hook path: %s\n", path)
 
 	args := []string{path}
 	if spec.Hooks == nil {
@@ -125,9 +160,7 @@ func addNVIDIAHook(spec *specs.Spec) error {
 			if !strings.Contains(hook.Path, "nvidia-container-runtime-hook") {
 				continue
 			}
-			if fileLogger != nil {
-				fileLogger.Println("existing nvidia prestart hook in OCI spec file")
-			}
+			logger.Println("existing nvidia prestart hook in OCI spec file")
 			return nil
 		}
 	}
@@ -141,53 +174,102 @@ func addNVIDIAHook(spec *specs.Spec) error {
 }
 
 func main() {
+	err := run()
+	if err != nil {
+		logger.Errorf("Error running %v: %v", os.Args, err)
+		os.Exit(1)
+	}
+}
+
+func run() error {
 	cfg, err := getConfig()
-	exitOnError(err, "fail to get config")
+	if err != nil {
+		return fmt.Errorf("error loading config: %v", err)
+	}
 
-	logFile, err := os.OpenFile(cfg.debugFilePath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
-	exitOnError(err, "fail to open debug log file")
-	defer logFile.Close()
+	err = logger.LogToFile(cfg.debugFilePath)
+	if err != nil {
+		return fmt.Errorf("error opening debug log file: %v", err)
+	}
+	defer logger.CloseFile()
 
-	fileLogger = log.New(logFile, "", log.LstdFlags)
-	fileLogger.Printf("Running %s\n", os.Args[0])
-
-	args, err := getArgs()
-	exitOnError(err, "fail to get args")
+	logger.Printf("Running %s\n", os.Args[0])
+	args, err := getArgs(os.Args)
+	if err != nil {
+		return fmt.Errorf("error getting processing command line arguments: %v", err)
+	}
 
 	if args.cmd != "create" {
-		fileLogger.Println("Command is not \"create\", executing runc doing nothing")
-		execRunc()
-		log.Fatalf("ERROR: %s: fail to execute runc binary\n", os.Args[0])
+		logger.Println("Command is not \"create\", executing runc doing nothing")
+		err = execRunc()
+		if err != nil {
+			return fmt.Errorf("error forwarding command to runc: %v", err)
+		}
 	}
 
-	if args.bundleDirPath == "" {
-		args.bundleDirPath, err = os.Getwd()
-		exitOnError(err, "get working directory")
-		fileLogger.Printf("Bundle dirrectory path is empty, using working directory: %s\n", args.bundleDirPath)
+	configFilePath, err := args.getConfigFilePath()
+	if err != nil {
+		return fmt.Errorf("error getting config file path: %v", err)
 	}
 
-	fileLogger.Printf("Using bundle file: %s\n", args.bundleDirPath+"/config.json")
-	jsonFile, err := os.OpenFile(args.bundleDirPath+"/config.json", os.O_RDWR, 0644)
-	exitOnError(err, "open OCI spec file")
+	logger.Printf("Using OCI specification file path: %v", configFilePath)
+
+	jsonFile, err := os.OpenFile(configFilePath, os.O_RDWR, 0644)
+	if err != nil {
+		return fmt.Errorf("error opening OCI specification file: %v", err)
+	}
 
 	defer jsonFile.Close()
 
 	jsonContent, err := ioutil.ReadAll(jsonFile)
-	exitOnError(err, "read OCI spec file")
+	if err != nil {
+		return fmt.Errorf("error reading OCI specificaiton: %v", err)
+	}
 
 	var spec specs.Spec
 	err = json.Unmarshal(jsonContent, &spec)
-	exitOnError(err, "unmarshal OCI spec file")
+	if err != nil {
+		return fmt.Errorf("error unmarshalling OCI specification: %v", err)
+	}
 
 	err = addNVIDIAHook(&spec)
-	exitOnError(err, "inject NVIDIA hook")
+	if err != nil {
+		return fmt.Errorf("error injecting NVIDIA Container Runtime hook: %v", err)
+	}
 
 	jsonOutput, err := json.Marshal(spec)
-	exitOnError(err, "marchal OCI spec file")
+	if err != nil {
+		return fmt.Errorf("error marshalling modified OCI specification: %v", err)
+	}
 
 	_, err = jsonFile.WriteAt(jsonOutput, 0)
-	exitOnError(err, "write OCI spec file")
+	if err != nil {
+		return fmt.Errorf("error writing modifed OCI specification to file: %v", err)
+	}
 
-	fileLogger.Print("Prestart hook added, executing runc")
-	execRunc()
+	logger.Print("Prestart hook added, executing runc")
+	err = execRunc()
+	if err != nil {
+		return fmt.Errorf("error forwarding 'create' command to runc: %v", err)
+	}
+
+	return nil
+}
+
+func (a args) getConfigFilePath() (string, error) {
+	configRoot := a.bundleDirPath
+	if configRoot == "" {
+		logger.Printf("Bundle directory path is empty, using working directory.")
+		workingDirectory, err := os.Getwd()
+		if err != nil {
+			return "", fmt.Errorf("error getting working directory: %v", err)
+		}
+		configRoot = workingDirectory
+	}
+
+	logger.Printf("Using bundle directory: %v", configRoot)
+
+	configFilePath := filepath.Join(configRoot, "config.json")
+
+	return configFilePath, nil
 }
