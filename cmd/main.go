@@ -107,15 +107,8 @@ func getArgs(argv []string) (*args, error) {
 	return args, nil
 }
 
-func exitOnError(err error, msg string) {
-	if err != nil {
-		logger.Fatalf("ERROR: %s: %s: %v\n", os.Args[0], msg, err)
-	}
-}
-
-// execRuncAndExit discovers the runc binary and issues an exec syscall.
-// If this is not successful, the program is exited.
-func execRuncAndExit() {
+// execRunc discovers the runc binary and issues an exec syscall.
+func execRunc() error {
 	runcCandidates := []string{
 		"docker-runc",
 		"runc",
@@ -129,17 +122,22 @@ func execRuncAndExit() {
 		if err == nil {
 			break
 		}
-		logger.Printf("\"%v\" binary not found", candidate)
+		logger.Printf("\"%v\" binary not found: %v", candidate, err)
 	}
-	exitOnError(err, "find runc path")
+	if err != nil {
+		return fmt.Errorf("error locating runc: %v", err)
+	}
 
 	logger.Printf("Runc path: %s\n", runcPath)
 
 	err = syscall.Exec(runcPath, append([]string{runcPath}, os.Args[1:]...), os.Environ())
+	if err != nil {
+		return fmt.Errorf("could not exec '%v': %v", runcPath, err)
+	}
 
 	// syscall.Exec is not expected to return. This is an error state regardless of whether
 	// err is nil or not.
-	logger.Fatalf("could not exec %v from %v: %v", runcPath, os.Args[0], err)
+	return fmt.Errorf("unexpected return from exec '%v'", runcPath)
 }
 
 func addNVIDIAHook(spec *specs.Spec) error {
@@ -176,53 +174,87 @@ func addNVIDIAHook(spec *specs.Spec) error {
 }
 
 func main() {
+	err := run()
+	if err != nil {
+		logger.Errorf("Error running %v: %v", os.Args, err)
+		os.Exit(1)
+	}
+}
+
+func run() error {
 	cfg, err := getConfig()
-	exitOnError(err, "fail to get config")
+	if err != nil {
+		return fmt.Errorf("error loading config: %v", err)
+	}
 
 	logFile, err := os.OpenFile(cfg.debugFilePath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
-	exitOnError(err, "fail to open debug log file")
+	if err != nil {
+		return fmt.Errorf("error opening debug log file: %v", err)
+	}
 	defer logFile.Close()
-
 	logger.SetOutput(logFile)
 
 	logger.Printf("Running %s\n", os.Args[0])
-
 	args, err := getArgs(os.Args)
-	exitOnError(err, "fail to get args")
+	if err != nil {
+		return fmt.Errorf("error getting processing command line arguments: %v", err)
+	}
 
 	if args.cmd != "create" {
 		logger.Println("Command is not \"create\", executing runc doing nothing")
-		execRuncAndExit()
+		err = execRunc()
+		if err != nil {
+			return fmt.Errorf("error forwarding command to runc: %v", err)
+		}
 	}
 
 	configFilePath, err := args.getConfigFilePath()
-	exitOnError(err, "error getting config file path")
+	if err != nil {
+		return fmt.Errorf("error getting config file path: %v", err)
+	}
 
 	logger.Printf("Using OCI specification file path: %v", configFilePath)
 
 	jsonFile, err := os.OpenFile(configFilePath, os.O_RDWR, 0644)
-	exitOnError(err, "open OCI spec file")
+	if err != nil {
+		return fmt.Errorf("error opening OCI specification file: %v", err)
+	}
 
 	defer jsonFile.Close()
 
 	jsonContent, err := ioutil.ReadAll(jsonFile)
-	exitOnError(err, "read OCI spec file")
+	if err != nil {
+		return fmt.Errorf("error reading OCI specificaiton: %v", err)
+	}
 
 	var spec specs.Spec
 	err = json.Unmarshal(jsonContent, &spec)
-	exitOnError(err, "unmarshal OCI spec file")
+	if err != nil {
+		return fmt.Errorf("error unmarshalling OCI specification: %v", err)
+	}
 
 	err = addNVIDIAHook(&spec)
-	exitOnError(err, "inject NVIDIA hook")
+	if err != nil {
+		return fmt.Errorf("error injecting NVIDIA Container Runtime hook: %v", err)
+	}
 
 	jsonOutput, err := json.Marshal(spec)
-	exitOnError(err, "marchal OCI spec file")
+	if err != nil {
+		return fmt.Errorf("error marshalling modified OCI specification: %v", err)
+	}
 
 	_, err = jsonFile.WriteAt(jsonOutput, 0)
-	exitOnError(err, "write OCI spec file")
+	if err != nil {
+		return fmt.Errorf("error writing modifed OCI specification to file: %v", err)
+	}
 
 	logger.Print("Prestart hook added, executing runc")
-	execRuncAndExit()
+	err = execRunc()
+	if err != nil {
+		return fmt.Errorf("error forwarding 'create' command to runc: %v", err)
+	}
+
+	return nil
 }
 
 func (a args) getConfigFilePath() (string, error) {

@@ -40,13 +40,3 @@ func NewLogger() *Logger {
 
 	return logger
 }
-
-func (l Logger) Fatalf(format string, args ...interface{}) {
-	logrus.Errorf(format, args...)
-	l.Logger.Fatalf(format, args...)
-}
-
-func (l *Logger) Fatal(args ...interface{}) {
-	logrus.Error(args...)
-	l.Logger.Fatal(args...)
-}
