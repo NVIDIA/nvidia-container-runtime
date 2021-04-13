@@ -17,12 +17,16 @@
 package main
 
 import (
+	"fmt"
+	"os"
+
 	"github.com/sirupsen/logrus"
 	"github.com/tsaikd/KDGoLib/logrusutil"
 )
 
 type Logger struct {
 	*logrus.Logger
+	logFile *os.File
 }
 
 func NewLogger() *Logger {
@@ -34,9 +38,28 @@ func NewLogger() *Logger {
 	}
 
 	logger := &Logger{
-		logrusLogger,
+		Logger: logrusLogger,
 	}
 	logger.SetFormatter(formatter)
 
 	return logger
+}
+
+func (l *Logger) LogToFile(filename string) error {
+	logFile, err := os.OpenFile(filename, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	if err != nil {
+		return fmt.Errorf("error opening debug log file: %v", err)
+	}
+
+	l.logFile = logFile
+	logger.SetOutput(logFile)
+
+	return nil
+}
+
+func (l *Logger) CloseFile() error {
+	if l.logFile == nil {
+		return nil
+	}
+	return l.logFile.Close()
 }

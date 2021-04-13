@@ -187,12 +187,11 @@ func run() error {
 		return fmt.Errorf("error loading config: %v", err)
 	}
 
-	logFile, err := os.OpenFile(cfg.debugFilePath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	err = logger.LogToFile(cfg.debugFilePath)
 	if err != nil {
 		return fmt.Errorf("error opening debug log file: %v", err)
 	}
-	defer logFile.Close()
-	logger.SetOutput(logFile)
+	defer logger.CloseFile()
 
 	logger.Printf("Running %s\n", os.Args[0])
 	args, err := getArgs(os.Args)
