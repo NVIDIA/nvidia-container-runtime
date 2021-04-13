@@ -116,14 +116,22 @@ func exitOnError(err error, msg string) {
 // execRuncAndExit discovers the runc binary and issues an exec syscall.
 // If this is not successful, the program is exited.
 func execRuncAndExit() {
-	logger.Println("Looking for \"docker-runc\" binary")
-	runcPath, err := exec.LookPath("docker-runc")
-	if err != nil {
-		logger.Println("\"docker-runc\" binary not found")
-		logger.Println("Looking for \"runc\" binary")
-		runcPath, err = exec.LookPath("runc")
-		exitOnError(err, "find runc path")
+	runcCandidates := []string{
+		"docker-runc",
+		"runc",
 	}
+
+	var err error
+	var runcPath string
+	for _, candidate := range runcCandidates {
+		logger.Printf("Looking for \"%v\" binary", candidate)
+		runcPath, err = exec.LookPath(candidate)
+		if err == nil {
+			break
+		}
+		logger.Printf("\"%v\" binary not found", candidate)
+	}
+	exitOnError(err, "find runc path")
 
 	logger.Printf("Runc path: %s\n", runcPath)
 
