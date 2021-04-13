@@ -27,8 +27,8 @@ import (
 
 type Logger struct {
 	*logrus.Logger
-	previouOutput io.Writer
-	logFile       *os.File
+	previousOutput io.Writer
+	logFile        *os.File
 }
 
 func NewLogger() *Logger {
@@ -54,7 +54,7 @@ func (l *Logger) LogToFile(filename string) error {
 	}
 
 	l.logFile = logFile
-	l.previouOutput = l.Out
+	l.previousOutput = l.Out
 	l.SetOutput(logFile)
 
 	return nil
@@ -65,7 +65,7 @@ func (l *Logger) CloseFile() error {
 		return nil
 	}
 	logFile := l.logFile
-	l.SetOutput(l.previouOutput)
+	l.SetOutput(l.previousOutput)
 	l.logFile = nil
 
 	return logFile.Close()
