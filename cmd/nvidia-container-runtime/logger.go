@@ -25,12 +25,14 @@ import (
 	"github.com/tsaikd/KDGoLib/logrusutil"
 )
 
+// Logger adds a way to manage output to a log file to a logrus.Logger
 type Logger struct {
 	*logrus.Logger
 	previousOutput io.Writer
 	logFile        *os.File
 }
 
+// NewLogger constructs a Logger with a preddefined formatter
 func NewLogger() *Logger {
 	logrusLogger := logrus.New()
 
@@ -47,6 +49,9 @@ func NewLogger() *Logger {
 	return logger
 }
 
+// LogToFile opens the specified file for appending and sets the logger to
+// output to the opened file. A reference to the file pointer is stored to
+// allow this to be closed.
 func (l *Logger) LogToFile(filename string) error {
 	logFile, err := os.OpenFile(filename, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 	if err != nil {
@@ -60,6 +65,8 @@ func (l *Logger) LogToFile(filename string) error {
 	return nil
 }
 
+// CloseFile closes the log file (if any) and resets the logger output to what it
+// was before LogToFile was called.
 func (l *Logger) CloseFile() error {
 	if l.logFile == nil {
 		return nil
