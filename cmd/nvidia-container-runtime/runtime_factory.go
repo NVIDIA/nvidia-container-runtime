@@ -126,6 +126,10 @@ func findRunc() (string, error) {
 		"runc",
 	}
 
+	return findRuntime(runtimeCandidates)
+}
+
+func findRuntime(runtimeCandidates []string) (string, error) {
 	for _, candidate := range runtimeCandidates {
 		logger.Infof("Looking for runtime binary '%v'", candidate)
 		runcPath, err := exec.LookPath(candidate)

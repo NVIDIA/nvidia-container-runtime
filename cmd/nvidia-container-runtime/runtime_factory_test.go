@@ -17,10 +17,20 @@
 package main
 
 import (
+	"path/filepath"
+	"strings"
 	"testing"
 
+	testlog "github.com/sirupsen/logrus/hooks/test"
 	"github.com/stretchr/testify/require"
 )
+
+func TestConstructor(t *testing.T) {
+	shim, err := newRuntime([]string{})
+
+	require.NoError(t, err)
+	require.NotNil(t, shim)
+}
 
 func TestGetBundlePath(t *testing.T) {
 	type expected struct {
@@ -128,4 +138,57 @@ func TestGetBundlePath(t *testing.T) {
 
 		require.Equalf(t, tc.expected.bundle, bundle, "%d: %v", i, tc)
 	}
+}
+
+func TestFindRunc(t *testing.T) {
+	testLogger, _ := testlog.NewNullLogger()
+	logger.Logger = testLogger
+
+	runcPath, err := findRunc()
+	require.NoError(t, err)
+	require.True(t, strings.HasSuffix(runcPath, "runc"))
+	require.True(t, strings.HasPrefix(runcPath, cfg.root))
+}
+
+func TestFindRuntime(t *testing.T) {
+	testLogger, _ := testlog.NewNullLogger()
+	logger.Logger = testLogger
+
+	testCases := []struct {
+		candidates   []string
+		expectedPath string
+	}{
+		{
+			candidates: []string{},
+		},
+		{
+			candidates: []string{"not-runc"},
+		},
+		{
+			candidates: []string{"not-runc", "also-not-runc"},
+		},
+		{
+			candidates:   []string{"runc"},
+			expectedPath: filepath.Join(cfg.root, "runc"),
+		},
+		{
+			candidates:   []string{"runc", "not-runc"},
+			expectedPath: filepath.Join(cfg.root, "runc"),
+		},
+		{
+			candidates:   []string{"not-runc", "runc"},
+			expectedPath: filepath.Join(cfg.root, "runc"),
+		},
+	}
+
+	for i, tc := range testCases {
+		runcPath, err := findRuntime(tc.candidates)
+		if tc.expectedPath == "" {
+			require.Error(t, err, "%d: %v", i, tc)
+		} else {
+			require.NoError(t, err, "%d: %v", i, tc)
+		}
+		require.Equal(t, tc.expectedPath, runcPath, "%d: %v", i, tc)
+	}
+
 }
