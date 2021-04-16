@@ -78,7 +78,7 @@ mock-hook:
 	[ ! -e /usr/bin/nvidia-container-runtime-hook ] && echo "" > /usr/bin/nvidia-container-runtime-hook && chmod +x /usr/bin/nvidia-container-runtime-hook || true
 
 test: binary mock-runc mock-hook
-	@go test -v $(MODULE)/...
+	@go test -v -coverprofile=coverage.out $(MODULE)/...
 	@${RM} $(MOCK_RUNC)
 
 .PHONY: docker-test
@@ -90,4 +90,3 @@ docker-test:
 		-w $(PWD) \
 		golang:$(GOLANG_VERSION) \
 			make test
-
