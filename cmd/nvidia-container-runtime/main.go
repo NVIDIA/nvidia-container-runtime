@@ -174,14 +174,16 @@ func addNVIDIAHook(spec *specs.Spec) error {
 }
 
 func main() {
-	err := run()
+	err := run(os.Args)
 	if err != nil {
 		logger.Errorf("Error running %v: %v", os.Args, err)
 		os.Exit(1)
 	}
 }
 
-func run() error {
+// run is an entry point that allows for idiomatic handling of errors
+// when calling from the main function.
+func run(argv []string) (err error) {
 	cfg, err := getConfig()
 	if err != nil {
 		return fmt.Errorf("error loading config: %v", err)
@@ -191,10 +193,16 @@ func run() error {
 	if err != nil {
 		return fmt.Errorf("error opening debug log file: %v", err)
 	}
-	defer logger.CloseFile()
+	defer func() {
+		// We capture and log a returning error before closing the log file.
+		if err != nil {
+			logger.Errorf("Error running %v: %v", argv, err)
+		}
+		logger.CloseFile()
+	}()
 
-	logger.Printf("Running %s\n", os.Args[0])
-	args, err := getArgs(os.Args)
+	logger.Printf("Running %s\n", argv[0])
+	args, err := getArgs(argv)
 	if err != nil {
 		return fmt.Errorf("error getting processing command line arguments: %v", err)
 	}
