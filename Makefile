@@ -28,11 +28,11 @@ MODULE := .
 docker-native:
 include $(CURDIR)/docker/docker.mk
 
-binary:
-	go build -ldflags "-s -w" -o "$(LIB_NAME)" $(MODULE)/cmd/nvidia-container-runtime/...
+binaries:
+	go build -ldflags "-s -w" $(MODULE)/cmd/...
 
-build:
-	@go build -ldflags "-s -w" $(MODULE)/...
+build: binaries
+	go build -ldflags "-s -w" $(MODULE)/...
 
 # Define the check targets for the Golang codebase
 MODULE := .
@@ -77,8 +77,8 @@ mock-hook:
 	[ ! -e /etc/nvidia-container-runtime/config.toml ] && echo "" > /etc/nvidia-container-runtime/config.toml || true
 	[ ! -e /usr/bin/nvidia-container-runtime-hook ] && echo "" > /usr/bin/nvidia-container-runtime-hook && chmod +x /usr/bin/nvidia-container-runtime-hook || true
 
-test: binary mock-runc mock-hook
-	@go test -v $(MODULE)/...
+test: build mock-runc mock-hook
+	@go test -v -coverprofile=coverage.out $(MODULE)/...
 	@${RM} $(MOCK_RUNC)
 
 .PHONY: docker-test
@@ -90,4 +90,3 @@ docker-test:
 		-w $(PWD) \
 		golang:$(GOLANG_VERSION) \
 			make test
-
