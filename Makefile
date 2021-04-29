@@ -17,10 +17,10 @@ MKDIR  ?= mkdir
 DIST_DIR ?= $(CURDIR)/dist
 
 LIB_NAME := nvidia-container-runtime
-LIB_VERSION := 3.4.2
+LIB_VERSION := 3.5.0
 PKG_REV := 1
 
-TOOLKIT_VERSION := 1.4.2
+TOOLKIT_VERSION := 1.5.0
 GOLANG_VERSION  := 1.16.3
 MODULE := .
 
