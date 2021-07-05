@@ -22,7 +22,7 @@ PKG_REV := 1
 
 TOOLKIT_VERSION := 1.5.0
 GOLANG_VERSION  := 1.16.3
-MODULE := .
+MODULE := github.com/NVIDIA/nvidia-container-runtime
 
 # By default run all native docker-based targets
 docker-native:
