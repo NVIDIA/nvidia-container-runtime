@@ -1,4 +1,4 @@
-module github.com/nvidia/nvidia-container-runtime
+module github.com/NVIDIA/nvidia-container-runtime
 
 go 1.16
 
