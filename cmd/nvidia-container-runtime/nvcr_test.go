@@ -22,7 +22,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/nvidia/nvidia-container-runtime/pkg/oci"
+	"github.com/NVIDIA/nvidia-container-runtime/pkg/oci"
 	"github.com/opencontainers/runtime-spec/specs-go"
 	testlog "github.com/sirupsen/logrus/hooks/test"
 	"github.com/stretchr/testify/require"

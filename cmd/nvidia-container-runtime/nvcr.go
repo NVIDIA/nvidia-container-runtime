@@ -22,7 +22,7 @@ import (
 	"os/exec"
 	"strings"
 
-	"github.com/nvidia/nvidia-container-runtime/pkg/oci"
+	"github.com/NVIDIA/nvidia-container-runtime/pkg/oci"
 	"github.com/opencontainers/runtime-spec/specs-go"
 	log "github.com/sirupsen/logrus"
 )
