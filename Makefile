@@ -67,19 +67,8 @@ misspell:
 vet:
 	go vet $(MODULE)/...
 
-MOCK_RUNC=$(CURDIR)/runc
-mock-runc:
-	@(printf '#!/bin/bash\necho mock runc') > $(MOCK_RUNC)
-	@chmod +x $(MOCK_RUNC)
-
-mock-hook:
-	[ ! -e /etc/nvidia-container-runtime ] && mkdir /etc/nvidia-container-runtime || true
-	[ ! -e /etc/nvidia-container-runtime/config.toml ] && echo "" > /etc/nvidia-container-runtime/config.toml || true
-	[ ! -e /usr/bin/nvidia-container-runtime-hook ] && echo "" > /usr/bin/nvidia-container-runtime-hook && chmod +x /usr/bin/nvidia-container-runtime-hook || true
-
-test: build mock-runc mock-hook
+test: build
 	@go test -v -coverprofile=coverage.out $(MODULE)/...
-	@${RM} $(MOCK_RUNC)
 
 .PHONY: docker-test
 docker-test:

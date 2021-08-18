@@ -18,7 +18,6 @@ package main
 
 import (
 	"path/filepath"
-	"strings"
 	"testing"
 
 	testlog "github.com/sirupsen/logrus/hooks/test"
@@ -146,8 +145,7 @@ func TestFindRunc(t *testing.T) {
 
 	runcPath, err := findRunc()
 	require.NoError(t, err)
-	require.True(t, strings.HasSuffix(runcPath, "runc"))
-	require.True(t, strings.HasPrefix(runcPath, cfg.root))
+	require.Equal(t, filepath.Join(cfg.binPath, "runc"), runcPath)
 }
 
 func TestFindRuntime(t *testing.T) {
@@ -169,15 +167,15 @@ func TestFindRuntime(t *testing.T) {
 		},
 		{
 			candidates:   []string{"runc"},
-			expectedPath: filepath.Join(cfg.root, "runc"),
+			expectedPath: filepath.Join(cfg.binPath, "runc"),
 		},
 		{
 			candidates:   []string{"runc", "not-runc"},
-			expectedPath: filepath.Join(cfg.root, "runc"),
+			expectedPath: filepath.Join(cfg.binPath, "runc"),
 		},
 		{
 			candidates:   []string{"not-runc", "runc"},
-			expectedPath: filepath.Join(cfg.root, "runc"),
+			expectedPath: filepath.Join(cfg.binPath, "runc"),
 		},
 	}
 

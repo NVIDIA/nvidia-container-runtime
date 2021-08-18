@@ -25,34 +25,41 @@ const (
 )
 
 type testConfig struct {
-	root string
+	root    string
+	binPath string
 }
 
 var cfg *testConfig
 
 func TestMain(m *testing.M) {
 	// TEST SETUP
-	// Update PATH to execute mock runc in current directory
-	_, filename, _, _ := runtime.Caller(0)
-
+	// Determine the module root and the test binary path
 	var err error
-	moduleRoot, err := getModuleRoot(filename)
+	moduleRoot, err := getModuleRoot()
 	if err != nil {
 		logger.Fatalf("error in test setup: could not get module root: %v", err)
 	}
+	testBinPath := filepath.Join(moduleRoot, "test", "bin")
+	testInputPath := filepath.Join(moduleRoot, "test", "input")
 
-	paths := strings.Split(os.Getenv("PATH"), ":")
-	paths = append([]string{moduleRoot}, paths...)
-	os.Setenv("PATH", strings.Join(paths, ":"))
+	// Set the environment variables for the test
+	os.Setenv("PATH", prependToPath(testBinPath, moduleRoot))
+	os.Setenv("XDG_CONFIG_HOME", testInputPath)
 
-	// Confirm path setup correctly
+	// Confirm that the environment is configured correctly
 	runcPath, err := exec.LookPath("runc")
-	if err != nil || !strings.HasPrefix(runcPath, moduleRoot) {
-		logger.Fatal("error in test setup: mock runc path set incorrectly in TestMain()")
+	if err != nil || filepath.Join(testBinPath, "runc") != runcPath {
+		logger.Fatalf("error in test setup: mock runc path set incorrectly in TestMain(): %v", err)
+	}
+	hookPath, err := exec.LookPath(nvidiaHook)
+	if err != nil || filepath.Join(testBinPath, nvidiaHook) != hookPath {
+		logger.Fatalf("error in test setup: mock hook path set incorrectly in TestMain(): %v", err)
 	}
 
+	// Store the root and binary paths in the test Config
 	cfg = &testConfig{
-		root: moduleRoot,
+		root:    moduleRoot,
+		binPath: testBinPath,
 	}
 
 	// RUN TESTS
@@ -64,18 +71,29 @@ func TestMain(m *testing.M) {
 	os.Exit(exitCode)
 }
 
-func getModuleRoot(dir string) (string, error) {
+func getModuleRoot() (string, error) {
+	_, filename, _, _ := runtime.Caller(0)
+
+	return hasGoMod(filename)
+}
+
+func hasGoMod(dir string) (string, error) {
 	if dir == "" || dir == "/" {
 		return "", fmt.Errorf("module root not found")
 	}
 
 	_, err := os.Stat(filepath.Join(dir, "go.mod"))
 	if err != nil {
-		return getModuleRoot(filepath.Dir(dir))
+		return hasGoMod(filepath.Dir(dir))
 	}
-
-	// go.mod was found in dir
 	return dir, nil
+}
+
+func prependToPath(additionalPaths ...string) string {
+	paths := strings.Split(os.Getenv("PATH"), ":")
+	paths = append(additionalPaths, paths...)
+
+	return strings.Join(paths, ":")
 }
 
 // case 1) nvidia-container-runtime run --bundle
@@ -240,10 +258,12 @@ func (c testConfig) generateNewRuntimeSpec() error {
 
 // Return number of valid NVIDIA prestart hooks in runtime spec
 func nvidiaHookCount(hooks *specs.Hooks) int {
-	prestartHooks := hooks.Prestart
-	count := 0
+	if hooks == nil {
+		return 0
+	}
 
-	for _, hook := range prestartHooks {
+	count := 0
+	for _, hook := range hooks.Prestart {
 		if strings.Contains(hook.Path, nvidiaHook) {
 			count++
 		}
