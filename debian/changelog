@@ -1,6 +1,8 @@
 nvidia-container-runtime (3.5.1~rc.1-1) experimental; urgency=medium
 
   * [BUILD] Allow tag to be specified instead of revision
+  * Convert to meta package that depends on nvidia-container-toolkit
+  * Remove libseccomp2 dependency
 
  -- NVIDIA CORPORATION <cudatools@nvidia.com>  Tue, 07 Sep 2021 13:06:50 +0200
 

@@ -20,7 +20,10 @@ LIB_NAME := nvidia-container-runtime
 LIB_VERSION := 3.5.1
 LIB_TAG ?= rc.1
 
-TOOLKIT_VERSION := 1.5.0
+# Note: This should be the previous full release of nvidia-container-toolkit to ensure
+# that release candidate (e.g. rc.1) work as expected.
+TOOLKIT_VERSION := 1.5.1
+
 GOLANG_VERSION  := 1.16.3
 MODULE := github.com/NVIDIA/nvidia-container-runtime
 

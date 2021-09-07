@@ -108,7 +108,7 @@ docker-all: $(AMD64_TARGETS) $(X86_64_TARGETS) \
 --amazonlinux%: PKG_REV = $(if $(LIB_TAG),0.1.$(LIB_TAG).amzn$(VERSION),2.amzn$(VERSION))
 
 # private opensuse-leap target with overrides
---opensuse-leap%: OS = opensuse-leap
+--opensuse-leap%: OS := opensuse-leap
 --opensuse-leap%: BASEIMAGE = opensuse/leap:$(VERSION)
 --opensuse-leap%: PKG_REV := $(if $(LIB_TAG),0.1.$(LIB_TAG),1)
 
