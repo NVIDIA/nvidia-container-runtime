@@ -16,8 +16,7 @@
 
 podTemplate (cloud:'sw-gpu-cloudnative',
     containers: [
-    containerTemplate(name: 'docker', image: 'docker:dind', ttyEnabled: true, privileged: true),
-    containerTemplate(name: 'golang', image: 'golang:1.16.3', ttyEnabled: true)
+    containerTemplate(name: 'docker', image: 'docker:dind', ttyEnabled: true, privileged: true)
   ]) {
     node(POD_LABEL) {
         def scmInfo
@@ -27,24 +26,13 @@ podTemplate (cloud:'sw-gpu-cloudnative',
         }
 
         stage('dependencies') {
-            container('golang') {
-                sh 'GO111MODULE=off go get -u github.com/client9/misspell/cmd/misspell'
-                sh 'GO111MODULE=off go get -u github.com/gordonklaus/ineffassign'
-                sh 'GO111MODULE=off go get -u golang.org/x/lint/golint'
-            }
             container('docker') {
                 sh 'apk add --no-cache make bash git'
             }
         }
         stage('check') {
-            parallel (
-                getGolangStages(["assert-fmt", "lint", "vet", "ineffassign", "misspell"])
-            )
         }
         stage('test') {
-            parallel (
-                getGolangStages(["test"])
-            )
         }
 
         def versionInfo
@@ -93,26 +81,6 @@ podTemplate (cloud:'sw-gpu-cloudnative',
                         sh "echo skipping release for non-tagged build"
                     }
                 }
-            }
-        }
-    }
-}
-
-def getGolangStages(def targets) {
-    stages = [:]
-
-    for (t in targets) {
-        stages[t] = getLintClosure(t)
-    }
-
-    return stages
-}
-
-def getLintClosure(def target) {
-    return {
-        container('golang') {
-            stage(target) {
-                sh "make ${target}"
             }
         }
     }

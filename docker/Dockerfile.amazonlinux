@@ -30,11 +30,6 @@ RUN go get -u golang.org/x/lint/golint github.com/gordonklaus/ineffassign
 
 RUN yum install -y curl
 
-WORKDIR /build
-
-COPY . .
-RUN make build
-
 # packaging
 ARG PKG_VERS
 ARG PKG_REV
@@ -47,8 +42,6 @@ ENV TOOLKIT_VERSION $TOOLKIT_VERSION
 # output directory
 ENV DIST_DIR=/tmp/nvidia-container-runtime-$PKG_VERS/SOURCES
 RUN mkdir -p $DIST_DIR /dist
-
-RUN mv nvidia-container-runtime $DIST_DIR/nvidia-container-runtime
 
 WORKDIR $DIST_DIR/..
 COPY rpm .

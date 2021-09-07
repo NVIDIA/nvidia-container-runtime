@@ -39,11 +39,6 @@ RUN apt-get update && \
     apt-get install -y curl && \
     rm -rf /var/lib/apt/lists/*
 
-WORKDIR /build
-
-COPY . .
-RUN make build
-
 # packaging
 ARG PKG_VERS
 ARG PKG_REV
@@ -58,8 +53,6 @@ ENV SECTION ""
 # output directory
 ENV DIST_DIR=/tmp/nvidia-container-runtime-$PKG_VERS
 RUN mkdir -p $DIST_DIR /dist
-
-RUN mv nvidia-container-runtime $DIST_DIR/nvidia-container-runtime
 
 WORKDIR $DIST_DIR
 COPY debian ./debian
