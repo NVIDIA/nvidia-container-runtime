@@ -47,8 +47,8 @@ func TestMain(m *testing.M) {
 	os.Setenv("XDG_CONFIG_HOME", testInputPath)
 
 	// Confirm that the environment is configured correctly
-	runcPath, err := exec.LookPath("runc")
-	if err != nil || filepath.Join(testBinPath, "runc") != runcPath {
+	runcPath, err := exec.LookPath(runcExecutableName)
+	if err != nil || filepath.Join(testBinPath, runcExecutableName) != runcPath {
 		logger.Fatalf("error in test setup: mock runc path set incorrectly in TestMain(): %v", err)
 	}
 	hookPath, err := exec.LookPath(nvidiaHook)

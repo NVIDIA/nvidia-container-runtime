@@ -145,7 +145,7 @@ func TestFindRunc(t *testing.T) {
 
 	runcPath, err := findRunc()
 	require.NoError(t, err)
-	require.Equal(t, filepath.Join(cfg.binPath, "runc"), runcPath)
+	require.Equal(t, filepath.Join(cfg.binPath, runcExecutableName), runcPath)
 }
 
 func TestFindRuntime(t *testing.T) {
@@ -166,16 +166,16 @@ func TestFindRuntime(t *testing.T) {
 			candidates: []string{"not-runc", "also-not-runc"},
 		},
 		{
-			candidates:   []string{"runc"},
-			expectedPath: filepath.Join(cfg.binPath, "runc"),
+			candidates:   []string{runcExecutableName},
+			expectedPath: filepath.Join(cfg.binPath, runcExecutableName),
 		},
 		{
-			candidates:   []string{"runc", "not-runc"},
-			expectedPath: filepath.Join(cfg.binPath, "runc"),
+			candidates:   []string{runcExecutableName, "not-runc"},
+			expectedPath: filepath.Join(cfg.binPath, runcExecutableName),
 		},
 		{
-			candidates:   []string{"not-runc", "runc"},
-			expectedPath: filepath.Join(cfg.binPath, "runc"),
+			candidates:   []string{"not-runc", runcExecutableName},
+			expectedPath: filepath.Join(cfg.binPath, runcExecutableName),
 		},
 	}
 

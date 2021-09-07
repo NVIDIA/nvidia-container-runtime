@@ -27,7 +27,9 @@ import (
 )
 
 const (
-	ociSpecFileName = "config.json"
+	ociSpecFileName          = "config.json"
+	dockerRuncExecutableName = "docker-runc"
+	runcExecutableName       = "runc"
 )
 
 // newRuntime is a factory method that constructs a runtime based on the selected configuration.
@@ -122,8 +124,8 @@ func getBundlePath(argv []string) (string, error) {
 // binary or an error.
 func findRunc() (string, error) {
 	runtimeCandidates := []string{
-		"docker-runc",
-		"runc",
+		dockerRuncExecutableName,
+		runcExecutableName,
 	}
 
 	return findRuntime(runtimeCandidates)
