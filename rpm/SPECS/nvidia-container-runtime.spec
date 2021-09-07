@@ -40,6 +40,9 @@ install -m 755 -t %{buildroot}%{_bindir} nvidia-container-runtime
 %{_bindir}/nvidia-container-runtime
 
 %changelog
+* Thu Apr 29 2021 NVIDIA CORPORATION <cudatools@nvidia.com> 3.5.1-0.1.rc.1
+- [BUILD] Allow tag to be specified instead of revision
+
 * Thu Apr 29 2021 NVIDIA CORPORATION <cudatools@nvidia.com> 3.5.0-1
 - Add dependence on nvidia-container-toolkit >= 1.5.0
 - Refactor the whole project for easier extensibility in the future
