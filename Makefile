@@ -24,9 +24,6 @@ LIB_TAG ?= rc.1
 # that release candidate (e.g. rc.1) work as expected.
 TOOLKIT_VERSION := 1.5.1
 
-GOLANG_VERSION  := 1.16.3
-MODULE := github.com/NVIDIA/nvidia-container-runtime
-
 # By default run all native docker-based targets
 docker-native:
 include $(CURDIR)/docker/docker.mk
