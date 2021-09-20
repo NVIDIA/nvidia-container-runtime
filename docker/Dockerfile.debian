@@ -64,8 +64,7 @@ RUN mv nvidia-container-runtime $DIST_DIR/nvidia-container-runtime
 WORKDIR $DIST_DIR
 COPY debian ./debian
 
-RUN sed -i "s;@VERSION@;${REVISION};" debian/changelog && \
-    sed -i "s;@TOOLKIT_VERSION@;${TOOLKIT_VERSION};" debian/control && \
+RUN sed -i "s;@TOOLKIT_VERSION@;${TOOLKIT_VERSION};" debian/control && \
     if [ "$REVISION" != "$(dpkg-parsechangelog --show-field=Version)" ]; then exit 1; fi
 
 CMD export DISTRIB="$(lsb_release -cs)" && \
