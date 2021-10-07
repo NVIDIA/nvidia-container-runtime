@@ -24,61 +24,6 @@ LIB_TAG ?= rc.1
 # that release candidate (e.g. rc.1) work as expected.
 TOOLKIT_VERSION := 1.5.1
 
-GOLANG_VERSION  := 1.16.3
-MODULE := github.com/NVIDIA/nvidia-container-runtime
-
 # By default run all native docker-based targets
 docker-native:
 include $(CURDIR)/docker/docker.mk
-
-binaries:
-	go build -ldflags "-s -w" $(MODULE)/cmd/...
-
-build: binaries
-	go build -ldflags "-s -w" $(MODULE)/...
-
-# Define the check targets for the Golang codebase
-MODULE := .
-.PHONY: check fmt assert-fmt ineffassign lint misspell vet
-check: assert-fmt lint misspell vet
-fmt:
-	go list -f '{{.Dir}}' $(MODULE)/... \
-		| xargs gofmt -s -l -w
-
-assert-fmt:
-	go list -f '{{.Dir}}' $(MODULE)/... \
-		| xargs gofmt -s -l > fmt.out
-	@if [ -s fmt.out ]; then \
-		echo "\nERROR: The following files are not formatted:\n"; \
-		cat fmt.out; \
-		rm fmt.out; \
-		exit 1; \
-	else \
-		rm fmt.out; \
-	fi
-
-ineffassign:
-	ineffassign $(MODULE)/...
-
-lint:
-	# We use `go list -f '{{.Dir}}' $(MODULE)/...` to skip the `vendor` folder.
-	go list -f '{{.Dir}}' $(MODULE)/... | xargs golint -set_exit_status
-
-misspell:
-	misspell $(MODULE)/...
-
-vet:
-	go vet $(MODULE)/...
-
-test: build
-	@go test -v -coverprofile=coverage.out $(MODULE)/...
-
-.PHONY: docker-test
-docker-test:
-	$(DOCKER) run \
-		--rm \
-		-e GOCACHE=/tmp/.cache \
-		-v $(PWD):$(PWD) \
-		-w $(PWD) \
-		golang:$(GOLANG_VERSION) \
-			make test

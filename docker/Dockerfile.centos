@@ -9,29 +9,6 @@ RUN yum install -y \
         rpm-build && \
     rm -rf /var/cache/yum/*
 
-ARG GOLANG_VERSION=0.0.0
-RUN set -eux; \
-    \
-    arch="$(uname -m)"; \
-    case "${arch##*-}" in \
-        x86_64 | amd64) ARCH='amd64' ;; \
-        ppc64el | ppc64le) ARCH='ppc64le' ;; \
-        aarch64) ARCH='arm64' ;; \
-        *) echo "unsupported architecture"; exit 1 ;; \
-    esac; \
-    wget -nv -O - https://storage.googleapis.com/golang/go${GOLANG_VERSION}.linux-${ARCH}.tar.gz \
-    | tar -C /usr/local -xz
-
-ENV GOPATH /go
-ENV PATH $GOPATH/bin:/usr/local/go/bin:$PATH
-
-RUN go get -u golang.org/x/lint/golint github.com/gordonklaus/ineffassign
-
-WORKDIR /build
-
-COPY . .
-RUN make build
-
 # packaging
 ARG PKG_VERS
 ARG PKG_REV
@@ -44,8 +21,6 @@ ENV TOOLKIT_VERSION $TOOLKIT_VERSION
 # output directory
 ENV DIST_DIR=/tmp/nvidia-container-runtime-$PKG_VERS/SOURCES
 RUN mkdir -p $DIST_DIR /dist
-
-RUN mv nvidia-container-runtime $DIST_DIR/nvidia-container-runtime
 
 WORKDIR $DIST_DIR/..
 COPY rpm .
