@@ -12,10 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-DOCKER ?= docker
-MKDIR  ?= mkdir
-DIST_DIR ?= $(CURDIR)/dist
-
 LIB_NAME := nvidia-container-runtime
 LIB_VERSION := 3.5.1
 LIB_TAG ?= rc.1
