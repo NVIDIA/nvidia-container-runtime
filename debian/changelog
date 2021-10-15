@@ -1,4 +1,4 @@
-nvidia-container-runtime (3.5.1~rc.1-1) experimental; urgency=medium
+nvidia-container-runtime (3.6.0~rc.1-1) experimental; urgency=medium
 
   * [BUILD] Allow tag to be specified instead of revision
   * Convert to meta package that depends on nvidia-container-toolkit

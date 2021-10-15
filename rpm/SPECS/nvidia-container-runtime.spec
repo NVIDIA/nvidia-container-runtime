@@ -31,7 +31,7 @@ cp %{SOURCE0} .
 %license LICENSE
 
 %changelog
-* Thu Apr 29 2021 NVIDIA CORPORATION <cudatools@nvidia.com> 3.5.1-0.1.rc.1
+* Thu Apr 29 2021 NVIDIA CORPORATION <cudatools@nvidia.com> 3.6.0-0.1.rc.1
 - [BUILD] Allow tag to be specified instead of revision
 - Convert to meta package that depends on nvidia-container-toolkit
 - Remove libseccomp2 dependency

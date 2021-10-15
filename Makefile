@@ -13,7 +13,7 @@
 # limitations under the License.
 
 LIB_NAME := nvidia-container-runtime
-LIB_VERSION := 3.5.1
+LIB_VERSION := 3.6.0
 LIB_TAG ?= rc.1
 
 # Note: This should be the previous full release of nvidia-container-toolkit to ensure
