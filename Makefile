@@ -12,12 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-DOCKER ?= docker
-MKDIR  ?= mkdir
-DIST_DIR ?= $(CURDIR)/dist
-
 LIB_NAME := nvidia-container-runtime
-LIB_VERSION := 3.5.1
+LIB_VERSION := 3.6.0
 LIB_TAG ?= rc.1
 
 # Note: This should be the previous full release of nvidia-container-toolkit to ensure

@@ -12,6 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+DOCKER ?= docker
+MKDIR  ?= mkdir
+DIST_DIR ?= $(CURDIR)/dist
+
 # Supported OSs by architecture
 AMD64_TARGETS := ubuntu20.04 ubuntu18.04 ubuntu16.04 debian10 debian9
 X86_64_TARGETS := centos7 centos8 rhel7 rhel8 amazonlinux1 amazonlinux2 opensuse-leap15.1
@@ -124,7 +128,7 @@ docker-build-%:
 	DOCKER_BUILDKIT=1 \
 	$(DOCKER) build \
 	    --progress=plain \
-	    --build-arg BASEIMAGE=$(BASEIMAGE) \
+	    --build-arg BASEIMAGE="$(BASEIMAGE)" \
 	    --build-arg GOLANG_VERSION="$(GOLANG_VERSION)" \
 	    --build-arg TOOLKIT_VERSION="$(TOOLKIT_VERSION)" \
 	    --build-arg PKG_VERS="$(LIB_VERSION)" \
