@@ -1,3 +1,8 @@
+nvidia-container-runtime (3.6.0~rc.2-1) experimental; urgency=medium
+
+
+ -- NVIDIA CORPORATION <cudatools@nvidia.com>  Thu, 04 Nov 2021 14:14:32 +0000
+
 nvidia-container-runtime (3.6.0~rc.1-1) experimental; urgency=medium
 
   * Add AARCH64 package for Amazon Linux 2

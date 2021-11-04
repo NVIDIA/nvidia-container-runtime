@@ -14,7 +14,7 @@
 
 LIB_NAME := nvidia-container-runtime
 LIB_VERSION := 3.6.0
-LIB_TAG ?= rc.1
+LIB_TAG ?= rc.2
 
 # Note: This should be the previous full release of nvidia-container-toolkit to ensure
 # that release candidate (e.g. rc.1) work as expected.

@@ -31,6 +31,9 @@ cp %{SOURCE0} .
 %license LICENSE
 
 %changelog
+* Thu Nov 04 2021 NVIDIA CORPORATION <cudatools@nvidia.com> 3.6.0-0.1.rc.2
+- Allow the toolkit version to be specified as a variable
+
 * Thu Apr 29 2021 NVIDIA CORPORATION <cudatools@nvidia.com> 3.6.0-0.1.rc.1
 - Add AARCH64 package for Amazon Linux 2
 - [BUILD] Allow tag to be specified instead of revision
