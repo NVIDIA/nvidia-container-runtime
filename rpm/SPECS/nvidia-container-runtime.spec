@@ -14,9 +14,7 @@ License: ASL 2.0
 Source0: LICENSE
 
 Obsoletes: nvidia-container-runtime < 2.0.0
-# Note: The -3 revision in the required toolkit version is to handle the released versions of
-# The nvidia-container-toolkit 1.5.1 package. This can be replaced with '-1' in subsequent releases.
-Requires: nvidia-container-toolkit > %{toolkit_version}-3, nvidia-container-toolkit < 2.0.0
+Requires: nvidia-container-toolkit >= %{toolkit_version}, nvidia-container-toolkit < 2.0.0
 
 %description
 Provides a modified version of runc allowing users to run GPU enabled
@@ -32,6 +30,7 @@ cp %{SOURCE0} .
 
 %changelog
 * Thu Nov 04 2021 NVIDIA CORPORATION <cudatools@nvidia.com> 3.6.0-0.1.rc.2
+- Bump nvidia-container-toolkit dependency to %{toolkit_version}
 - Allow the toolkit version to be specified as a variable
 
 * Thu Apr 29 2021 NVIDIA CORPORATION <cudatools@nvidia.com> 3.6.0-0.1.rc.1
