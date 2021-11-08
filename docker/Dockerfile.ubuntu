@@ -18,13 +18,14 @@ RUN apt-get update && \
     rm -rf /var/lib/apt/lists/*
 
 # packaging
+ARG PKG_NAME
 ARG PKG_VERS
 ARG PKG_REV
 ARG TOOLKIT_VERSION
 
 ENV DEBFULLNAME "NVIDIA CORPORATION"
 ENV DEBEMAIL "cudatools@nvidia.com"
-ENV PKG_NAME "nvidia-container-runtime"
+ENV PKG_NAME "${PKG_NAME}"
 ENV REVISION "$PKG_VERS-$PKG_REV"
 ENV TOOLKIT_VERSION $TOOLKIT_VERSION
 ENV SECTION ""
