@@ -28,10 +28,10 @@ WORKDIR $DIST_DIR/..
 COPY rpm .
 
 CMD arch=$(uname -m) && \
-    rpmbuild --clean --target=$arch -bb \
+    rpmbuild --clean -bb \
              -D "_topdir $PWD" \
              -D "version $VERSION" \
              -D "release $RELEASE" \
              -D "toolkit_version $TOOLKIT_VERSION" \
              SPECS/${PKG_NAME}.spec && \
-    mv RPMS/$arch/*.rpm /dist
+    mv RPMS/noarch/*.rpm /dist

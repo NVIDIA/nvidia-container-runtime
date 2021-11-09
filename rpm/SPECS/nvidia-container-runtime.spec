@@ -1,6 +1,7 @@
 Name: nvidia-container-runtime
 Version: %{version}
 Release: %{release}
+BuildArch: noarch
 Group: Development Tools
 
 Vendor: NVIDIA CORPORATION
@@ -30,6 +31,7 @@ cp %{SOURCE0} .
 
 %changelog
 * Mon Nov 08 2021 NVIDIA CORPORATION <cudatools@nvidia.com> 3.6.0-0.1.rc.3
+- Convert to noarch package
 
 * Thu Nov 04 2021 NVIDIA CORPORATION <cudatools@nvidia.com> 3.6.0-0.1.rc.2
 - Bump nvidia-container-toolkit dependency to %{toolkit_version}
