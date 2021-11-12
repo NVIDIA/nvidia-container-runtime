@@ -21,26 +21,31 @@ RUN apt-get update && \
     rm -rf /var/lib/apt/lists/*
 
 # packaging
+ARG PKG_NAME
 ARG PKG_VERS
 ARG PKG_REV
 ARG TOOLKIT_VERSION
 
 ENV DEBFULLNAME "NVIDIA CORPORATION"
 ENV DEBEMAIL "cudatools@nvidia.com"
+ENV PKG_NAME "${PKG_NAME}"
 ENV REVISION "$PKG_VERS-$PKG_REV"
 ENV TOOLKIT_VERSION $TOOLKIT_VERSION
 ENV SECTION ""
 
 # output directory
-ENV DIST_DIR=/tmp/nvidia-container-runtime-$PKG_VERS
+ENV DIST_DIR=/tmp/${PKG_NAME}-$PKG_VERS
 RUN mkdir -p $DIST_DIR /dist
 
 WORKDIR $DIST_DIR
 COPY debian ./debian
 
+RUN rm -f $DIST_DIR/debian/changelog
 RUN sed -i "s;@TOOLKIT_VERSION@;${TOOLKIT_VERSION};" debian/control && \
-    dch --changelog debian/changelog --append "Bump nvidia-container-toolkit dependency to ${TOOLKIT_VERSION}" && \
-    dch --changelog debian/changelog -r "" && \
+    dch --create --package="${PKG_NAME}" \
+        --newversion "${REVISION}" \
+            "Bump nvidia-container-toolkit dependency to ${TOOLKIT_VERSION}" && \
+    dch -r "" && \
     if [ "$REVISION" != "$(dpkg-parsechangelog --show-field=Version)" ]; then exit 1; fi
 
 CMD export DISTRIB="$(lsb_release -cs)" && \

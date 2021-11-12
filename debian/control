@@ -9,7 +9,7 @@ Vcs-Browser: https://github.com/NVIDIA/nvidia-container-runtime
 Build-Depends: debhelper (>= 9)
 
 Package: nvidia-container-runtime
-Architecture: any
+Architecture: all
 Depends: ${misc:Depends}, nvidia-container-toolkit (>= @TOOLKIT_VERSION@), nvidia-container-toolkit (<< 2.0.0)
 Description: NVIDIA container runtime
  Provides a modified version of runc allowing users to run GPU enabled

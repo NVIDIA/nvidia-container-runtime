@@ -139,20 +139,26 @@ RPM_TOOLKIT_REV := $(if $(TOOLKIT_TAG),0.1.$(TOOLKIT_TAG),1)
 --rhel%: VERSION = $(patsubst rhel%-$(ARCH),%,$(TARGET_PLATFORM))
 --rhel%: ARTIFACTS_DIR = $(DIST_DIR)/rhel$(VERSION)/$(ARCH)
 
+PLATFORM_ARGS ?= --platform=linux/$(ARCH)
+ifneq ($(strip $(ADD_DOCKER_PLATFORM_ARGS)),)
+DOCKER_PLATFORM_ARGS = $(PLATFORM_ARGS)
+endif
+
 docker-build-%:
 	@echo "Building for $(TARGET_PLATFORM)"
-	docker pull --platform=linux/$(ARCH) $(BASEIMAGE)
+	docker pull $(PLATFORM_ARGS) $(BASEIMAGE)
 	DOCKER_BUILDKIT=1 \
-	$(DOCKER) build \
+	$(DOCKER) build $(DOCKER_PLATFORM_ARGS) \
 	    --progress=plain \
 	    --build-arg BASEIMAGE="$(BASEIMAGE)" \
 	    --build-arg GOLANG_VERSION="$(GOLANG_VERSION)" \
 	    --build-arg TOOLKIT_VERSION="$(MIN_TOOLKIT_PKG_VERSION)" \
+		--build-arg PKG_NAME="$(LIB_NAME)" \
 	    --build-arg PKG_VERS="$(LIB_VERSION)" \
 	    --build-arg PKG_REV="$(PKG_REV)" \
 	    --tag $(BUILDIMAGE) \
 	    --file $(DOCKERFILE) .
-	$(DOCKER) run \
+	$(DOCKER) run $(DOCKER_PLATFORM_ARGS) \
 	    -e DISTRIB \
 	    -e SECTION \
 	    -v $(ARTIFACTS_DIR):/dist \
