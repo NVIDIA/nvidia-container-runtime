@@ -14,10 +14,10 @@
 
 LIB_NAME := nvidia-container-runtime
 LIB_VERSION := 3.6.0
-LIB_TAG ?= rc.3
+LIB_TAG ?=
 
 TOOLKIT_VERSION ?= 1.6.0
-TOOLKIT_TAG ?= rc.3
+TOOLKIT_TAG ?=
 
 # By default run all native docker-based targets
 docker-native:
