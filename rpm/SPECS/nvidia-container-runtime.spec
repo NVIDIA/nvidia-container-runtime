@@ -30,6 +30,9 @@ cp %{SOURCE0} .
 %license LICENSE
 
 %changelog
+* Wed Nov 17 2021 NVIDIA CORPORATION <cudatools@nvidia.com> 3.6.0-1
+- Promote 3.6.0-0.1.rc.3 to 3.6.0-1
+
 * Mon Nov 08 2021 NVIDIA CORPORATION <cudatools@nvidia.com> 3.6.0-0.1.rc.3
 - Convert to noarch package
 
