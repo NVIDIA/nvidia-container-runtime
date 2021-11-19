@@ -1,3 +1,6 @@
+# Note: as of 3.6.0-1 this file is no longer updated, with a changelog
+# entry for a given release generated as part of the packaging step.
+
 nvidia-container-runtime (3.6.0-1) UNRELEASED; urgency=medium
 
   * Promote 3.6.0~rc.3-1 to 3.6.0-1
