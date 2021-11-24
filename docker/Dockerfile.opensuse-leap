@@ -32,6 +32,7 @@ COPY rpm .
 CMD arch=$(uname -m) && \
     rpmbuild --clean -bb \
              -D "_topdir $PWD" \
+             -D "release_date $(date +'%a %b %d %Y')" \
              -D "version $VERSION" \
              -D "release $RELEASE" \
              -D "toolkit_version $TOOLKIT_VERSION" \
