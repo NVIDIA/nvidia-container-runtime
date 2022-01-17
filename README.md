@@ -1,8 +1,12 @@
+# Migration Notice
+
+**NOTE**: The source code for the `nvidia-container-runtime` binary has been moved to the [`nvidia-container-toolkit`](https://gitlab.com/nvidia/container-toolkit/container-toolkit/-/tree/master/cmd/nvidia-container-runtime) repository. It is now included in the `nvidia-container-toolkit` package and the `nvidia-container-runtime` package defined in this repository is a meta-package that allows workflows that referred to this package directly to continue to function without modification.
+
 # nvidia-container-runtime
 [![GitHub license](https://img.shields.io/badge/License-Apache%202.0-blue.svg?style=flat-square)](https://raw.githubusercontent.com/NVIDIA/nvidia-container-runtime/master/LICENSE)
 [![Package repository](https://img.shields.io/badge/packages-repository-b956e8.svg?style=flat-square)](https://nvidia.github.io/nvidia-container-runtime)
 
-A modified version of [runc](https://github.com/opencontainers/runc) adding a custom [pre-start hook](https://github.com/opencontainers/runtime-spec/blob/master/config.md#prestart) to all containers.  
+A modified version of [runc](https://github.com/opencontainers/runc) adding a custom [pre-start hook](https://github.com/opencontainers/runtime-spec/blob/master/config.md#prestart) to all containers.
 If environment variable `NVIDIA_VISIBLE_DEVICES` is set in the OCI spec, the hook will configure GPU access for the container by leveraging `nvidia-container-cli` from project [libnvidia-container](https://github.com/NVIDIA/libnvidia-container).
 
 ## Usage example
@@ -41,7 +45,7 @@ sudo yum install nvidia-container-runtime
 
 **Do not follow this section if you installed the `nvidia-docker2` package, it already registers the runtime.**
 
-To register the `nvidia` runtime, use the method below that is best suited to your environment.  
+To register the `nvidia` runtime, use the method below that is best suited to your environment.
 You might need to merge the new argument with your existing configuration.
 
 #### Systemd drop-in file
@@ -84,11 +88,11 @@ sudo dockerd --add-runtime=nvidia=/usr/bin/nvidia-container-runtime [...]
 
 ## Environment variables (OCI spec)
 
-Each environment variable maps to an command-line argument for `nvidia-container-cli` from [libnvidia-container](https://github.com/NVIDIA/libnvidia-container).  
+Each environment variable maps to an command-line argument for `nvidia-container-cli` from [libnvidia-container](https://github.com/NVIDIA/libnvidia-container).
 These variables are already set in our [official CUDA images](https://hub.docker.com/r/nvidia/cuda/).
 
 ### `NVIDIA_VISIBLE_DEVICES`
-This variable controls which GPUs will be made accessible inside the container.  
+This variable controls which GPUs will be made accessible inside the container.
 
 #### Possible values
 * `0,1,2`, `GPU-fef8089b` …: a comma-separated list of GPU UUID(s) or index(es).
@@ -157,7 +161,7 @@ This option controls which driver libraries/binaries will be mounted inside the 
 * `display`: required for leveraging X11 display.
 
 ### `NVIDIA_REQUIRE_*`
-A logical expression to define constraints on the configurations supported by the container.  
+A logical expression to define constraints on the configurations supported by the container.
 
 #### Supported constraints
 * `cuda`: constraint on the CUDA driver version.
@@ -166,7 +170,7 @@ A logical expression to define constraints on the configurations supported by th
 * `brand`: constraint on the brand of the selected GPUs (e.g. GeForce, Tesla, GRID).
 
 #### Expressions
-Multiple constraints can be expressed in a single environment variable: space-separated constraints are ORed, comma-separated constraints are ANDed.  
+Multiple constraints can be expressed in a single environment variable: space-separated constraints are ORed, comma-separated constraints are ANDed.
 Multiple environment variables of the form `NVIDIA_REQUIRE_*` are ANDed together.
 
 ### `NVIDIA_DISABLE_REQUIRE`
@@ -181,7 +185,7 @@ If the version of the NVIDIA driver is insufficient to run this version of CUDA,
 * `cuda>=7.5`, `cuda>=8.0`, `cuda>=9.0` …: any valid CUDA version in the form `major.minor`.
 
 ### `CUDA_VERSION`
-Similar to `NVIDIA_REQUIRE_CUDA`, for legacy CUDA images.  
+Similar to `NVIDIA_REQUIRE_CUDA`, for legacy CUDA images.
 In addition, if `NVIDIA_REQUIRE_CUDA` is not set, `NVIDIA_VISIBLE_DEVICES` and `NVIDIA_DRIVER_CAPABILITIES` will default to `all`.
 
 ## Issues and Contributing
