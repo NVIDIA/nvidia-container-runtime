@@ -1,3 +1,6 @@
+# Migration Notice
+**NOTE**:  This repository is provided for convenience, with all recent packages for the NVIDIA Container Toolkit (including the NVIDIA Container Runtime) being served by the
+https://nvidia.github.io/libnvidia-container repository which is included in this repositories configuration by default.
 # Repository configuration
 
 In order to setup the nvidia-container-runtime repository for your distribution, follow the instructions below.
