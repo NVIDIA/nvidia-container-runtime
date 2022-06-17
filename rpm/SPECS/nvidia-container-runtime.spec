@@ -9,7 +9,7 @@ Packager: NVIDIA CORPORATION <cudatools@nvidia.com>
 
 Summary: NVIDIA container runtime
 URL: https://github.com/NVIDIA/nvidia-container-runtime
-# runc NOTICE file: https://github.com/opencontainers/runc/blob/master/NOTICE
+# runc NOTICE file: https://github.com/opencontainers/runc/blob/main/NOTICE
 License: ASL 2.0
 
 Source0: LICENSE

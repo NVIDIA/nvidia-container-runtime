@@ -1,12 +1,12 @@
 # Migration Notice
 
-**NOTE**: The source code for the `nvidia-container-runtime` binary has been moved to the [`nvidia-container-toolkit`](https://gitlab.com/nvidia/container-toolkit/container-toolkit/-/tree/master/cmd/nvidia-container-runtime) repository. It is now included in the `nvidia-container-toolkit` package and the `nvidia-container-runtime` package defined in this repository is a meta-package that allows workflows that referred to this package directly to continue to function without modification.
+**NOTE**: The source code for the `nvidia-container-runtime` binary has been moved to the [`nvidia-container-toolkit`](https://gitlab.com/nvidia/container-toolkit/container-toolkit/-/tree/main/cmd/nvidia-container-runtime) repository. It is now included in the `nvidia-container-toolkit` package and the `nvidia-container-runtime` package defined in this repository is a meta-package that allows workflows that referred to this package directly to continue to function without modification.
 
 # nvidia-container-runtime
-[![GitHub license](https://img.shields.io/badge/License-Apache%202.0-blue.svg?style=flat-square)](https://raw.githubusercontent.com/NVIDIA/nvidia-container-runtime/master/LICENSE)
+[![GitHub license](https://img.shields.io/badge/License-Apache%202.0-blue.svg?style=flat-square)](https://raw.githubusercontent.com/NVIDIA/nvidia-container-runtime/main/LICENSE)
 [![Package repository](https://img.shields.io/badge/packages-repository-b956e8.svg?style=flat-square)](https://nvidia.github.io/nvidia-container-runtime)
 
-A modified version of [runc](https://github.com/opencontainers/runc) adding a custom [pre-start hook](https://github.com/opencontainers/runtime-spec/blob/master/config.md#prestart) to all containers.
+A modified version of [runc](https://github.com/opencontainers/runc) adding a custom [pre-start hook](https://github.com/opencontainers/runtime-spec/blob/main/config.md#prestart) to all containers.
 If environment variable `NVIDIA_VISIBLE_DEVICES` is set in the OCI spec, the hook will configure GPU access for the container by leveraging `nvidia-container-cli` from project [libnvidia-container](https://github.com/NVIDIA/libnvidia-container).
 
 ## Usage example
@@ -192,5 +192,5 @@ In addition, if `NVIDIA_REQUIRE_CUDA` is not set, `NVIDIA_VISIBLE_DEVICES` and `
 
 [Checkout the Contributing document!](CONTRIBUTING.md)
 
-* Please let us know by [filing a new issue](https://github.com/NVIDIA/nvidia-docker/issues/new)
-* You can contribute by opening a [pull request](https://help.github.com/articles/using-pull-requests/)
+* Please let us know by [filing a new issue](https://github.com/NVIDIA/nvidia-container-toolkit/issues/new)
+* You can contribute by creating a [merge request](https://gitlab.com/nvidia/container-toolkit/container-runtime/-/merge_requests/new) to our public GitLab repository
