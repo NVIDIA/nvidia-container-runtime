@@ -18,8 +18,8 @@ Obsoletes: nvidia-container-runtime < 2.0.0
 Requires: nvidia-container-toolkit >= %{toolkit_version}, nvidia-container-toolkit < 2.0.0
 
 %description
-Provides a modified version of runc allowing users to run GPU enabled
-containers.
+A meta-package that allows installation flows expecting the nvidia-container-runtime
+to be migrated to installing the NVIDIA Container Toolkit packages directly.
 
 %prep
 cp %{SOURCE0} .

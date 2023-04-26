@@ -11,6 +11,6 @@ Build-Depends: debhelper (>= 9)
 Package: nvidia-container-runtime
 Architecture: all
 Depends: ${misc:Depends}, nvidia-container-toolkit (>= @TOOLKIT_VERSION@), nvidia-container-toolkit (<< 2.0.0)
-Description: NVIDIA container runtime
- Provides a modified version of runc allowing users to run GPU enabled
- containers.
+Description: NVIDIA Container Toolkit meta-package
+ A meta-package that allows installation flows expecting the nvidia-container-runtime
+ to be migrated to installing the NVIDIA Container Toolkit packages directly.
